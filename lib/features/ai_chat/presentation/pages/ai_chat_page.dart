@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class AiChatPage extends ConsumerStatefulWidget {
   const AiChatPage({super.key});
@@ -38,6 +40,8 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    final currentRoute = GoRouterState.of(context).uri.path;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
       appBar: AppBar(
@@ -45,6 +49,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
         backgroundColor: const Color(0xFF323232),
         foregroundColor: const Color(0xFFFFFFFF),
       ),
+      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: Column(
         children: [
           Expanded(

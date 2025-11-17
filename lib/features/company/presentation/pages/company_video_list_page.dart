@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
 import 'package:numbers/features/company/presentation/providers/company_provider.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class CompanyVideoListPage extends ConsumerStatefulWidget {
   const CompanyVideoListPage({super.key});
@@ -29,20 +30,56 @@ class _CompanyVideoListPageState extends ConsumerState<CompanyVideoListPage> {
       return;
     }
 
-    final controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
-    controller.initialize().then((_) {
-      if (mounted) {
-        setState(() {});
-      }
-    });
+    // URLの検証
+    if (videoUrl.isEmpty || !(Uri.tryParse(videoUrl)?.hasAbsolutePath ?? false)) {
+      print('無効なビデオURL (videoId: $videoId): $videoUrl');
+      return;
+    }
 
-    _controllers[videoId] = controller;
+    try {
+      final controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+      _controllers[videoId] = controller;
+      
+      controller.initialize().then((_) {
+        if (!mounted) return;
+        
+        // 初期化成功後の状態確認
+        if (controller.value.hasError) {
+          print('ビデオ初期化エラー (videoId: $videoId): ${controller.value.errorDescription}');
+          _controllers[videoId]?.dispose();
+          _controllers.remove(videoId);
+          if (mounted) {
+            setState(() {});
+          }
+          return;
+        }
+
+        if (mounted) {
+          setState(() {});
+        }
+      }).catchError((error, stackTrace) {
+        // ビデオの初期化に失敗した場合（フォーマットエラーなど）
+        print('ビデオ初期化エラー (videoId: $videoId, URL: $videoUrl): $error');
+        print('スタックトレース: $stackTrace');
+        // エラーが発生したコントローラーを削除
+        if (_controllers.containsKey(videoId)) {
+          _controllers[videoId]?.dispose();
+          _controllers.remove(videoId);
+        }
+        if (mounted) {
+          setState(() {});
+        }
+      });
+    } catch (e) {
+      print('ビデオコントローラー作成エラー (videoId: $videoId, URL: $videoUrl): $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final companyId = GoRouterState.of(context).pathParameters['id'] ?? '';
     final videosAsync = ref.watch(companyVideosProvider(companyId));
+    final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
@@ -51,6 +88,7 @@ class _CompanyVideoListPageState extends ConsumerState<CompanyVideoListPage> {
         backgroundColor: const Color(0xFF323232),
         foregroundColor: const Color(0xFFFFFFFF),
       ),
+      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: videosAsync.when(
         data: (videos) {
           if (videos.isEmpty) {
@@ -90,8 +128,14 @@ class _CompanyVideoListPageState extends ConsumerState<CompanyVideoListPage> {
                 }
               }
 
-              if (videoUrl != null) {
-                _initializeVideo(videoId, videoUrl);
+              if (videoUrl != null && videoUrl.isNotEmpty) {
+                // URLの検証を追加
+                final uri = Uri.tryParse(videoUrl);
+                if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+                  _initializeVideo(videoId, videoUrl);
+                } else {
+                  print('無効なビデオURL形式 (videoId: $videoId): $videoUrl');
+                }
               }
 
               final controller = _controllers[videoId];
@@ -134,9 +178,28 @@ class _CompanyVideoListPageState extends ConsumerState<CompanyVideoListPage> {
                               ? Image.network(
                                   thumbnailUrl,
                                   fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey[300],
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.video_library,
+                                          color: Colors.grey,
+                                          size: 48,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 )
-                              : const Center(
-                                  child: CircularProgressIndicator(),
+                              : Container(
+                                  color: Colors.grey[300],
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.video_library,
+                                      color: Colors.grey,
+                                      size: 48,
+                                    ),
+                                  ),
                                 ),
                     ),
                     // タイトルと説明

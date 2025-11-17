@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/job/presentation/providers/job_provider.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class ApplicationHistoryPage extends ConsumerWidget {
   const ApplicationHistoryPage({super.key});
@@ -9,6 +10,7 @@ class ApplicationHistoryPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final applicationsAsync = ref.watch(applicationsProvider);
+    final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
@@ -17,6 +19,7 @@ class ApplicationHistoryPage extends ConsumerWidget {
         backgroundColor: const Color(0xFF323232),
         foregroundColor: const Color(0xFFFFFFFF),
       ),
+      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: applicationsAsync.when(
         data: (applications) {
           if (applications.isEmpty) {

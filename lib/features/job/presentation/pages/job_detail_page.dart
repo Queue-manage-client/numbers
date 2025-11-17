@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/job/presentation/providers/job_provider.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class JobDetailPage extends ConsumerWidget {
   const JobDetailPage({super.key});
@@ -11,6 +12,7 @@ class JobDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final jobId = GoRouterState.of(context).pathParameters['id'] ?? '';
     final jobAsync = ref.watch(jobProvider(jobId));
+    final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
@@ -66,29 +68,35 @@ class JobDetailPage extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('エラー: $error')),
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFFFFF),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, -2),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFFFF),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, -2),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: ElevatedButton(
-          onPressed: () {
-            context.push('/jobs/$jobId/apply/confirm');
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF323232),
-            foregroundColor: const Color(0xFFFFFFFF),
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: ElevatedButton(
+              onPressed: () {
+                context.push('/jobs/$jobId/apply/confirm');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF323232),
+                foregroundColor: const Color(0xFFFFFFFF),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: const Text('応募する'),
+            ),
           ),
-          child: const Text('応募する'),
-        ),
+          AppFooter(currentRoute: currentRoute),
+        ],
       ),
     );
   }

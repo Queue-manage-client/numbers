@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/profile/presentation/providers/profile_provider.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class ProfileEditPage extends ConsumerStatefulWidget {
   const ProfileEditPage({super.key});
@@ -67,6 +68,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
+    final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
@@ -75,6 +77,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         backgroundColor: const Color(0xFF323232),
         foregroundColor: const Color(0xFFFFFFFF),
       ),
+      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: profileAsync.when(
         data: (profile) {
           if (profile != null && _nicknameController.text.isEmpty) {

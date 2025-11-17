@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:numbers/features/chat/presentation/providers/chat_provider.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class ChatRoomPage extends ConsumerStatefulWidget {
   const ChatRoomPage({super.key});
@@ -52,6 +54,7 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
     // TODO: 実際にはroute parameterからroomIdを取得
     const roomId = 'dummy-room-id';
     final messagesAsync = ref.watch(messagesProvider(roomId));
+    final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
@@ -60,6 +63,7 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
         backgroundColor: const Color(0xFF323232),
         foregroundColor: const Color(0xFFFFFFFF),
       ),
+      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: Column(
         children: [
           Expanded(

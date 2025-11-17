@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/company/presentation/providers/company_provider.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class VideoSearchPage extends ConsumerStatefulWidget {
   const VideoSearchPage({super.key});
@@ -63,6 +64,7 @@ class _VideoSearchPageState extends ConsumerState<VideoSearchPage> {
   @override
   Widget build(BuildContext context) {
     final videosAsync = ref.watch(feedVideosProvider);
+    final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
@@ -71,6 +73,7 @@ class _VideoSearchPageState extends ConsumerState<VideoSearchPage> {
         backgroundColor: const Color(0xFF323232),
         foregroundColor: const Color(0xFFFFFFFF),
       ),
+      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: Column(
         children: [
           // 検索バーとフィルタ
@@ -203,6 +206,17 @@ class _VideoSearchPageState extends ConsumerState<VideoSearchPage> {
                                     width: 120,
                                     height: 80,
                                     fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 120,
+                                        height: 80,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(Icons.video_library),
+                                      );
+                                    },
                                   ),
                                 )
                               else

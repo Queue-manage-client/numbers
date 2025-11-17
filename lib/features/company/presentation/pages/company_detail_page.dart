@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/company/presentation/providers/company_provider.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class CompanyDetailPage extends ConsumerWidget {
   const CompanyDetailPage({super.key});
@@ -10,6 +11,7 @@ class CompanyDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final companyId = GoRouterState.of(context).pathParameters['id'] ?? '';
     final companyAsync = ref.watch(companyProvider(companyId));
+    final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
@@ -18,6 +20,7 @@ class CompanyDetailPage extends ConsumerWidget {
         backgroundColor: const Color(0xFF323232),
         foregroundColor: const Color(0xFFFFFFFF),
       ),
+      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: companyAsync.when(
         data: (company) {
           if (company == null) {

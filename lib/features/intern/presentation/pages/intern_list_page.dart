@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/intern/presentation/providers/intern_provider.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class InternListPage extends ConsumerWidget {
   const InternListPage({super.key});
@@ -9,6 +10,7 @@ class InternListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final internshipsAsync = ref.watch(internshipsProvider);
+    final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
@@ -17,6 +19,7 @@ class InternListPage extends ConsumerWidget {
         backgroundColor: const Color(0xFF323232),
         foregroundColor: const Color(0xFFFFFFFF),
       ),
+      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: internshipsAsync.when(
         data: (internships) {
           if (internships.isEmpty) {

@@ -3,6 +3,9 @@ import 'package:numbers/features/onboarding/presentation/pages/splash_page.dart'
 import 'package:numbers/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:numbers/features/auth/presentation/pages/login_page.dart';
 import 'package:numbers/features/auth/presentation/pages/signup_page.dart';
+import 'package:numbers/features/auth/presentation/pages/account_type_selection_page.dart';
+import 'package:numbers/features/auth/presentation/pages/individual_signup_page.dart';
+import 'package:numbers/features/auth/presentation/pages/company_signup_page.dart';
 import 'package:numbers/features/auth/presentation/pages/password_reset_page.dart';
 import 'package:numbers/features/feed/presentation/pages/feed_page.dart';
 import 'package:numbers/features/company/presentation/pages/company_detail_page.dart';
@@ -70,7 +73,15 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/signup',
-      builder: (context, state) => const SignupPage(),
+      builder: (context, state) => const AccountTypeSelectionPage(),
+    ),
+    GoRoute(
+      path: '/signup/individual',
+      builder: (context, state) => const IndividualSignupPage(),
+    ),
+    GoRoute(
+      path: '/signup/company',
+      builder: (context, state) => const CompanySignupPage(),
     ),
     GoRoute(
       path: '/password-reset',
