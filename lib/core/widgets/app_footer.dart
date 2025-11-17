@@ -18,11 +18,11 @@ class AppFooter extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Container(
-          height: 65,
-          padding: const EdgeInsets.only(top: 4),
+          height: 70,
+          padding: const EdgeInsets.only(top: 8, bottom: 4),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               _buildNavItem(
                 context,
@@ -31,6 +31,7 @@ class AppFooter extends StatelessWidget {
                 label: 'ホーム',
                 route: '/feed',
                 isActive: currentRoute == '/feed',
+                isCenter: false,
               ),
               _buildNavItem(
                 context,
@@ -39,22 +40,28 @@ class AppFooter extends StatelessWidget {
                 label: '探す',
                 route: '/jobs/map',
                 isActive: currentRoute == '/jobs/map' || currentRoute.startsWith('/jobs/'),
+                isCenter: false,
               ),
               _buildNavItem(
                 context,
                 icon: Icons.people_outline,
                 activeIcon: Icons.people,
-                label: 'インターン',
+                label: 'インターン/\nチャット',
                 route: '/interns',
-                isActive: currentRoute == '/interns' || currentRoute.startsWith('/interns/'),
+                isActive: currentRoute == '/interns' ||
+                         currentRoute.startsWith('/interns/') ||
+                         currentRoute == '/chats' ||
+                         currentRoute.startsWith('/chats/'),
+                isCenter: true,
               ),
               _buildNavItem(
                 context,
-                icon: Icons.chat_bubble_outline,
-                activeIcon: Icons.chat_bubble,
-                label: 'チャット',
-                route: '/chats',
-                isActive: currentRoute == '/chats' || currentRoute.startsWith('/chats/'),
+                icon: Icons.calendar_today_outlined,
+                activeIcon: Icons.calendar_today,
+                label: 'カレンダー',
+                route: '/calendar',
+                isActive: currentRoute == '/calendar',
+                isCenter: false,
               ),
               _buildNavItem(
                 context,
@@ -67,6 +74,7 @@ class AppFooter extends StatelessWidget {
                          currentRoute == '/applications' ||
                          currentRoute.startsWith('/applications/') ||
                          currentRoute == '/settings',
+                isCenter: false,
               ),
             ],
           ),
@@ -82,6 +90,7 @@ class AppFooter extends StatelessWidget {
     required String label,
     required String route,
     required bool isActive,
+    required bool isCenter,
   }) {
     return Expanded(
       child: Material(
@@ -93,26 +102,40 @@ class AppFooter extends StatelessWidget {
             }
           },
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+            padding: EdgeInsets.symmetric(vertical: isCenter ? 0 : 4),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  isActive ? activeIcon : icon,
-                  color: Colors.white,
-                  size: 26,
-                ),
-                const SizedBox(height: 2),
+                if (isCenter) ...[
+                  // 中央アイコンは大きく表示
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      isActive ? activeIcon : icon,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                ] else ...[
+                  // 通常のアイコン
+                  Icon(
+                    isActive ? activeIcon : icon,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  const SizedBox(height: 4),
+                ],
                 Text(
                   label,
-                  style: const TextStyle(
-                    fontSize: 9,
+                  style: TextStyle(
+                    fontSize: isCenter ? 8 : 9,
                     color: Colors.white,
                     fontWeight: FontWeight.w400,
-                    height: 1.2,
+                    height: 1.1,
                   ),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                 ),
