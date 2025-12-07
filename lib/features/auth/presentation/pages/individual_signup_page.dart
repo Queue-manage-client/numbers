@@ -96,6 +96,9 @@ class IndividualSignupPage extends HookConsumerWidget {
                   SizedBox(height: SpacePalette.sm),
                   TextFormField(
                     controller: nameController,
+                    decoration: InputDecoration(
+                      hintText: '山田太郎',
+                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return '名前を入力してください';
@@ -116,6 +119,9 @@ class IndividualSignupPage extends HookConsumerWidget {
                   SizedBox(height: SpacePalette.sm),
                   TextFormField(
                     controller: emailController,
+                    decoration: InputDecoration(
+                      hintText: 'example@example.com',
+                    ),
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -140,6 +146,9 @@ class IndividualSignupPage extends HookConsumerWidget {
                   SizedBox(height: SpacePalette.sm),
                   TextFormField(
                     controller: passwordController,
+                    decoration: InputDecoration(
+                      hintText: '6文字以上で入力してください',
+                    ),
                     obscureText: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -164,6 +173,9 @@ class IndividualSignupPage extends HookConsumerWidget {
                   SizedBox(height: SpacePalette.sm),
                   TextFormField(
                     controller: confirmPasswordController,
+                    decoration: InputDecoration(
+                      hintText: '入力間違いはありませんか？',
+                    ),
                     obscureText: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {

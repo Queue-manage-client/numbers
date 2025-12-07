@@ -1,136 +1,128 @@
+// auth/presentation/pages/password_reset_page.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
-class PasswordResetPage extends ConsumerStatefulWidget {
+class PasswordResetPage extends HookConsumerWidget {
   const PasswordResetPage({super.key});
 
   @override
-  ConsumerState<PasswordResetPage> createState() => _PasswordResetPageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formKey = useMemoized(() => GlobalKey<FormState>());
+    final emailController = useTextEditingController();
+    final isLoading = useState(false);
 
-class _PasswordResetPageState extends ConsumerState<PasswordResetPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  bool _isLoading = false;
+    Future<void> sendResetEmail() async {
+      if (!formKey.currentState!.validate()) return;
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    super.dispose();
-  }
+      isLoading.value = true;
 
-  Future<void> _sendResetEmail() async {
-    if (!_formKey.currentState!.validate()) return;
+      try {
+        final supabase = ref.read(supabaseClientProvider);
+        await supabase.auth.resetPasswordForEmail(emailController.text.trim());
 
-    setState(() => _isLoading = true);
-
-    try {
-      final supabase = ref.read(supabaseClientProvider);
-      await supabase.auth.resetPasswordForEmail(_emailController.text.trim());
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('パスワードリセットメールを送信しました')),
-        );
-        context.go('/login');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('エラー: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('パスワードリセットメールを送信しました')),
+          );
+          context.go('/login');
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('エラー: $e')),
+          );
+        }
+      } finally {
+        isLoading.value = false;
       }
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
-      appBar: AppBar(
-        title: const Text('パスワードリセット'),
-        backgroundColor: const Color(0xFF323232),
-        foregroundColor: const Color(0xFFFFFFFF),
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'パスワードリセット',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF323232),
+      backgroundColor: ColorPalette.neutral100,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(SpacePalette.base), // 全体padding
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'パスワードリセット',
+                    style: TextStylePalette.header,
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  '登録したメールアドレスを入力してください。\nパスワードリセット用のリンクを送信します。',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF666666),
+                  const SizedBox(height: SpacePalette.base), // 別機能間隔
+                  Text(
+                    '登録したメールアドレスを入力してください。\nパスワードリセット用のリンクを送信します。',
+                    style: TextStylePalette.smSubText,
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 48),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'メールアドレス',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: SpacePalette.lg), // 別機能間隔（大きめ）
+                  
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'メールアドレス',
+                      style: TextStylePalette.smTitle,
+                    ),
                   ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'メールアドレスを入力してください';
-                    }
-                    if (!value.contains('@')) {
-                      return '有効なメールアドレスを入力してください';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _sendResetEmail,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF323232),
-                    foregroundColor: const Color(0xFFFFFFFF),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  SizedBox(height: SpacePalette.sm),
+                  TextFormField(
+                    controller: emailController,
+                    decoration: InputDecoration(
+                      hintText: 'example@example.com',
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'メールアドレスを入力してください';
+                      }
+                      if (!value.contains('@')) {
+                        return '有効なメールアドレスを入力してください';
+                      }
+                      return null;
+                    },
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Color(0xFFFFFFFF),
-                          ),
-                        )
-                      : const Text('リセットメールを送信'),
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => context.go('/login'),
-                  child: const Text(
-                    'ログイン画面に戻る',
-                    style: TextStyle(color: Color(0xFF323232)),
+                  const SizedBox(height: SpacePalette.base), // 別機能間隔
+                  
+                  ElevatedButton(
+                    onPressed: isLoading.value ? null : sendResetEmail,
+                    child: isLoading.value
+                        ? SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: ColorPalette.neutral0,
+                            ),
+                          )
+                        : const Text(
+                          'リセットメールを送信',
+                          // スタイル指定できない？
+                        ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: SpacePalette.lg), // 別機能間隔
+                  Align(
+                    alignment: Alignment.center,
+                    child: GestureDetector(
+                      onTap: (){
+                        context.go('/login');
+                      },
+                      child: Text(
+                        'ログイン画面に戻る',
+                        style: TextStylePalette.guide
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

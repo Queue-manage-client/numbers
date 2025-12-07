@@ -85,10 +85,18 @@ class CompanyLoginPage extends HookConsumerWidget {
                   const SizedBox(height: SpacePalette.lg), // 大きめの間隔
 
                   // メールアドレス
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'メールアドレス',
+                      style: TextStylePalette.smTitle,
+                    ),
+                  ),
+                  SizedBox(height: SpacePalette.sm),
                   TextFormField(
                     controller: emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'メールアドレス',
+                    decoration: InputDecoration(
+                      hintText: 'example@example.com',
                     ),
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
@@ -104,10 +112,18 @@ class CompanyLoginPage extends HookConsumerWidget {
                   const SizedBox(height: SpacePalette.base), // 別機能間隔
 
                   // パスワード
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'パスワード',
+                      style: TextStylePalette.smTitle,
+                    ),
+                  ),
+                  SizedBox(height: SpacePalette.sm),
                   TextFormField(
                     controller: passwordController,
-                    decoration: const InputDecoration(
-                      labelText: 'パスワード',
+                    decoration: InputDecoration(
+                      hintText: '6文字以上で入力してください',
                     ),
                     obscureText: true,
                     validator: (value) {

@@ -98,7 +98,9 @@ class CompanySignupPage extends HookConsumerWidget {
                   // 企業名
                   TextFormField(
                     controller: companyNameController,
-
+                    decoration: InputDecoration(
+                      hintText: '株式会社ABC',
+                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return '企業名を入力してください';
@@ -119,6 +121,9 @@ class CompanySignupPage extends HookConsumerWidget {
                   SizedBox(height: SpacePalette.sm),
                   TextFormField(
                     controller: representativeNameController,
+                    decoration: InputDecoration(
+                      hintText: '山田太郎',
+                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return '代表者名を入力してください';
@@ -140,6 +145,9 @@ class CompanySignupPage extends HookConsumerWidget {
                   TextFormField(
                     controller: phoneController,
                     keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      hintText: '090-1234-5678',
+                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return '電話番号を入力してください';
@@ -161,6 +169,9 @@ class CompanySignupPage extends HookConsumerWidget {
                   TextFormField(
                     controller: emailController,
                     keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      hintText: 'example@example.com',
+                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'メールアドレスを入力してください';
@@ -184,6 +195,9 @@ class CompanySignupPage extends HookConsumerWidget {
                   SizedBox(height: SpacePalette.sm),
                   TextFormField(
                     controller: passwordController,
+                    decoration: InputDecoration(
+                      hintText: '6文字以上で入力してください',
+                    ),
                     obscureText: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -209,6 +223,9 @@ class CompanySignupPage extends HookConsumerWidget {
                   TextFormField(
                     controller: confirmPasswordController,
                     obscureText: true,
+                    decoration: InputDecoration(
+                      hintText: '入力間違いはありませんか？',
+                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'パスワード（確認）を入力してください';
