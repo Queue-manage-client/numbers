@@ -1,3 +1,5 @@
+// auth/data/repositories/auth_repository.dart
+// Supabase Authとの通信。signUp/signIn/signOut/認証状態監視
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthRepository {

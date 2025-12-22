@@ -1,3 +1,4 @@
+// admin/presentation/pages/admin_dashboard_page.dart
 import 'package:flutter/material.dart';
 
 class AdminDashboardPage extends StatelessWidget {

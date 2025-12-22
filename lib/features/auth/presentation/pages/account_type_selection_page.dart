@@ -39,7 +39,7 @@ class AccountTypeSelectionPage extends HookWidget {
                   onTap: () => context.go('/signup/individual'),
                 ),
 
-                const SizedBox(height: SpacePalette.xs),
+                const SizedBox(height: SpacePalette.sm),
 
                 // 企業用アカウントカード
                 _AccountTypeCard(

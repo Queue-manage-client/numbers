@@ -1,3 +1,4 @@
+// admin/presentation/pages/admin_inquiry_detail_page.dart
 import 'package:flutter/material.dart';
 
 class AdminInquiryDetailPage extends StatelessWidget {

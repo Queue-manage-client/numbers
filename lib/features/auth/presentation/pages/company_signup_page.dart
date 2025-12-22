@@ -4,6 +4,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
+import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
 class CompanySignupPage extends HookConsumerWidget {
@@ -33,28 +34,49 @@ class CompanySignupPage extends HookConsumerWidget {
       isLoading.value = true;
 
       try {
-        final repository = ref.read(authRepositoryProvider);
-
-        final response = await repository.signUp(
+        // 1. ユーザー作成（auth.users + profiles に 'user' で作成される）
+        final authRepository = ref.read(authRepositoryProvider);
+        final response = await authRepository.signUp(
           email: emailController.text.trim(),
           password: passwordController.text,
         );
 
-        if (context.mounted) {
-          await Future.delayed(const Duration(milliseconds: 500));
+        if (response.user == null) {
+          throw Exception('ユーザー作成に失敗しました');
+        }
 
-          final user = repository.currentUser;
-          if (user != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('企業登録完了しました')),
-            );
-            context.go('/company-portal/dashboard');
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('登録完了しました。ログインしてください。')),
-            );
-            context.go('/company-portal/login');
-          }
+        final userId = response.user!.id;
+
+        // 2. 企業情報を companies テーブルに保存
+        final companyPortalRepository = ref.read(companyPortalRepositoryProvider);
+        final companyData = {
+          'name': companyNameController.text.trim(),
+          'description': '', // 後で編集可能
+          'address': '',
+          'industry': '',
+          'website': null,
+        };
+        
+        final companyId = await companyPortalRepository.createCompany(companyData);
+
+        // 3. profiles の role を 'company_user' に、company_id を設定
+        await companyPortalRepository.updateUserProfile(
+          userId: userId,
+          role: 'company_user',
+          companyId: companyId,
+          position: '管理者', // デフォルト
+        );
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('企業登録完了しました')),
+          );
+          
+          // プロフィール情報を再取得
+          ref.invalidate(currentUserProfileProvider);
+          ref.invalidate(companyInfoProvider);
+          
+          context.go('/company-portal/dashboard');
         }
       } catch (e) {
         if (context.mounted) {

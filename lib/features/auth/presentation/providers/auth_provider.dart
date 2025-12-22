@@ -1,3 +1,5 @@
+// auth/presentation/providers/auth_provider.dart
+// 認証状態をRiverpodで管理。
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/auth/data/repositories/auth_repository.dart';

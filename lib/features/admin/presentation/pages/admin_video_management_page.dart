@@ -1,3 +1,4 @@
+// admin/presentation/pages/admin_video_management_page.dart
 import 'package:flutter/material.dart';
 
 class AdminVideoManagementPage extends StatelessWidget {

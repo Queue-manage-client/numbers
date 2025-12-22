@@ -1,0 +1,322 @@
+// company_portal/presentation/pages/company_profile_edit_page.dart
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
+import 'package:numbers/core/theme/app_theme.dart';
+
+class CompanyProfileEditPage extends HookConsumerWidget {
+  const CompanyProfileEditPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formKey = useMemoized(() => GlobalKey<FormState>());
+    final companyNameController = useTextEditingController();
+    final descriptionController = useTextEditingController();
+    final addressController = useTextEditingController();
+    final industryController = useTextEditingController();
+    final websiteController = useTextEditingController();
+    final isLoading = useState(false);
+    final isDataLoaded = useState(false);
+
+    // 企業情報を取得
+    final companyInfoAsync = ref.watch(companyInfoProvider);
+
+    // データをフォームにセット
+    useEffect(() {
+      companyInfoAsync.whenData((companyInfo) {
+        if (companyInfo != null && !isDataLoaded.value) {
+          companyNameController.text = companyInfo['name'] ?? '';
+          descriptionController.text = companyInfo['description'] ?? '';
+          addressController.text = companyInfo['address'] ?? '';
+          industryController.text = companyInfo['industry'] ?? '';
+          websiteController.text = companyInfo['website'] ?? '';
+          isDataLoaded.value = true;
+        }
+      });
+      return null;
+    }, [companyInfoAsync]);
+
+    final updateProfile = useCallback(() async {
+      if (!formKey.currentState!.validate()) return;
+
+      final companyId = ref.read(currentCompanyIdProvider);
+      if (companyId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '企業IDが取得できません',
+              style: TextStylePalette.normalText.copyWith(
+                color: ColorPalette.neutral0,
+              ),
+            ),
+            backgroundColor: ColorPalette.primaryColor,
+          ),
+        );
+        return;
+      }
+
+      isLoading.value = true;
+
+      try {
+        final updateData = {
+          'name': companyNameController.text.trim(),
+          'description': descriptionController.text.trim(),
+          'address': addressController.text.trim(),
+          'industry': industryController.text.trim(),
+          'website': websiteController.text.trim(),
+        };
+
+        await ref.read(companyPortalRepositoryProvider).updateCompany(companyId, updateData);
+
+        // 企業情報を再取得
+        ref.invalidate(companyInfoProvider);
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '企業情報を更新しました',
+                style: TextStylePalette.normalText.copyWith(
+                  color: ColorPalette.neutral0,
+                ),
+              ),
+              backgroundColor: ColorPalette.systemGreen,
+            ),
+          );
+          context.go('/company-portal/dashboard');
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '更新エラー: $e',
+                style: TextStylePalette.normalText.copyWith(
+                  color: ColorPalette.neutral0,
+                ),
+              ),
+              backgroundColor: ColorPalette.primaryColor,
+            ),
+          );
+        }
+      } finally {
+        isLoading.value = false;
+      }
+    }, [
+      companyNameController,
+      descriptionController,
+      addressController,
+      industryController,
+      websiteController,
+    ]);
+
+    return Scaffold(
+      backgroundColor: ColorPalette.neutral100,
+      appBar: AppBar(
+        title: const Text('企業情報編集'),
+      ),
+      body: companyInfoAsync.when(
+        data: (companyInfo) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(SpacePalette.base),
+            child: Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 企業ロゴ
+                  Center(
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: ColorPalette.neutral200,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                            color: ColorPalette.neutral200,
+                          ),
+                          child: Icon(
+                            Icons.business,
+                            size: 60,
+                            color: ColorPalette.neutral500,
+                          ),
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: ColorPalette.primaryColor,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.camera_alt,
+                                color: ColorPalette.neutral0,
+                              ),
+                              onPressed: () {
+                                // TODO: 画像選択
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'ロゴアップロード機能は実装中です',
+                                      style: TextStylePalette.normalText.copyWith(
+                                        color: ColorPalette.neutral0,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: SpacePalette.lg * 2),
+
+                  // 企業名
+                  Text(
+                    '企業名',
+                    style: TextStylePalette.smTitle,
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  TextFormField(
+                    controller: companyNameController,
+                    style: TextStylePalette.normalText,
+                    decoration: InputDecoration(
+                      hintText: '企業名を入力',
+                      hintStyle: TextStylePalette.hintText,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return '企業名を入力してください';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: SpacePalette.base),
+
+                  // 説明
+                  Text(
+                    '企業説明',
+                    style: TextStylePalette.smTitle,
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  TextFormField(
+                    controller: descriptionController,
+                    style: TextStylePalette.normalText,
+                    decoration: InputDecoration(
+                      hintText: '企業の概要を入力してください',
+                      hintStyle: TextStylePalette.hintText,
+                    ),
+                    maxLines: 4,
+                  ),
+                  const SizedBox(height: SpacePalette.base),
+
+                  // 所在地
+                  Text(
+                    '所在地',
+                    style: TextStylePalette.smTitle,
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  TextFormField(
+                    controller: addressController,
+                    style: TextStylePalette.normalText,
+                    decoration: InputDecoration(
+                      hintText: '例: 東京都渋谷区',
+                      hintStyle: TextStylePalette.hintText,
+                    ),
+                  ),
+                  const SizedBox(height: SpacePalette.base),
+
+                  // 業界
+                  Text(
+                    '業界',
+                    style: TextStylePalette.smTitle,
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  TextFormField(
+                    controller: industryController,
+                    style: TextStylePalette.normalText,
+                    decoration: InputDecoration(
+                      hintText: '例: IT, 製造業, サービス業',
+                      hintStyle: TextStylePalette.hintText,
+                    ),
+                  ),
+                  const SizedBox(height: SpacePalette.base),
+
+                  // ウェブサイト
+                  Text(
+                    'ウェブサイト',
+                    style: TextStylePalette.smTitle,
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  TextFormField(
+                    controller: websiteController,
+                    style: TextStylePalette.normalText,
+                    decoration: InputDecoration(
+                      hintText: 'https://example.com',
+                      hintStyle: TextStylePalette.hintText,
+                    ),
+                    keyboardType: TextInputType.url,
+                  ),
+                  const SizedBox(height: SpacePalette.lg * 2),
+
+                  // 更新ボタン
+                  ElevatedButton(
+                    onPressed: isLoading.value ? null : updateProfile,
+                    child: isLoading.value
+                        ? SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: ColorPalette.neutral0,
+                            ),
+                          )
+                        : const Text('更新'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: ColorPalette.primaryColor,
+          ),
+        ),
+        error: (error, _) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 80,
+                color: ColorPalette.primaryColor,
+              ),
+              const SizedBox(height: SpacePalette.lg),
+              Text(
+                'エラーが発生しました',
+                style: TextStylePalette.header,
+              ),
+              const SizedBox(height: SpacePalette.sm),
+              Text(
+                '$error',
+                style: TextStylePalette.subText,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

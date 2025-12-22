@@ -1,3 +1,4 @@
+// core/router/app_router.dart
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/onboarding/presentation/pages/splash_page.dart';
 import 'package:numbers/features/onboarding/presentation/pages/onboarding_page.dart';
@@ -7,45 +8,45 @@ import 'package:numbers/features/auth/presentation/pages/account_type_selection_
 import 'package:numbers/features/auth/presentation/pages/individual_signup_page.dart';
 import 'package:numbers/features/auth/presentation/pages/company_signup_page.dart';
 import 'package:numbers/features/auth/presentation/pages/password_reset_page.dart';
-import 'package:numbers/features/feed/presentation/pages/feed_page.dart';
-import 'package:numbers/features/company/presentation/pages/company_detail_page.dart';
-import 'package:numbers/features/company/presentation/pages/company_video_list_page.dart';
-import 'package:numbers/features/company/presentation/pages/company_job_list_page.dart';
-import 'package:numbers/features/company/presentation/pages/company_intern_list_page.dart';
-import 'package:numbers/features/search/presentation/pages/video_search_page.dart';
-import 'package:numbers/features/job/presentation/pages/job_map_page.dart';
-import 'package:numbers/features/job/presentation/pages/job_detail_page.dart';
-import 'package:numbers/features/job/presentation/pages/job_application_confirm_page.dart';
-import 'package:numbers/features/job/presentation/pages/job_application_complete_page.dart';
-import 'package:numbers/features/intern/presentation/pages/intern_list_page.dart';
-import 'package:numbers/features/intern/presentation/pages/intern_detail_page.dart';
-import 'package:numbers/features/chat/presentation/pages/chat_list_page.dart';
-import 'package:numbers/features/chat/presentation/pages/chat_room_page.dart';
-import 'package:numbers/features/ai_chat/presentation/pages/ai_chat_page.dart';
-import 'package:numbers/features/profile/presentation/pages/my_page.dart';
-import 'package:numbers/features/profile/presentation/pages/profile_edit_page.dart';
-import 'package:numbers/features/profile/presentation/pages/application_history_page.dart';
-import 'package:numbers/features/profile/presentation/pages/application_detail_page.dart';
-import 'package:numbers/features/profile/presentation/pages/settings_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_login_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_dashboard_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_video_management_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_video_post_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_video_list_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_video_edit_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_job_management_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_job_post_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_job_list_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_job_edit_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_intern_management_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_intern_post_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_intern_list_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_intern_edit_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_chat_management_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_chat_room_create_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_chat_room_list_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_chat_room_detail_page.dart';
-import 'package:numbers/features/company_portal/presentation/pages/company_profile_edit_page.dart';
+import 'package:numbers/features/user/feed/presentation/pages/feed_page.dart';
+import 'package:numbers/features/user/company/presentation/pages/company_detail_page.dart';
+import 'package:numbers/features/user/company/presentation/pages/company_video_list_page.dart';
+import 'package:numbers/features/user/company/presentation/pages/company_job_list_page.dart';
+import 'package:numbers/features/user/company/presentation/pages/company_intern_list_page.dart';
+import 'package:numbers/features/user/search/presentation/pages/video_search_page.dart';
+import 'package:numbers/features/user/job/presentation/pages/job_map_page.dart';
+import 'package:numbers/features/user/job/presentation/pages/job_detail_page.dart';
+import 'package:numbers/features/user/job/presentation/pages/job_application_confirm_page.dart';
+import 'package:numbers/features/user/job/presentation/pages/job_application_complete_page.dart';
+import 'package:numbers/features/user/intern/presentation/pages/intern_list_page.dart';
+import 'package:numbers/features/user/intern/presentation/pages/intern_detail_page.dart';
+import 'package:numbers/features/user/chat/presentation/pages/chat_list_page.dart';
+import 'package:numbers/features/user/chat/presentation/pages/chat_room_page.dart';
+import 'package:numbers/features/user/ai_chat/presentation/pages/ai_chat_page.dart';
+import 'package:numbers/features/user/profile/presentation/pages/my_page.dart';
+import 'package:numbers/features/user/profile/presentation/pages/profile_edit_page.dart';
+import 'package:numbers/features/user/profile/presentation/pages/application_history_page.dart';
+import 'package:numbers/features/user/profile/presentation/pages/application_detail_page.dart';
+import 'package:numbers/features/user/profile/presentation/pages/settings_page.dart';
+import 'package:numbers/features/auth/presentation/pages/company_login_page.dart';
+import 'package:numbers/features/company_portal/dashboard/presentation/pages/company_dashboard_page.dart';
+import 'package:numbers/features/company_portal/video/presentation/pages/company_video_management_page.dart';
+import 'package:numbers/features/company_portal/video/presentation/pages/company_video_post_page.dart';
+import 'package:numbers/features/company_portal/video/presentation/pages/company_video_list_page.dart';
+import 'package:numbers/features/company_portal/video/presentation/pages/company_video_edit_page.dart';
+import 'package:numbers/features/company_portal/job/presentation/pages/company_job_management_page.dart';
+import 'package:numbers/features/company_portal/job/presentation/pages/company_job_post_page.dart';
+import 'package:numbers/features/company_portal/job/presentation/pages/company_job_list_page.dart';
+import 'package:numbers/features/company_portal/job/presentation/pages/company_job_edit_page.dart';
+import 'package:numbers/features/company_portal/intern/presentation/pages/company_intern_management_page.dart';
+import 'package:numbers/features/company_portal/intern/presentation/pages/company_intern_post_page.dart';
+import 'package:numbers/features/company_portal/intern/presentation/pages/company_intern_list_page.dart';
+import 'package:numbers/features/company_portal/intern/presentation/pages/company_intern_edit_page.dart';
+import 'package:numbers/features/company_portal/chat/presentation/pages/company_chat_management_page.dart';
+import 'package:numbers/features/company_portal/chat/presentation/pages/company_chat_room_create_page.dart';
+import 'package:numbers/features/company_portal/chat/presentation/pages/company_chat_room_list_page.dart';
+import 'package:numbers/features/company_portal/chat/presentation/pages/company_chat_room_detail_page.dart';
+import 'package:numbers/features/company_portal/profile/presentation/pages/company_profile_edit_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_login_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_dashboard_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_user_management_page.dart';
@@ -152,8 +153,11 @@ final appRouter = GoRouter(
       builder: (context, state) => const ChatListPage(),
     ),
     GoRoute(
-      path: '/chats/:id',
-      builder: (context, state) => const ChatRoomPage(),
+      path: '/chats/:roomId',
+      builder: (context, state) {
+        final roomId = state.pathParameters['roomId'] ?? '';
+        return ChatRoomPage(roomId: roomId);
+      },
     ),
 
     // User - AI Chat
@@ -206,8 +210,11 @@ final appRouter = GoRouter(
       builder: (context, state) => const CompanyVideoListManagementPage(),
     ),
     GoRoute(
-      path: '/company-portal/videos/:id/edit',
-      builder: (context, state) => const CompanyVideoEditPage(),
+      path: '/company-portal/videos/:videoId/edit',
+      builder: (context, state) {
+        final videoId = state.pathParameters['videoId'] ?? '';
+        return CompanyVideoEditPage(videoId: videoId);
+      },
     ),
     GoRoute(
       path: '/company-portal/jobs',
@@ -254,8 +261,11 @@ final appRouter = GoRouter(
       builder: (context, state) => const CompanyChatRoomListPage(),
     ),
     GoRoute(
-      path: '/company-portal/chats/:id',
-      builder: (context, state) => const CompanyChatRoomDetailPage(),
+      path: '/company-portal/chats/:roomId', // ✅ パラメータ名を変更
+      builder: (context, state) {
+        final roomId = state.pathParameters['roomId'] ?? ''; // ✅ roomIdを取得
+        return CompanyChatRoomDetailPage(roomId: roomId); // ✅ roomIdを渡す
+      },
     ),
     GoRoute(
       path: '/company-portal/profile/edit',

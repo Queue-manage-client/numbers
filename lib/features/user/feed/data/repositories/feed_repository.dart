@@ -1,0 +1,142 @@
+// feed/data/repositories/feed_repository.dart
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class FeedRepository {
+  final SupabaseClient _supabase;
+
+  FeedRepository(this._supabase);
+
+  /// フィード動画一覧を取得
+  Future<List<Map<String, dynamic>>> fetchFeedVideos({
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    try {
+      final response = await _supabase
+          .from('company_videos')
+          .select('*, companies(*)')
+          .order('created_at', ascending: false)
+          .limit(limit)
+          .range(offset, offset + limit - 1);
+
+      if (response == null) {
+        return [];
+      }
+
+      return List<Map<String, dynamic>>.from(response as List);
+    } catch (e) {
+      print('Error fetching feed videos: $e');
+      rethrow;
+    }
+  }
+
+  /// 特定の動画を取得
+  Future<Map<String, dynamic>?> fetchVideoById(String videoId) async {
+    try {
+      final response = await _supabase
+          .from('company_videos')
+          .select('*, companies(*)')
+          .eq('id', videoId)
+          .single();
+
+      return response as Map<String, dynamic>;
+    } catch (e) {
+      print('Error fetching video by id: $e');
+      return null;
+    }
+  }
+
+  /// 動画のブックマーク状態を切り替え
+  Future<bool> toggleBookmark(String videoId, String userId) async {
+    try {
+      // まず既存のブックマークを確認
+      final existing = await _supabase
+          .from('bookmarks')
+          .select()
+          .eq('video_id', videoId)
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (existing != null) {
+        // 既にブックマーク済み → 削除
+        await _supabase
+            .from('bookmarks')
+            .delete()
+            .eq('video_id', videoId)
+            .eq('user_id', userId);
+        return false;
+      } else {
+        // 未ブックマーク → 追加
+        await _supabase.from('bookmarks').insert({
+          'video_id': videoId,
+          'user_id': userId,
+        });
+        return true;
+      }
+    } catch (e) {
+      print('Error toggling bookmark: $e');
+      rethrow;
+    }
+  }
+
+  /// 動画の視聴履歴を記録
+  Future<void> recordView(String videoId, String userId) async {
+    try {
+      await _supabase.from('video_views').insert({
+        'video_id': videoId,
+        'user_id': userId,
+        'viewed_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      print('Error recording view: $e');
+      // 視聴履歴の記録失敗は致命的ではないのでエラーを投げない
+    }
+  }
+
+  /// 企業をフォロー
+  Future<void> followCompany(String companyId, String userId) async {
+    try {
+      await _supabase.from('company_follows').insert({
+        'company_id': companyId,
+        'user_id': userId,
+      });
+    } catch (e) {
+      print('Error following company: $e');
+      rethrow;
+    }
+  }
+
+  /// 企業のフォローを解除
+  Future<void> unfollowCompany(String companyId, String userId) async {
+    try {
+      await _supabase
+          .from('company_follows')
+          .delete()
+          .eq('company_id', companyId)
+          .eq('user_id', userId);
+    } catch (e) {
+      print('Error unfollowing company: $e');
+      rethrow;
+    }
+  }
+
+  /// 動画URLを取得（Supabase Storage）
+  String getVideoUrl(String videoPath) {
+    try {
+      return _supabase.storage.from('videos').getPublicUrl(videoPath);
+    } catch (e) {
+      print('Error getting video URL: $e');
+      return '';
+    }
+  }
+
+  /// サムネイルURLを取得（Supabase Storage）
+  String getThumbnailUrl(String thumbnailPath) {
+    try {
+      return _supabase.storage.from('thumbnails').getPublicUrl(thumbnailPath);
+    } catch (e) {
+      print('Error getting thumbnail URL: $e');
+      return '';
+    }
+  }
+}

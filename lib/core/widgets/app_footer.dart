@@ -1,5 +1,7 @@
+// core/widgets/app_footer.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
 class AppFooter extends StatelessWidget {
   final String currentRoute;
@@ -12,14 +14,23 @@ class AppFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF000000),
+      decoration: BoxDecoration(
+        color: ColorPalette.neutral0,
+        border: Border(
+          top: BorderSide(
+            color: ColorPalette.neutral200,
+            width: 1,
+          ),
+        ),
       ),
       child: SafeArea(
         top: false,
         child: Container(
           height: 70,
-          padding: const EdgeInsets.only(top: 8, bottom: 4),
+          padding: const EdgeInsets.only(
+            top: SpacePalette.sm,
+            bottom: SpacePalette.xs,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -44,23 +55,20 @@ class AppFooter extends StatelessWidget {
               ),
               _buildNavItem(
                 context,
-                icon: Icons.people_outline,
-                activeIcon: Icons.people,
-                label: 'インターン/\nチャット',
-                route: '/interns',
-                isActive: currentRoute == '/interns' ||
-                         currentRoute.startsWith('/interns/') ||
-                         currentRoute == '/chats' ||
-                         currentRoute.startsWith('/chats/'),
+                icon: Icons.chat_bubble_outline,
+                activeIcon: Icons.chat_bubble,
+                label: 'チャット',
+                route: '/chats',
+                isActive: currentRoute == '/chats' || currentRoute.startsWith('/chats/'),
                 isCenter: true,
               ),
               _buildNavItem(
                 context,
-                icon: Icons.calendar_today_outlined,
-                activeIcon: Icons.calendar_today,
-                label: 'カレンダー',
-                route: '/calendar',
-                isActive: currentRoute == '/calendar',
+                icon: Icons.school_outlined,
+                activeIcon: Icons.school,
+                label: 'インターン',
+                route: '/interns',
+                isActive: currentRoute == '/interns' || currentRoute.startsWith('/interns/'),
                 isCenter: false,
               ),
               _buildNavItem(
@@ -101,8 +109,11 @@ class AppFooter extends StatelessWidget {
               context.go(route);
             }
           },
+          borderRadius: BorderRadius.circular(RadiusPalette.base),
           child: Padding(
-            padding: EdgeInsets.symmetric(vertical: isCenter ? 0 : 4),
+            padding: EdgeInsets.symmetric(
+              vertical: isCenter ? 0 : SpacePalette.xs,
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
@@ -110,10 +121,12 @@ class AppFooter extends StatelessWidget {
                 if (isCenter) ...[
                   // 中央アイコンは大きく表示
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(SpacePalette.sm),
                     child: Icon(
                       isActive ? activeIcon : icon,
-                      color: Colors.white,
+                      color: isActive
+                          ? ColorPalette.primaryColor
+                          : ColorPalette.neutral500,
                       size: 28,
                     ),
                   ),
@@ -122,20 +135,24 @@ class AppFooter extends StatelessWidget {
                   // 通常のアイコン
                   Icon(
                     isActive ? activeIcon : icon,
-                    color: Colors.white,
+                    color: isActive
+                        ? ColorPalette.primaryColor
+                        : ColorPalette.neutral500,
                     size: 24,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: SpacePalette.xs),
                 ],
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: isCenter ? 8 : 9,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w400,
+                    fontSize: isCenter ? 9 : 9,
+                    color: isActive
+                        ? ColorPalette.primaryColor
+                        : ColorPalette.neutral500,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                     height: 1.1,
                   ),
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                 ),
@@ -147,4 +164,3 @@ class AppFooter extends StatelessWidget {
     );
   }
 }
-
