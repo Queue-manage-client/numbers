@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
@@ -31,7 +32,31 @@ class LoginPage extends HookConsumerWidget {
         );
 
         if (context.mounted) {
-          context.go('/feed');
+          // ログイン成功後、profileのroleを取得して適切な画面へ遷移
+          final supabase = Supabase.instance.client;
+          final userId = supabase.auth.currentUser?.id;
+
+          if (userId != null) {
+            final profile = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', userId)
+                .maybeSingle();
+
+            final role = profile?['role'] as String?;
+
+            if (context.mounted) {
+              if (role == 'admin') {
+                context.go('/admin/dashboard');
+              } else if (role == 'company_user') {
+                context.go('/company-portal/dashboard');
+              } else {
+                context.go('/feed');
+              }
+            }
+          } else {
+            context.go('/feed');
+          }
         }
       } catch (e) {
         if (context.mounted) {

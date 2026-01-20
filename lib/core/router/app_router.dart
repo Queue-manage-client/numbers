@@ -303,7 +303,10 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/admin/inquiries/:id',
-      builder: (context, state) => const AdminInquiryDetailPage(),
+      builder: (context, state) {
+        final id = state.pathParameters['id'] ?? '';
+        return AdminInquiryDetailPage(inquiryId: id);
+      },
     ),
   ],
 );
