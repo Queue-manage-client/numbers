@@ -81,9 +81,24 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
         videoUrl = supabase.storage.from('company-videos').getPublicUrl(videoPath);
       }
 
+      // デバッグ用: 動画URLをログ出力
+      debugPrint('Video URL: $videoUrl');
+
       // 動画プレイヤーを初期化
       _controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
-      await _controller!.initialize();
+
+      try {
+        await _controller!.initialize();
+      } catch (initError) {
+        // 動画初期化エラー - ファイルが存在しないか、フォーマットがサポートされていない可能性
+        debugPrint('Video initialization error: $initError');
+        debugPrint('Attempted URL: $videoUrl');
+        setState(() {
+          _isLoading = false;
+          _errorMessage = '動画を再生できません。\n\nファイルが存在しないか、サポートされていない形式です。';
+        });
+        return;
+      }
 
       _controller!.addListener(() {
         if (mounted) {
@@ -143,7 +158,7 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
                   color: ColorPalette.primaryColor,
                 ),
               )
-            : _errorMessage != null
+            : _videoData == null
                 ? _buildErrorState()
                 : _buildContent(),
       ),
@@ -158,31 +173,61 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.error_outline,
+              Icons.videocam_off,
               size: 80,
-              color: ColorPalette.primaryColor,
+              color: ColorPalette.neutral400,
             ),
             const SizedBox(height: SpacePalette.lg),
             Text(
-              _errorMessage!,
+              '動画を再生できません',
               style: TextStylePalette.header,
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: SpacePalette.sm),
+            Text(
+              _errorMessage!,
+              style: TextStylePalette.subText,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: SpacePalette.lg * 2),
-            OutlinedButton(
-              onPressed: () => context.pop(),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: ColorPalette.primaryColor,
-                side: const BorderSide(
-                  color: ColorPalette.primaryColor,
-                  width: 2,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                OutlinedButton(
+                  onPressed: () => context.pop(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: ColorPalette.neutral400,
+                    side: const BorderSide(
+                      color: ColorPalette.neutral600,
+                      width: 1,
+                    ),
+                    minimumSize: const Size(100, ButtonSizePalette.button),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(RadiusPalette.base),
+                    ),
+                  ),
+                  child: const Text('戻る'),
                 ),
-                minimumSize: const Size(120, ButtonSizePalette.button),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(RadiusPalette.base),
+                const SizedBox(width: SpacePalette.base),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _isLoading = true;
+                      _errorMessage = null;
+                    });
+                    _loadVideoData();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: ColorPalette.primaryColor,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(100, ButtonSizePalette.button),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(RadiusPalette.base),
+                    ),
+                  ),
+                  child: const Text('再試行'),
                 ),
-              ),
-              child: const Text('戻る'),
+              ],
             ),
           ],
         ),
@@ -209,6 +254,32 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
                 // 動画
                 if (_controller != null && _controller!.value.isInitialized)
                   VideoPlayer(_controller!)
+                else if (_errorMessage != null)
+                  // 動画が読み込めない場合のプレースホルダー
+                  Container(
+                    color: ColorPalette.neutral800,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.videocam_off,
+                            size: 48,
+                            color: ColorPalette.neutral400,
+                          ),
+                          const SizedBox(height: SpacePalette.sm),
+                          Text(
+                            '動画を再生できません',
+                            style: TextStyle(
+                              fontFamily: 'NotoSansJP',
+                              fontSize: FontSizePalette.size14,
+                              color: ColorPalette.neutral400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
                 else
                   Container(
                     color: ColorPalette.neutral800,
@@ -258,17 +329,18 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
 
                         const Spacer(),
 
-                        // 再生ボタン
-                        Center(
-                          child: IconButton(
-                            icon: Icon(
-                              _isPlaying ? Icons.pause_circle : Icons.play_circle,
-                              color: Colors.white,
-                              size: 64,
+                        // 再生ボタン（動画が再生可能な場合のみ表示）
+                        if (_controller != null && _controller!.value.isInitialized)
+                          Center(
+                            child: IconButton(
+                              icon: Icon(
+                                _isPlaying ? Icons.pause_circle : Icons.play_circle,
+                                color: Colors.white,
+                                size: 64,
+                              ),
+                              onPressed: _togglePlayPause,
                             ),
-                            onPressed: _togglePlayPause,
                           ),
-                        ),
 
                         const Spacer(),
 

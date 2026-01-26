@@ -29,6 +29,8 @@ import 'package:numbers/features/user/profile/presentation/pages/profile_edit_pa
 import 'package:numbers/features/user/profile/presentation/pages/application_history_page.dart';
 import 'package:numbers/features/user/profile/presentation/pages/application_detail_page.dart';
 import 'package:numbers/features/user/profile/presentation/pages/settings_page.dart';
+import 'package:numbers/features/user/profile/presentation/pages/terms_of_service_page.dart';
+import 'package:numbers/features/user/profile/presentation/pages/privacy_policy_page.dart';
 import 'package:numbers/features/auth/presentation/pages/company_login_page.dart';
 import 'package:numbers/features/company_portal/dashboard/presentation/pages/company_dashboard_page.dart';
 import 'package:numbers/features/company_portal/video/presentation/pages/company_video_management_page.dart';
@@ -197,6 +199,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsPage(),
+    ),
+    GoRoute(
+      path: '/terms',
+      builder: (context, state) => const TermsOfServicePage(),
+    ),
+    GoRoute(
+      path: '/privacy',
+      builder: (context, state) => const PrivacyPolicyPage(),
     ),
 
     // Company Portal

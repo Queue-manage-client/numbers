@@ -11,10 +11,27 @@ class InternDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // TODO: 実際にはroute parameterからinternshipIdを取得
-    const internshipId = 'dummy-internship-id';
-    final internshipAsync = ref.watch(internshipProvider(internshipId));
+    final internshipId = GoRouterState.of(context).pathParameters['id'] ?? '';
     final currentRoute = GoRouterState.of(context).uri.path;
+
+    // IDが空の場合はエラー表示
+    if (internshipId.isEmpty) {
+      return Scaffold(
+        backgroundColor: ColorPalette.neutral900,
+        appBar: AppBar(
+          title: const Text('インターン詳細'),
+        ),
+        body: Center(
+          child: Text(
+            'インターンが見つかりません',
+            style: TextStylePalette.subText,
+          ),
+        ),
+        bottomNavigationBar: AppFooter(currentRoute: currentRoute),
+      );
+    }
+
+    final internshipAsync = ref.watch(internshipProvider(internshipId));
 
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,

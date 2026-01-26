@@ -108,22 +108,28 @@ class VideoSearchPage extends HookConsumerWidget {
 
               // ヘッダー
               Padding(
-                padding: const EdgeInsets.all(SpacePalette.base),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpacePalette.sm,
+                  vertical: SpacePalette.sm,
+                ),
                 child: Row(
                   children: [
-                    Expanded(
-                      child: Text(
-                        '動画検索',
-                        style: TextStylePalette.title,
-                      ),
-                    ),
                     IconButton(
                       icon: Icon(
-                        Icons.close,
-                        color: ColorPalette.neutral800,
+                        Icons.arrow_back,
+                        color: ColorPalette.neutral0,
                       ),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          '動画検索',
+                          style: TextStylePalette.title,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 48), // バランス用のスペース
                   ],
                 ),
               ),
@@ -205,12 +211,13 @@ class VideoSearchPage extends HookConsumerWidget {
                     const SizedBox(height: SpacePalette.base),
 
                     // 検索ボタン
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: performSearch,
-                        icon: const Icon(Icons.search),
-                        label: const Text('検索'),
+                    GradientButton(
+                      text: '検索',
+                      onPressed: performSearch,
+                      icon: const Icon(
+                        Icons.search,
+                        color: ColorPalette.neutral0,
+                        size: 20,
                       ),
                     ),
                   ],

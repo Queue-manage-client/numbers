@@ -1,16 +1,14 @@
 // profile/presentation/pages/settings_page.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
-class SettingsPage extends ConsumerWidget {
+class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
@@ -78,9 +76,7 @@ class SettingsPage extends ConsumerWidget {
                     Icons.chevron_right,
                     color: ColorPalette.neutral400,
                   ),
-                  onTap: () {
-                    // TODO: 利用規約ページへ遷移
-                  },
+                  onTap: () => context.push('/terms'),
                 ),
                 Divider(
                   height: 1,
@@ -99,35 +95,9 @@ class SettingsPage extends ConsumerWidget {
                     Icons.chevron_right,
                     color: ColorPalette.neutral400,
                   ),
-                  onTap: () {
-                    // TODO: プライバシーポリシーページへ遷移
-                  },
+                  onTap: () => context.push('/privacy'),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(height: SpacePalette.base),
-
-          // ログアウトカード
-          Container(
-            decoration: BoxDecoration(
-              color: ColorPalette.neutral800,
-              borderRadius: BorderRadius.circular(RadiusPalette.lg),
-              border: Border.all(color: ColorPalette.neutral600),
-            ),
-            child: ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text(
-                'ログアウト',
-                style: TextStyle(color: Colors.red),
-              ),
-              onTap: () async {
-                final repository = ref.read(authRepositoryProvider);
-                await repository.signOut();
-                if (context.mounted) {
-                  context.go('/login');
-                }
-              },
             ),
           ),
         ],

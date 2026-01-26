@@ -155,21 +155,25 @@ class ChatListPage extends HookConsumerWidget {
                         ),
                       ],
                       const SizedBox(height: SpacePalette.sm),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            context.push('/chats/$roomId');
-                          },
-                          icon: const Icon(Icons.login, size: 18, color: ColorPalette.neutral0),
-                          label: Text('参加する', style: TextStylePalette.buttonTextBlack),
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: ColorPalette.neutral0,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: SpacePalette.inner,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            '参加する',
+                            style: TextStyle(
+                              fontFamily: 'NotoSansJP',
+                              fontSize: FontSizePalette.size12,
+                              fontVariations: const [FontVariation('wght', 700)],
+                              color: ColorPalette.primaryColor,
                             ),
                           ),
-                        ),
+                          const SizedBox(width: SpacePalette.xs),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 12,
+                            color: ColorPalette.primaryColor,
+                          ),
+                        ],
                       ),
                     ],
                   ),
