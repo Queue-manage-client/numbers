@@ -71,12 +71,12 @@ class ChatRoomPage extends HookConsumerWidget {
     }, [messageController, currentUser, roomId]);
 
     return Scaffold(
-      backgroundColor: ColorPalette.neutral100,
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: ColorPalette.neutral800,
+            color: ColorPalette.neutral0,
           ),
           onPressed: () => context.go('/chats'),
         ),
@@ -148,7 +148,7 @@ class ChatRoomPage extends HookConsumerWidget {
                         decoration: BoxDecoration(
                           color: isMe
                               ? ColorPalette.primaryColor
-                              : ColorPalette.neutral0,
+                              : ColorPalette.neutral800,
                           borderRadius: BorderRadius.circular(RadiusPalette.lg),
                         ),
                         child: Column(
@@ -157,25 +157,23 @@ class ChatRoomPage extends HookConsumerWidget {
                             if (!isMe) ...[
                               Text(
                                 senderName,
-                                style: TextStylePalette.smSubTitle,
+                                style: TextStylePalette.smSubTitle.copyWith(
+                                  color: ColorPalette.neutral300,
+                                ),
                               ),
                               const SizedBox(height: SpacePalette.xs),
                             ],
                             Text(
                               message['content'] ?? '',
                               style: TextStylePalette.normalText.copyWith(
-                                color: isMe
-                                    ? ColorPalette.neutral0
-                                    : ColorPalette.neutral800,
+                                color: ColorPalette.neutral0,
                               ),
                             ),
                             const SizedBox(height: SpacePalette.xs),
                             Text(
                               _formatTime(message['created_at']),
                               style: TextStylePalette.smSubText.copyWith(
-                                color: isMe
-                                    ? ColorPalette.neutral0.withOpacity(0.7)
-                                    : ColorPalette.neutral500,
+                                color: ColorPalette.neutral400,
                               ),
                             ),
                           ],
@@ -220,9 +218,9 @@ class ChatRoomPage extends HookConsumerWidget {
           Container(
             padding: const EdgeInsets.all(SpacePalette.base),
             decoration: BoxDecoration(
-              color: ColorPalette.neutral0,
+              color: ColorPalette.neutral800,
               border: Border(
-                top: BorderSide(color: ColorPalette.neutral200),
+                top: BorderSide(color: ColorPalette.neutral600),
               ),
             ),
             child: Row(
@@ -234,9 +232,23 @@ class ChatRoomPage extends HookConsumerWidget {
                     decoration: InputDecoration(
                       hintText: 'メッセージを入力...',
                       hintStyle: TextStylePalette.hintText,
+                      filled: true,
+                      fillColor: ColorPalette.neutral800,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: SpacePalette.base,
                         vertical: SpacePalette.inner,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(RadiusPalette.base),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(RadiusPalette.base),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(RadiusPalette.base),
+                        borderSide: BorderSide(color: ColorPalette.primaryColor),
                       ),
                     ),
                     maxLines: null,

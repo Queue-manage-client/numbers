@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/company/presentation/providers/company_provider.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
 class CompanyDetailPage extends ConsumerWidget {
   const CompanyDetailPage({super.key});
@@ -15,17 +16,20 @@ class CompanyDetailPage extends ConsumerWidget {
     final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         title: const Text('企業詳細'),
-        backgroundColor: const Color(0xFF323232),
-        foregroundColor: const Color(0xFFFFFFFF),
       ),
       bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: companyAsync.when(
         data: (company) {
           if (company == null) {
-            return const Center(child: Text('企業が見つかりません'));
+            return Center(
+              child: Text(
+                '企業が見つかりません',
+                style: TextStylePalette.subText,
+              ),
+            );
           }
 
           return SingleChildScrollView(
@@ -33,35 +37,25 @@ class CompanyDetailPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(SpacePalette.base),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         company['name'] ?? '企業名未設定',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF323232),
-                        ),
+                        style: TextStylePalette.lgListTitle,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: SpacePalette.sm),
                       Text(
                         company['industry'] ?? '業種未設定',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF666666),
-                        ),
+                        style: TextStylePalette.subText,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: SpacePalette.base),
                       Text(
                         company['description'] ?? '説明未設定',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF323232),
-                        ),
+                        style: TextStylePalette.normalText,
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: SpacePalette.lg),
                       _buildSection(context, '動画', '/company/$companyId/videos'),
                       _buildSection(context, '求人', '/company/$companyId/jobs'),
                       _buildSection(
@@ -73,18 +67,38 @@ class CompanyDetailPage extends ConsumerWidget {
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('エラー: $error')),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: ColorPalette.primaryColor,
+          ),
+        ),
+        error: (error, stack) => Center(
+          child: Text(
+            'エラー: $error',
+            style: TextStylePalette.subText,
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildSection(BuildContext context, String title, String route) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+    return Container(
+      margin: const EdgeInsets.only(bottom: SpacePalette.base),
+      decoration: BoxDecoration(
+        color: ColorPalette.neutral800,
+        borderRadius: BorderRadius.circular(RadiusPalette.base),
+        border: Border.all(color: ColorPalette.neutral600),
+      ),
       child: ListTile(
-        title: Text(title),
-        trailing: const Icon(Icons.chevron_right),
+        title: Text(
+          title,
+          style: TextStylePalette.smListTitle,
+        ),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: ColorPalette.neutral400,
+        ),
         onTap: () => context.push(route),
       ),
     );

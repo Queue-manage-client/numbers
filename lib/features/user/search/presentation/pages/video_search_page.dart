@@ -83,61 +83,23 @@ class VideoSearchPage extends HookConsumerWidget {
 
     final videosAsync = ref.watch(feedVideosProvider);
 
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(RadiusPalette.lg + 8),
-        topRight: Radius.circular(RadiusPalette.lg + 8),
+    return Scaffold(
+      backgroundColor: ColorPalette.neutral100,
+      appBar: AppBar(
+        backgroundColor: ColorPalette.neutral100,
+        foregroundColor: ColorPalette.neutral800,
+        title: Text(
+          '動画検索',
+          style: TextStylePalette.title,
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/feed'),
+        ),
       ),
-      child: Material(
-        color: ColorPalette.neutral100,
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.9,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ハンドルバー
-              Container(
-                margin: const EdgeInsets.only(top: SpacePalette.sm),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: ColorPalette.neutral200,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-
-              // ヘッダー
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: SpacePalette.sm,
-                  vertical: SpacePalette.sm,
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.arrow_back,
-                        color: ColorPalette.neutral0,
-                      ),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          '動画検索',
-                          style: TextStylePalette.title,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 48), // バランス用のスペース
-                  ],
-                ),
-              ),
-
-              Divider(
-                height: 1,
-                color: ColorPalette.neutral200,
-              ),
+      body: Column(
+        children: [
 
               // 検索バーとフィルタ
               Padding(
@@ -305,8 +267,7 @@ class VideoSearchPage extends HookConsumerWidget {
                           child: InkWell(
                             onTap: () {
                               if (companyId != null) {
-                                Navigator.of(context).pop(); // モーダルを閉じる
-                                context.go('/company/$companyId');
+                                context.push('/company/$companyId');
                               }
                             },
                             borderRadius: BorderRadius.circular(RadiusPalette.lg),
@@ -449,8 +410,6 @@ class VideoSearchPage extends HookConsumerWidget {
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 }
