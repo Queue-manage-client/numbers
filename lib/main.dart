@@ -20,7 +20,7 @@ void main() async {
       autoRefreshToken: true,
     ),
     storageOptions: const StorageClientOptions(
-      retryAttempts: 10,
+      retryAttempts: 3,
     ),
   );
 

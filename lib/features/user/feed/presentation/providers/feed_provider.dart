@@ -7,7 +7,7 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
   return Supabase.instance.client;
 });
 
-// フィード動画取得プロバイダー
+// フィード動画取得プロバイダー（公開動画のみ）
 final feedVideosProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final supabase = ref.watch(supabaseClientProvider);
 
@@ -15,6 +15,7 @@ final feedVideosProvider = FutureProvider<List<Map<String, dynamic>>>((ref) asyn
     final response = await supabase
         .from('company_videos')
         .select('*, companies(*)')
+        .eq('is_public', true)
         .order('created_at', ascending: false)
         .limit(50);
 
@@ -30,22 +31,16 @@ final feedVideosProvider = FutureProvider<List<Map<String, dynamic>>>((ref) asyn
 });
 
 // 動画カテゴリ（タグ）一覧取得プロバイダー（使用頻度順で上位7件）
+// 注: filteredVideosProviderと並列でデータを取得するため、
+// feedVideosProviderのデータを再利用してクエリ数を削減
 final videoCategoriesProvider = FutureProvider<List<String>>((ref) async {
-  final supabase = ref.watch(supabaseClientProvider);
+  // feedVideosProviderのデータを再利用（追加クエリなし）
+  final videosAsync = await ref.watch(feedVideosProvider.future);
 
   try {
-    final response = await supabase
-        .from('company_videos')
-        .select('tags')
-        .eq('is_public', true);
-
-    if (response == null) {
-      return [];
-    }
-
     // タグの出現回数をカウント
     final Map<String, int> tagCounts = {};
-    for (final video in response as List) {
+    for (final video in videosAsync) {
       final tags = video['tags'] as List<dynamic>?;
       if (tags != null) {
         for (final tag in tags) {
@@ -71,34 +66,27 @@ final videoCategoriesProvider = FutureProvider<List<String>>((ref) async {
 // 選択中のカテゴリ
 final selectedCategoryProvider = StateProvider<String?>((ref) => null);
 
-// カテゴリでフィルタリングした動画取得プロバイダー
-final filteredVideosProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final supabase = ref.watch(supabaseClientProvider);
+// カテゴリでフィルタリングした動画プロバイダー（クライアント側フィルタ - DBクエリなし）
+final filteredVideosProvider = Provider<AsyncValue<List<Map<String, dynamic>>>>((ref) {
+  final videosAsync = ref.watch(feedVideosProvider);
   final selectedCategory = ref.watch(selectedCategoryProvider);
 
-  try {
-    var query = supabase
-        .from('company_videos')
-        .select('*, companies(*)')
-        .eq('is_public', true);
-
-    if (selectedCategory != null) {
-      query = query.contains('tags', [selectedCategory]);
-    }
-
-    final response = await query
-        .order('created_at', ascending: false)
-        .limit(50);
-
-    if (response == null) {
-      return [];
-    }
-
-    return List<Map<String, dynamic>>.from(response as List);
-  } catch (e) {
-    print('Error fetching filtered videos: $e');
-    rethrow;
-  }
+  return videosAsync.when(
+    data: (videos) {
+      if (selectedCategory == null) {
+        return AsyncValue.data(videos);
+      }
+      // クライアント側でフィルタリング（DBクエリなし）
+      final filtered = videos.where((video) {
+        final tags = video['tags'] as List<dynamic>?;
+        if (tags == null) return false;
+        return tags.contains(selectedCategory);
+      }).toList();
+      return AsyncValue.data(filtered);
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (error, stack) => AsyncValue.error(error, stack),
+  );
 });
 
 // 特定の動画取得プロバイダー

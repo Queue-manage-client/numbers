@@ -143,18 +143,18 @@ class AdminLoginPage extends HookConsumerWidget {
                   const SizedBox(height: SpacePalette.lg),
 
                   // ログインボタン
-                  ElevatedButton(
+                  GradientButton(
+                    text: 'ログイン',
                     onPressed: isLoading.value ? null : login,
-                    child: isLoading.value
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: ColorPalette.neutral0,
-                            ),
-                          )
-                        : const Text('ログイン'),
+                    isLoading: isLoading.value,
+                    icon: Transform.rotate(
+                      angle: -0.5,
+                      child: const Icon(
+                        Icons.send,
+                        color: ColorPalette.neutral0,
+                        size: 18,
+                      ),
+                    ),
                   ),
                 ],
               ),

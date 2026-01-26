@@ -67,14 +67,6 @@ class IndividualSignupPage extends HookConsumerWidget {
 
     return Scaffold(
       backgroundColor: ColorPalette.neutral100,
-      appBar: AppBar(
-        backgroundColor: ColorPalette.neutral100,
-        foregroundColor: ColorPalette.neutral800,
-        title: Text(
-          '個人アカウント登録',
-          style: TextStylePalette.title,
-        ),
-      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -85,6 +77,16 @@ class IndividualSignupPage extends HookConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // タイトル
+                  Align(
+                    alignment: Alignment.center,
+                    child: Text(
+                      '個人として登録',
+                      style: TextStylePalette.header,
+                    ),
+                  ),
+                  const SizedBox(height: SpacePalette.lg),
+
                   // 名前
                   Align(
                     alignment: Alignment.centerLeft,
@@ -187,35 +189,18 @@ class IndividualSignupPage extends HookConsumerWidget {
                   const SizedBox(height: SpacePalette.lg), // 別機能間隔
 
                   // 登録ボタン
-                  ElevatedButton(
+                  GradientButton(
+                    text: '登録',
                     onPressed: isLoading.value ? null : signup,
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: ColorPalette.neutral0,
+                    isLoading: isLoading.value,
+                    icon: Transform.rotate(
+                      angle: -0.5,
+                      child: const Icon(
+                        Icons.send,
+                        color: ColorPalette.neutral0,
+                        size: 18,
+                      ),
                     ),
-                    child: isLoading.value
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: ColorPalette.neutral0,
-                            ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '登録',
-                                style: TextStylePalette.buttonTextBlack,
-                              ),
-                              const SizedBox(width: SpacePalette.sm),
-                              Icon(
-                                Icons.send,
-                                color: ColorPalette.neutral0,
-                                size: 18,
-                              ),
-                            ],
-                          ),
                   ),
                   const SizedBox(height: SpacePalette.lg), // 別機能間隔
                   

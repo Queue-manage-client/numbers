@@ -57,37 +57,19 @@ class CompanyPortalRepository {
   /// ダッシュボード統計を取得
   Future<Map<String, int>> getDashboardStats(String companyId) async {
     try {
-      // 動画数
-      final videosCount = await _supabase
-          .from('company_videos')
-          .select()
-          .eq('company_id', companyId)
-          .count();
-
-      // 求人数
-      final jobsCount = await _supabase
-          .from('jobs')
-          .select()
-          .eq('company_id', companyId)
-          .eq('status', 'open')
-          .count();
-
-      // インターン数
-      final internshipsCount = await _supabase
-          .from('internships')
-          .select()
-          .eq('company_id', companyId)
-          .eq('is_public', true)
-          .count();
-
-      // チャット数（実装予定）
-      final chatsCount = 0;
+      // 全クエリを並列実行（N+1問題を回避）
+      final results = await Future.wait([
+        _supabase.from('company_videos').select().eq('company_id', companyId).count(),
+        _supabase.from('jobs').select().eq('company_id', companyId).eq('status', 'open').count(),
+        _supabase.from('internships').select().eq('company_id', companyId).eq('is_public', true).count(),
+        _supabase.from('chat_rooms').select().eq('company_id', companyId).count(),
+      ]);
 
       return {
-        'videos': videosCount.count,
-        'jobs': jobsCount.count,
-        'internships': internshipsCount.count,
-        'chats': chatsCount,
+        'videos': results[0].count,
+        'jobs': results[1].count,
+        'internships': results[2].count,
+        'chats': results[3].count,
       };
     } catch (e) {
       print('Error getting dashboard stats: $e');

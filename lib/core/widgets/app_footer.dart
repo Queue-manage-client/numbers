@@ -16,15 +16,7 @@ class AppFooter extends StatelessWidget {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Container(
-      decoration: BoxDecoration(
-        color: ColorPalette.neutral900,
-        border: const Border(
-          top: BorderSide(
-            color: ColorPalette.neutral600,
-            width: 1,
-          ),
-        ),
-      ),
+      color: ColorPalette.neutral900,
       padding: EdgeInsets.only(
         top: SpacePalette.sm,
         bottom: bottomPadding > 0 ? bottomPadding : SpacePalette.sm,

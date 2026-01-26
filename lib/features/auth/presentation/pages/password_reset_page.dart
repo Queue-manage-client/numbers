@@ -92,42 +92,18 @@ class PasswordResetPage extends HookConsumerWidget {
                   ),
                   const SizedBox(height: SpacePalette.base), // 別機能間隔
                   
-                  ElevatedButton(
+                  GradientButton(
+                    text: 'リセットメールを送信',
                     onPressed: isLoading.value ? null : sendResetEmail,
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: ColorPalette.neutral0,
+                    isLoading: isLoading.value,
+                    icon: Transform.rotate(
+                      angle: -0.5,
+                      child: const Icon(
+                        Icons.send,
+                        color: ColorPalette.neutral0,
+                        size: 18,
+                      ),
                     ),
-                    child: isLoading.value
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: ColorPalette.neutral0,
-                            ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'リセットメールを送信',
-                                style: TextStyle(
-                                  color: ColorPalette.neutral0,
-                                  fontSize: FontSizePalette.size16,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                              const SizedBox(width: SpacePalette.sm),
-                              Transform.rotate(
-                                angle: -0.5,
-                                child: Icon(
-                                  Icons.send,
-                                  color: ColorPalette.neutral0,
-                                  size: 18,
-                                ),
-                              ),
-                            ],
-                          ),
                   ),
                   const SizedBox(height: SpacePalette.lg), // 別機能間隔
                   Align(

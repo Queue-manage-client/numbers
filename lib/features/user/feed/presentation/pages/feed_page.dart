@@ -13,42 +13,22 @@ class FeedPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authStateProvider);
     final user = ref.watch(currentUserProvider);
     final categoriesAsync = ref.watch(videoCategoriesProvider);
     final videosAsync = ref.watch(filteredVideosProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
 
-    // 認証状態の変更を監視
+    // 認証状態の変更を監視（ref.listenのみ使用 - 二重監視を回避）
     ref.listen<AsyncValue<AuthState>>(authStateProvider, (previous, next) {
-      next.when(
-        data: (state) {
-          if (state.session == null || state.session!.user == null) {
-            context.go('/login');
-          }
-        },
-        loading: () {},
-        error: (_, __) {
+      next.whenData((state) {
+        if (state.session == null || state.session!.user == null) {
           context.go('/login');
-        },
-      );
+        }
+      });
     });
 
-    // 認証状態がローディング中
-    if (authState.isLoading || user == null) {
-      return Scaffold(
-        backgroundColor: ColorPalette.neutral900,
-        body: Center(
-          child: CircularProgressIndicator(
-            color: ColorPalette.primaryColor,
-          ),
-        ),
-      );
-    }
-
-    // セッションチェック
-    final session = authState.value?.session;
-    if (session == null || session.user == null) {
+    // ユーザーがnullの場合のみローディング表示
+    if (user == null) {
       return Scaffold(
         backgroundColor: ColorPalette.neutral900,
         body: Center(
@@ -176,20 +156,24 @@ class FeedPage extends ConsumerWidget {
           crossAxisSpacing: SpacePalette.sm,
           mainAxisSpacing: SpacePalette.base,
         ),
+        addAutomaticKeepAlives: false,
+        addRepaintBoundaries: true,
         itemCount: videos.length,
         itemBuilder: (context, index) {
           final video = videos[index];
-          return _VideoThumbnailCard(
-            video: video,
-            supabase: supabase,
-            onTap: () {
-              // 動画詳細ページへ遷移
-              final companyId = video['company_id'] as String?;
-              final videoId = video['id'] as String?;
-              if (companyId != null && videoId != null) {
-                context.push('/companies/$companyId/videos/$videoId');
-              }
-            },
+          return RepaintBoundary(
+            child: _VideoThumbnailCard(
+              video: video,
+              supabase: supabase,
+              onTap: () {
+                // 動画詳細ページへ遷移
+                final companyId = video['company_id'] as String?;
+                final videoId = video['id'] as String?;
+                if (companyId != null && videoId != null) {
+                  context.push('/companies/$companyId/videos/$videoId');
+                }
+              },
+            ),
           );
         },
       ),
@@ -329,15 +313,19 @@ class _VideoThumbnailCard extends StatelessWidget {
                     ? Image.network(
                         thumbnailUrl,
                         fit: BoxFit.cover,
+                        cacheHeight: 300,
+                        cacheWidth: 200,
+                        gaplessPlayback: true,
+                        filterQuality: FilterQuality.low,
                         errorBuilder: (context, error, stackTrace) {
-                          return _buildPlaceholder();
+                          return _placeholder;
                         },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return _buildPlaceholder(isLoading: true);
+                        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                          if (wasSynchronouslyLoaded) return child;
+                          return frame != null ? child : _loadingPlaceholder;
                         },
                       )
-                    : _buildPlaceholder(),
+                    : _placeholder,
               ),
             ),
 
@@ -379,27 +367,26 @@ class _VideoThumbnailCard extends StatelessWidget {
 
                     const Spacer(),
 
-                    // タグ
+                    // タグ（ネストされたListViewを避けてRowを使用）
                     if (tags.isNotEmpty)
-                      SizedBox(
-                        height: 20,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: tags.length > 2 ? 2 : tags.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(width: SpacePalette.xs),
-                          itemBuilder: (context, index) {
-                            return Text(
-                              '#${tags[index]}',
-                              style: const TextStyle(
-                                fontFamily: 'NotoSansJP',
-                                fontSize: 10,
-                                fontVariations: [FontVariation('wght', 600)],
-                                color: ColorPalette.neutral400,
+                      Row(
+                        children: [
+                          for (int i = 0; i < (tags.length > 2 ? 2 : tags.length); i++) ...[
+                            if (i > 0) const SizedBox(width: SpacePalette.xs),
+                            Flexible(
+                              child: Text(
+                                '#${tags[i]}',
+                                style: const TextStyle(
+                                  fontFamily: 'NotoSansJP',
+                                  fontSize: 10,
+                                  fontVariations: [FontVariation('wght', 600)],
+                                  color: ColorPalette.neutral400,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          ],
+                        ],
                       ),
                   ],
                 ),
@@ -411,25 +398,23 @@ class _VideoThumbnailCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder({bool isLoading = false}) {
-    return Container(
-      color: ColorPalette.neutral600,
-      child: Center(
-        child: isLoading
-            ? SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: ColorPalette.neutral400,
-                ),
-              )
-            : Icon(
-                Icons.play_circle_outline,
-                size: 48,
-                color: ColorPalette.neutral400,
-              ),
+  // プレースホルダーを定数化してパフォーマンス向上
+  static const Widget _placeholder = Center(
+    child: Icon(
+      Icons.play_circle_outline,
+      size: 48,
+      color: ColorPalette.neutral400,
+    ),
+  );
+
+  static const Widget _loadingPlaceholder = Center(
+    child: SizedBox(
+      width: 24,
+      height: 24,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        color: ColorPalette.neutral400,
       ),
-    );
-  }
+    ),
+  );
 }

@@ -94,32 +94,15 @@ class JobDetailPage extends ConsumerWidget {
                 ),
               ),
             ),
-            child: ElevatedButton(
+            child: GradientButton(
+              text: '応募する',
               onPressed: () {
                 context.push('/jobs/$jobId/apply/confirm');
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: ColorPalette.primaryColor,
-                foregroundColor: ColorPalette.neutral0,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '応募する',
-                    style: TextStyle(
-                      color: ColorPalette.neutral0,
-                      fontSize: FontSizePalette.size16,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(width: SpacePalette.sm),
-                  const Icon(
-                    Icons.north_east,
-                    color: ColorPalette.neutral0,
-                    size: 20,
-                  ),
-                ],
+              icon: const Icon(
+                Icons.north_east,
+                color: ColorPalette.neutral0,
+                size: 20,
               ),
             ),
           ),

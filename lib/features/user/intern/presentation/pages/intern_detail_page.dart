@@ -198,37 +198,17 @@ class InternDetailPage extends ConsumerWidget {
                     // 応募ボタン
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('応募機能は準備中です')),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: ColorPalette.primaryColor,
-                            foregroundColor: ColorPalette.neutral0,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'インターン応募',
-                                style: TextStyle(
-                                  fontSize: FontSizePalette.size16,
-                                  fontWeight: FontWeight.w900,
-                                  color: ColorPalette.neutral0,
-                                ),
-                              ),
-                              const SizedBox(width: SpacePalette.sm),
-                              const Icon(
-                                Icons.north_east,
-                                color: ColorPalette.neutral0,
-                                size: 20,
-                              ),
-                            ],
-                          ),
+                      child: GradientButton(
+                        text: 'インターン応募',
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('応募機能は準備中です')),
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.north_east,
+                          color: ColorPalette.neutral0,
+                          size: 20,
                         ),
                       ),
                     ),

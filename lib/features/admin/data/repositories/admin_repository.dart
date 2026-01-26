@@ -47,52 +47,23 @@ class AdminRepository {
   /// ダッシュボード用の統計情報を取得
   Future<Map<String, int>> getDashboardStats() async {
     try {
-      // ユーザー数
-      final usersCount = await _supabase
-          .from('profiles')
-          .select()
-          .count();
-
-      // 企業数
-      final companiesCount = await _supabase
-          .from('companies')
-          .select()
-          .count();
-
-      // 動画数
-      final videosCount = await _supabase
-          .from('company_videos')
-          .select()
-          .count();
-
-      // 求人数（open状態のみ）
-      final jobsCount = await _supabase
-          .from('jobs')
-          .select()
-          .eq('status', 'open')
-          .count();
-
-      // インターン数（公開中のみ）
-      final internshipsCount = await _supabase
-          .from('internships')
-          .select()
-          .eq('is_public', true)
-          .count();
-
-      // 未対応の問い合わせ数
-      final openInquiriesCount = await _supabase
-          .from('inquiries')
-          .select()
-          .eq('status', 'open')
-          .count();
+      // 全クエリを並列実行（N+1問題を回避）
+      final results = await Future.wait([
+        _supabase.from('profiles').select().count(),
+        _supabase.from('companies').select().count(),
+        _supabase.from('company_videos').select().count(),
+        _supabase.from('jobs').select().eq('status', 'open').count(),
+        _supabase.from('internships').select().eq('is_public', true).count(),
+        _supabase.from('inquiries').select().eq('status', 'open').count(),
+      ]);
 
       return {
-        'users': usersCount.count,
-        'companies': companiesCount.count,
-        'videos': videosCount.count,
-        'jobs': jobsCount.count,
-        'internships': internshipsCount.count,
-        'openInquiries': openInquiriesCount.count,
+        'users': results[0].count,
+        'companies': results[1].count,
+        'videos': results[2].count,
+        'jobs': results[3].count,
+        'internships': results[4].count,
+        'openInquiries': results[5].count,
       };
     } catch (e) {
       print('Error getting dashboard stats: $e');

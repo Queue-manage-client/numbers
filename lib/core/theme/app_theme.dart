@@ -27,7 +27,16 @@ class ColorPalette {
   // システムカラー
   static const Color primaryColor = Color(0xFF2EBD27); // メイングリーン
   static const Color primaryDark = Color(0xFF239A1E); // ダークグリーン
+  static const Color primaryLight = Color(0xFF4ED847); // ライトグリーン
   static const Color systemGreen = Color(0xFF2EBD27);
+
+  // グラデーション
+  static const LinearGradient primaryGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [primaryLight, primaryColor, primaryDark],
+    stops: [0.0, 0.5, 1.0],
+  );
 }
 
 // フォントサイズ
@@ -495,6 +504,87 @@ class AppTheme {
           }
           return ColorPalette.neutral400;
         }),
+      ),
+    );
+  }
+}
+
+/// グラデーション付きボタンウィジェット
+class GradientButton extends StatelessWidget {
+  final String text;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final Widget? icon;
+  final double? width;
+  final double height;
+
+  const GradientButton({
+    super.key,
+    required this.text,
+    this.onPressed,
+    this.isLoading = false,
+    this.icon,
+    this.width,
+    this.height = ButtonSizePalette.button,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isEnabled = onPressed != null && !isLoading;
+
+    return Container(
+      width: width ?? double.infinity,
+      height: height,
+      decoration: BoxDecoration(
+        gradient: isEnabled ? ColorPalette.primaryGradient : null,
+        color: isEnabled ? null : ColorPalette.neutral600,
+        borderRadius: BorderRadius.circular(RadiusPalette.base),
+        boxShadow: isEnabled
+            ? [
+                BoxShadow(
+                  color: ColorPalette.primaryColor.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isEnabled ? onPressed : null,
+          borderRadius: BorderRadius.circular(RadiusPalette.base),
+          child: Center(
+            child: isLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: ColorPalette.neutral0,
+                    ),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        text,
+                        style: TextStyle(
+                          fontFamily: _fontFamily,
+                          fontSize: FontSizePalette.size16,
+                          fontVariations: const [FontVariation('wght', 900)],
+                          color: ColorPalette.neutral0,
+                        ),
+                      ),
+                      if (icon != null) ...[
+                        const SizedBox(width: SpacePalette.base),
+                        icon!,
+                      ],
+                    ],
+                  ),
+          ),
+        ),
       ),
     );
   }

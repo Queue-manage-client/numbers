@@ -25,6 +25,8 @@ class ChatListPage extends HookConsumerWidget {
             indicatorColor: ColorPalette.primaryColor,
             labelColor: ColorPalette.primaryColor,
             unselectedLabelColor: ColorPalette.neutral500,
+            dividerColor: ColorPalette.neutral600,
+            dividerHeight: 0.5,
             tabs: const [
               Tab(text: 'グループ'),
               Tab(text: 'DM'),
@@ -107,11 +109,21 @@ class ChatListPage extends HookConsumerWidget {
                     children: [
                       Row(
                         children: [
-                          CircleAvatar(
-                            backgroundColor: ColorPalette.primaryColor,
-                            child: Icon(
-                              Icons.group,
-                              color: ColorPalette.neutral0,
+                          Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: ColorPalette.neutral500,
+                                width: 1.8,
+                              ),
+                            ),
+                            child: CircleAvatar(
+                              backgroundColor: ColorPalette.primaryColor,
+                              child: Icon(
+                                Icons.group,
+                                color: ColorPalette.neutral0,
+                              ),
                             ),
                           ),
                           const SizedBox(width: SpacePalette.base),
@@ -274,11 +286,21 @@ class ChatListPage extends HookConsumerWidget {
               margin: const EdgeInsets.only(bottom: SpacePalette.sm),
               child: ListTile(
                 contentPadding: const EdgeInsets.all(SpacePalette.base),
-                leading: CircleAvatar(
-                  backgroundColor: ColorPalette.primaryColor,
-                  child: Icon(
-                    Icons.business,
-                    color: ColorPalette.neutral0,
+                leading: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: ColorPalette.neutral500,
+                      width: 1.8,
+                    ),
+                  ),
+                  child: CircleAvatar(
+                    backgroundColor: ColorPalette.primaryColor,
+                    child: Icon(
+                      Icons.business,
+                      color: ColorPalette.neutral0,
+                    ),
                   ),
                 ),
                 title: Text(

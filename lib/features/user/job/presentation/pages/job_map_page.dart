@@ -163,39 +163,15 @@ class _JobMapPageState extends State<JobMapPage> {
                           const SizedBox(height: SpacePalette.base),
 
                           // 応募ボタン
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                context.go('/jobs/${_jobs[0]['id']}');
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: ColorPalette.primaryColor,
-                                foregroundColor: ColorPalette.neutral0,
-                                padding: const EdgeInsets.symmetric(vertical: SpacePalette.inner),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(RadiusPalette.base),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    '応募する',
-                                    style: TextStyle(
-                                      fontSize: FontSizePalette.size16,
-                                      fontWeight: FontWeight.w900,
-                                      color: ColorPalette.neutral0,
-                                    ),
-                                  ),
-                                  const SizedBox(width: SpacePalette.sm),
-                                  const Icon(
-                                    Icons.north_east,
-                                    color: ColorPalette.neutral0,
-                                    size: 20,
-                                  ),
-                                ],
-                              ),
+                          GradientButton(
+                            text: '応募する',
+                            onPressed: () {
+                              context.go('/jobs/${_jobs[0]['id']}');
+                            },
+                            icon: const Icon(
+                              Icons.north_east,
+                              color: ColorPalette.neutral0,
+                              size: 20,
                             ),
                           ),
                         ],
