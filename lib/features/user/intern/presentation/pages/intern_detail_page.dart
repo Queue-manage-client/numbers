@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/intern/presentation/providers/intern_provider.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
 class InternDetailPage extends ConsumerWidget {
   const InternDetailPage({super.key});
@@ -16,14 +17,14 @@ class InternDetailPage extends ConsumerWidget {
     final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF000000),
+      backgroundColor: ColorPalette.neutral900,
       body: internshipAsync.when(
         data: (internship) {
           if (internship == null) {
-            return const Center(
+            return Center(
               child: Text(
                 'インターンが見つかりません',
-                style: TextStyle(color: Colors.white),
+                style: TextStylePalette.subText,
               ),
             );
           }
@@ -38,30 +39,26 @@ class InternDetailPage extends ConsumerWidget {
                   children: [
                     // 上部タイトルエリア
                     Container(
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF000000),
+                      decoration: BoxDecoration(
+                        color: ColorPalette.neutral900,
                       ),
                       child: SafeArea(
                         bottom: false,
                         child: Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(SpacePalette.base),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
+                              Text(
                                 '1日インターン',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                                style: TextStylePalette.header,
                               ),
                               Text(
                                 'One Day Intern',
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: FontSizePalette.size16,
                                   fontStyle: FontStyle.italic,
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: ColorPalette.neutral400,
                                 ),
                               ),
                             ],
@@ -72,136 +69,135 @@ class InternDetailPage extends ConsumerWidget {
 
                     // 検索バー
                     Container(
-                      color: const Color(0xFF1a1a1a),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      color: ColorPalette.neutral800,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: SpacePalette.base,
+                        vertical: SpacePalette.sm,
+                      ),
                       child: Row(
                         children: [
                           Expanded(
                             child: TextField(
-                              style: const TextStyle(color: Colors.white),
+                              style: TextStylePalette.normalText,
                               decoration: InputDecoration(
                                 hintText: '企業名・キーワードで検索',
-                                hintStyle: TextStyle(color: Colors.grey[600]),
+                                hintStyle: TextStylePalette.hintText,
                                 filled: true,
-                                fillColor: const Color(0xFF2a2a2a),
+                                fillColor: ColorPalette.neutral900,
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(RadiusPalette.base),
                                   borderSide: BorderSide.none,
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
+                                  horizontal: SpacePalette.base,
+                                  vertical: SpacePalette.inner,
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: SpacePalette.sm),
                           TextButton(
                             onPressed: () {},
-                            child: const Text(
+                            child: Text(
                               '絞り込み',
-                              style: TextStyle(color: Colors.white),
+                              style: TextStyle(
+                                color: ColorPalette.neutral0,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: SpacePalette.base),
 
                     // インターン画像
                     Container(
                       height: 200,
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      margin: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(12),
+                        color: ColorPalette.neutral800,
+                        borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                        border: Border.all(color: ColorPalette.neutral600),
                       ),
-                      child: const Center(
-                        child: Icon(Icons.image, size: 60, color: Colors.grey),
+                      child: Center(
+                        child: Icon(
+                          Icons.image,
+                          size: 60,
+                          color: ColorPalette.neutral600,
+                        ),
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: SpacePalette.base),
 
                     // カテゴリーとエリア
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
                       child: Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
+                              horizontal: SpacePalette.inner,
+                              vertical: SpacePalette.xs,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2a2a2a),
-                              borderRadius: BorderRadius.circular(16),
+                              color: ColorPalette.neutral800,
+                              borderRadius: BorderRadius.circular(RadiusPalette.base),
+                              border: Border.all(color: ColorPalette.neutral600),
                             ),
-                            child: const Text(
+                            child: Text(
                               '建築・土木',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.white,
-                              ),
+                              style: TextStylePalette.smText,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: SpacePalette.sm),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
+                              horizontal: SpacePalette.inner,
+                              vertical: SpacePalette.xs,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2a2a2a),
-                              borderRadius: BorderRadius.circular(16),
+                              color: ColorPalette.neutral800,
+                              borderRadius: BorderRadius.circular(RadiusPalette.base),
+                              border: Border.all(color: ColorPalette.neutral600),
                             ),
-                            child: const Text(
+                            child: Text(
                               '関西',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.white,
-                              ),
+                              style: TextStylePalette.smText,
                             ),
                           ),
                         ],
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: SpacePalette.base),
 
                     // タイトル
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
                       child: Text(
                         internship['title'] ?? '建設業界の縁の下の力持ち',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                        style: TextStylePalette.lgListTitle,
                       ),
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: SpacePalette.sm),
 
                     // 企業名
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
                       child: Text(
                         company?['name'] ?? '大和鉄筋株式会社',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.white70,
-                        ),
+                        style: TextStylePalette.subText,
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: SpacePalette.lg),
 
                     // 応募ボタン
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
                       child: SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -211,61 +207,68 @@ class InternDetailPage extends ConsumerWidget {
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF5722),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                            backgroundColor: ColorPalette.primaryColor,
+                            foregroundColor: ColorPalette.neutral0,
                           ),
-                          child: const Text(
-                            'インターン応募',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'インターン応募',
+                                style: TextStyle(
+                                  fontSize: FontSizePalette.size16,
+                                  fontWeight: FontWeight.w900,
+                                  color: ColorPalette.neutral0,
+                                ),
+                              ),
+                              const SizedBox(width: SpacePalette.sm),
+                              const Icon(
+                                Icons.north_east,
+                                color: ColorPalette.neutral0,
+                                size: 20,
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: SpacePalette.lg),
 
                     // 募集内容
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1a1a1a),
-                          borderRadius: BorderRadius.circular(12),
+                          color: ColorPalette.neutral800,
+                          borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                          border: Border.all(color: ColorPalette.neutral600),
                         ),
                         child: Theme(
-                          data: ThemeData(
+                          data: Theme.of(context).copyWith(
                             dividerColor: Colors.transparent,
-                            expansionTileTheme: const ExpansionTileThemeData(
-                              iconColor: Colors.white,
-                              collapsedIconColor: Colors.white,
-                            ),
                           ),
                           child: ExpansionTile(
                             initiallyExpanded: true,
-                            title: const Row(
+                            iconColor: ColorPalette.neutral0,
+                            collapsedIconColor: ColorPalette.neutral0,
+                            title: Row(
                               children: [
-                                Icon(Icons.list, color: Color(0xFFFF5722), size: 20),
-                                SizedBox(width: 8),
+                                Icon(
+                                  Icons.list,
+                                  color: ColorPalette.primaryColor,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: SpacePalette.sm),
                                 Text(
                                   '募集内容',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
+                                  style: TextStylePalette.smTitle,
                                 ),
                               ],
                             ),
                             children: [
                               Padding(
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.all(SpacePalette.base),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -273,7 +276,7 @@ class InternDetailPage extends ConsumerWidget {
                                       Icons.check_circle_outline,
                                       '1日インターン｜やりがい学生と繋がりやすい',
                                     ),
-                                    const SizedBox(height: 12),
+                                    const SizedBox(height: SpacePalette.inner),
                                     _buildInfoRow(
                                       Icons.check_circle_outline,
                                       '実際の建設現場で働くプロと直接交流できる説明体験',
@@ -287,18 +290,18 @@ class InternDetailPage extends ConsumerWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: SpacePalette.base),
 
-                    // YORODUYA SELECT
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
+                    // NBS SELECT
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: SpacePalette.lg),
                       child: Center(
                         child: Text(
-                          'YORODUYA SELECT',
+                          'NBS SELECT',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: FontSizePalette.size12,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white54,
+                            color: ColorPalette.neutral400,
                             letterSpacing: 1.5,
                           ),
                         ),
@@ -312,13 +315,15 @@ class InternDetailPage extends ConsumerWidget {
             ],
           );
         },
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: Colors.white),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: ColorPalette.primaryColor,
+          ),
         ),
         error: (error, stack) => Center(
           child: Text(
             'エラー: $error',
-            style: const TextStyle(color: Colors.white),
+            style: TextStylePalette.normalText,
           ),
         ),
       ),
@@ -330,16 +335,16 @@ class InternDetailPage extends ConsumerWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: Colors.white70, size: 20),
-        const SizedBox(width: 8),
+        Icon(
+          icon,
+          color: ColorPalette.neutral400,
+          size: 20,
+        ),
+        const SizedBox(width: SpacePalette.sm),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.white70,
-              height: 1.4,
-            ),
+            style: TextStylePalette.subText,
           ),
         ),
       ],

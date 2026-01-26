@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
 class JobMapPage extends StatefulWidget {
   const JobMapPage({super.key});
@@ -28,56 +29,36 @@ class _JobMapPageState extends State<JobMapPage> {
     final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF000000),
+      backgroundColor: ColorPalette.neutral900,
+      appBar: AppBar(
+        title: const Text('募集を探す'),
+        centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: SpacePalette.base),
+            child: Center(
+              child: Text(
+                'Apply Now',
+                style: TextStyle(
+                  fontSize: FontSizePalette.size14,
+                  fontStyle: FontStyle.italic,
+                  color: ColorPalette.neutral400,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           // 地図エリア（プレースホルダー）
           Container(
-            color: Colors.grey[300],
-            child: const Center(
+            color: ColorPalette.neutral800,
+            child: Center(
               child: Icon(
                 Icons.map,
                 size: 100,
-                color: Colors.grey,
-              ),
-            ),
-          ),
-
-          // 上部：タイトルエリア
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFF000000),
-              ),
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        '募集を探す',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        'Apply Now',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.white.withOpacity(0.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                color: ColorPalette.neutral600,
               ),
             ),
           ),
@@ -85,20 +66,14 @@ class _JobMapPageState extends State<JobMapPage> {
           // 求人カード
           if (_jobs.isNotEmpty)
             Positioned(
-              top: MediaQuery.of(context).padding.top + 80,
-              left: 16,
-              right: 16,
+              top: SpacePalette.base,
+              left: SpacePalette.base,
+              right: SpacePalette.base,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  color: ColorPalette.neutral800,
+                  borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                  border: Border.all(color: ColorPalette.neutral600),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -106,11 +81,15 @@ class _JobMapPageState extends State<JobMapPage> {
                   children: [
                     // カードヘッダー（閉じるボタン）
                     Padding(
-                      padding: const EdgeInsets.only(right: 8, top: 8),
+                      padding: const EdgeInsets.only(right: SpacePalette.sm, top: SpacePalette.sm),
                       child: Align(
                         alignment: Alignment.topRight,
                         child: IconButton(
-                          icon: const Icon(Icons.close, size: 20),
+                          icon: Icon(
+                            Icons.close,
+                            size: 20,
+                            color: ColorPalette.neutral400,
+                          ),
                           onPressed: () {
                             setState(() {
                               _jobs.clear();
@@ -121,86 +100,67 @@ class _JobMapPageState extends State<JobMapPage> {
                     ),
 
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      padding: const EdgeInsets.fromLTRB(
+                        SpacePalette.base,
+                        0,
+                        SpacePalette.base,
+                        SpacePalette.base,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // タイトル
                           Text(
                             _jobs[0]['title'],
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF000000),
-                            ),
+                            style: TextStylePalette.smListTitle,
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: SpacePalette.sm),
 
                           // 企業名
                           Text(
                             _jobs[0]['company'],
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[700],
-                            ),
+                            style: TextStylePalette.subText,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: SpacePalette.inner),
 
                           // 給与
                           Row(
                             children: [
-                              const Text(
+                              Text(
                                 '給与',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF000000),
-                                ),
+                                style: TextStylePalette.smTitle,
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: SpacePalette.sm),
                               Text(
                                 _jobs[0]['salary'],
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF000000),
-                                ),
+                                style: TextStylePalette.normalText,
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: SpacePalette.sm),
 
                           // 勤務時間
                           Row(
                             children: [
-                              const Text(
+                              Text(
                                 '時間',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF000000),
-                                ),
+                                style: TextStylePalette.smTitle,
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: SpacePalette.sm),
                               Text(
                                 _jobs[0]['time'],
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF000000),
-                                ),
+                                style: TextStylePalette.normalText,
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: SpacePalette.sm),
 
                           // 所在地
                           Text(
                             _jobs[0]['location'],
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF000000),
-                            ),
+                            style: TextStylePalette.normalText,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: SpacePalette.base),
 
                           // 応募ボタン
                           SizedBox(
@@ -210,19 +170,31 @@ class _JobMapPageState extends State<JobMapPage> {
                                 context.go('/jobs/${_jobs[0]['id']}');
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFFF5722),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                backgroundColor: ColorPalette.primaryColor,
+                                foregroundColor: ColorPalette.neutral0,
+                                padding: const EdgeInsets.symmetric(vertical: SpacePalette.inner),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(RadiusPalette.base),
                                 ),
                               ),
-                              child: const Text(
-                                '応募する',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '応募する',
+                                    style: TextStyle(
+                                      fontSize: FontSizePalette.size16,
+                                      fontWeight: FontWeight.w900,
+                                      color: ColorPalette.neutral0,
+                                    ),
+                                  ),
+                                  const SizedBox(width: SpacePalette.sm),
+                                  const Icon(
+                                    Icons.north_east,
+                                    color: ColorPalette.neutral0,
+                                    size: 20,
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -234,20 +206,20 @@ class _JobMapPageState extends State<JobMapPage> {
               ),
             ),
 
-          // 下部：YORODUYA SELECT
+          // 下部：NBS SELECT
           Positioned(
             bottom: 80,
             left: 0,
             right: 0,
             child: Container(
-              padding: const EdgeInsets.all(16),
-              child: const Center(
+              padding: const EdgeInsets.all(SpacePalette.base),
+              child: Center(
                 child: Text(
-                  'YORODUYA SELECT',
+                  'NBS SELECT',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: FontSizePalette.size12,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: ColorPalette.neutral400,
                     letterSpacing: 1.5,
                   ),
                 ),

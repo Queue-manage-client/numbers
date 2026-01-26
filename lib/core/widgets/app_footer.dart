@@ -13,80 +13,71 @@ class AppFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Container(
       decoration: BoxDecoration(
-        color: ColorPalette.neutral0,
-        border: Border(
+        color: ColorPalette.neutral900,
+        border: const Border(
           top: BorderSide(
-            color: ColorPalette.neutral200,
+            color: ColorPalette.neutral600,
             width: 1,
           ),
         ),
       ),
-      child: SafeArea(
-        top: false,
-        child: Container(
-          height: 70,
-          padding: const EdgeInsets.only(
-            top: SpacePalette.sm,
-            bottom: SpacePalette.xs,
+      padding: EdgeInsets.only(
+        top: SpacePalette.sm,
+        bottom: bottomPadding > 0 ? bottomPadding : SpacePalette.sm,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          _buildNavItem(
+            context,
+            icon: Icons.home_outlined,
+            activeIcon: Icons.home,
+            label: 'ホーム',
+            route: '/feed',
+            isActive: currentRoute == '/feed',
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _buildNavItem(
-                context,
-                icon: Icons.home_outlined,
-                activeIcon: Icons.home,
-                label: 'ホーム',
-                route: '/feed',
-                isActive: currentRoute == '/feed',
-                isCenter: false,
-              ),
-              _buildNavItem(
-                context,
-                icon: Icons.search,
-                activeIcon: Icons.search,
-                label: '探す',
-                route: '/jobs/map',
-                isActive: currentRoute == '/jobs/map' || currentRoute.startsWith('/jobs/'),
-                isCenter: false,
-              ),
-              _buildNavItem(
-                context,
-                icon: Icons.chat_bubble_outline,
-                activeIcon: Icons.chat_bubble,
-                label: 'チャット',
-                route: '/chats',
-                isActive: currentRoute == '/chats' || currentRoute.startsWith('/chats/'),
-                isCenter: true,
-              ),
-              _buildNavItem(
-                context,
-                icon: Icons.school_outlined,
-                activeIcon: Icons.school,
-                label: 'インターン',
-                route: '/interns',
-                isActive: currentRoute == '/interns' || currentRoute.startsWith('/interns/'),
-                isCenter: false,
-              ),
-              _buildNavItem(
-                context,
-                icon: Icons.grid_view_outlined,
-                activeIcon: Icons.grid_view,
-                label: 'その他',
-                route: '/my-page',
-                isActive: currentRoute == '/my-page' ||
-                         currentRoute == '/profile/edit' ||
-                         currentRoute == '/applications' ||
-                         currentRoute.startsWith('/applications/') ||
-                         currentRoute == '/settings',
-                isCenter: false,
-              ),
-            ],
+          _buildNavItem(
+            context,
+            icon: Icons.search,
+            activeIcon: Icons.search,
+            label: '探す',
+            route: '/jobs/map',
+            isActive: currentRoute == '/jobs/map' || currentRoute.startsWith('/jobs/'),
           ),
-        ),
+          _buildNavItem(
+            context,
+            icon: Icons.forum_outlined,
+            activeIcon: Icons.forum,
+            label: 'チャット',
+            route: '/chats',
+            isActive: currentRoute == '/chats' || currentRoute.startsWith('/chats/'),
+          ),
+          _buildNavItem(
+            context,
+            icon: Icons.school_outlined,
+            activeIcon: Icons.school,
+            label: 'インターン',
+            route: '/interns',
+            isActive: currentRoute == '/interns' || currentRoute.startsWith('/interns/'),
+          ),
+          _buildNavItem(
+            context,
+            icon: Icons.grid_view_outlined,
+            activeIcon: Icons.grid_view,
+            label: 'その他',
+            route: '/my-page',
+            isActive: currentRoute == '/my-page' ||
+                     currentRoute == '/profile/edit' ||
+                     currentRoute == '/applications' ||
+                     currentRoute.startsWith('/applications/') ||
+                     currentRoute == '/settings',
+          ),
+        ],
       ),
     );
   }
@@ -98,7 +89,6 @@ class AppFooter extends StatelessWidget {
     required String label,
     required String route,
     required bool isActive,
-    required bool isCenter,
   }) {
     return Expanded(
       child: Material(
@@ -111,45 +101,27 @@ class AppFooter extends StatelessWidget {
           },
           borderRadius: BorderRadius.circular(RadiusPalette.base),
           child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: isCenter ? 0 : SpacePalette.xs,
-            ),
+            padding: const EdgeInsets.symmetric(vertical: SpacePalette.xs),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (isCenter) ...[
-                  // 中央アイコンは大きく表示
-                  Container(
-                    padding: const EdgeInsets.all(SpacePalette.sm),
-                    child: Icon(
-                      isActive ? activeIcon : icon,
-                      color: isActive
-                          ? ColorPalette.primaryColor
-                          : ColorPalette.neutral500,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                ] else ...[
-                  // 通常のアイコン
-                  Icon(
-                    isActive ? activeIcon : icon,
-                    color: isActive
-                        ? ColorPalette.primaryColor
-                        : ColorPalette.neutral500,
-                    size: 24,
-                  ),
-                  const SizedBox(height: SpacePalette.xs),
-                ],
+                Icon(
+                  isActive ? activeIcon : icon,
+                  color: isActive
+                      ? ColorPalette.primaryColor
+                      : ColorPalette.neutral400,
+                  size: 24,
+                ),
+                const SizedBox(height: 2),
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: isCenter ? 9 : 9,
+                    fontSize: 10,
                     color: isActive
                         ? ColorPalette.primaryColor
-                        : ColorPalette.neutral500,
-                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                        : ColorPalette.neutral400,
+                    fontWeight: isActive ? FontWeight.w800 : FontWeight.w700,
                     height: 1.1,
                   ),
                   maxLines: 1,

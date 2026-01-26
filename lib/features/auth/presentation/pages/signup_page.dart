@@ -1,5 +1,4 @@
 // auth/presentation/pages/signup_page.dart
-// このページにはどうやって行くの？
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -39,7 +38,7 @@ class SignupPage extends HookConsumerWidget {
 
         if (context.mounted) {
           await Future.delayed(const Duration(milliseconds: 500));
-          
+
           final user = repository.currentUser;
           if (user != null) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -69,20 +68,24 @@ class SignupPage extends HookConsumerWidget {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(SpacePalette.base), // 全体padding
+            padding: const EdgeInsets.all(SpacePalette.base),
             child: Form(
               key: formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    '新規登録',
-                    style: TextStylePalette.header,
-                    textAlign: TextAlign.center,
+                  // タイトル
+                  Align(
+                    alignment: Alignment.center,
+                    child: Text(
+                      '新規登録',
+                      style: TextStylePalette.header,
+                    ),
                   ),
-                  const SizedBox(height: SpacePalette.lg), // 別機能間隔（大きめ）
-                  
+                  const SizedBox(height: SpacePalette.lg),
+
+                  // メールアドレス
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -90,10 +93,10 @@ class SignupPage extends HookConsumerWidget {
                       style: TextStylePalette.smTitle,
                     ),
                   ),
-                  SizedBox(height: SpacePalette.sm),
+                  const SizedBox(height: SpacePalette.sm),
                   TextFormField(
                     controller: emailController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: 'example@example.com',
                     ),
                     keyboardType: TextInputType.emailAddress,
@@ -107,8 +110,9 @@ class SignupPage extends HookConsumerWidget {
                       return null;
                     },
                   ),
-                  const SizedBox(height: SpacePalette.base), // 別機能間隔
-                  
+                  const SizedBox(height: SpacePalette.base),
+
+                  // パスワード
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -116,10 +120,10 @@ class SignupPage extends HookConsumerWidget {
                       style: TextStylePalette.smTitle,
                     ),
                   ),
-                  SizedBox(height: SpacePalette.sm),
+                  const SizedBox(height: SpacePalette.sm),
                   TextFormField(
                     controller: passwordController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: '6文字以上で入力してください',
                     ),
                     obscureText: true,
@@ -133,8 +137,9 @@ class SignupPage extends HookConsumerWidget {
                       return null;
                     },
                   ),
-                  const SizedBox(height: SpacePalette.base), // 別機能間隔
-                  
+                  const SizedBox(height: SpacePalette.base),
+
+                  // パスワード（確認）
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -142,10 +147,10 @@ class SignupPage extends HookConsumerWidget {
                       style: TextStylePalette.smTitle,
                     ),
                   ),
-                  SizedBox(height: SpacePalette.sm),
+                  const SizedBox(height: SpacePalette.sm),
                   TextFormField(
                     controller: confirmPasswordController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: '入力間違いはありませんか？',
                     ),
                     obscureText: true,
@@ -156,12 +161,16 @@ class SignupPage extends HookConsumerWidget {
                       return null;
                     },
                   ),
-                  const SizedBox(height: SpacePalette.base), // 別機能間隔
-                  
+                  const SizedBox(height: SpacePalette.lg),
+
+                  // 登録ボタン
                   ElevatedButton(
                     onPressed: isLoading.value ? null : signup,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: ColorPalette.neutral0,
+                    ),
                     child: isLoading.value
-                        ? SizedBox(
+                        ? const SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
@@ -169,12 +178,30 @@ class SignupPage extends HookConsumerWidget {
                               color: ColorPalette.neutral0,
                             ),
                           )
-                        : const Text('登録'),
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '登録',
+                                style: TextStylePalette.buttonTextBlack,
+                              ),
+                              const SizedBox(width: SpacePalette.sm),
+                              Transform.rotate(
+                                angle: -0.5,
+                                child: Icon(
+                                  Icons.send,
+                                  color: ColorPalette.neutral0,
+                                  size: 18,
+                                ),
+                              ),
+                            ],
+                          ),
                   ),
-                  const SizedBox(height: SpacePalette.lg), // 別機能間隔
-                  
+                  const SizedBox(height: SpacePalette.lg),
+
+                  // ログインリンク
                   Align(
-                    alignment:Alignment.center,
+                    alignment: Alignment.center,
                     child: GestureDetector(
                       onTap: () => context.go('/login'),
                       child: Text(

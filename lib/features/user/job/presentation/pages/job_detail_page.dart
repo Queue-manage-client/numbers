@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/job/presentation/providers/job_provider.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
 class JobDetailPage extends ConsumerWidget {
   const JobDetailPage({super.key});
@@ -16,16 +17,24 @@ class JobDetailPage extends ConsumerWidget {
     final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
-        title: const Text('求人詳細'),
-        backgroundColor: const Color(0xFF323232),
-        foregroundColor: const Color(0xFFFFFFFF),
+        title: Text(
+          '求人詳細',
+          style: TextStylePalette.title,
+        ),
+        backgroundColor: ColorPalette.neutral900,
+        elevation: 0,
       ),
       body: jobAsync.when(
         data: (job) {
           if (job == null) {
-            return const Center(child: Text('求人が見つかりません'));
+            return Center(
+              child: Text(
+                '求人が見つかりません',
+                style: TextStylePalette.subText,
+              ),
+            );
           }
 
           final company = job['companies'] as Map<String, dynamic>?;
@@ -35,27 +44,20 @@ class JobDetailPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(SpacePalette.base),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         job['title'] ?? '求人名未設定',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF323232),
-                        ),
+                        style: TextStylePalette.lgListTitle,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: SpacePalette.sm),
                       Text(
                         company?['name'] ?? '企業名未設定',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF666666),
-                        ),
+                        style: TextStylePalette.lgListLeading,
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: SpacePalette.lg),
                       _buildSection('給与', job['salary'] ?? '未設定'),
                       _buildSection('仕事内容', job['description'] ?? '未設定'),
                       _buildSection('勤務地', job['location']?.toString() ?? '未設定'),
@@ -66,34 +68,59 @@ class JobDetailPage extends ConsumerWidget {
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('エラー: $error')),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: ColorPalette.primaryColor,
+          ),
+        ),
+        error: (error, stack) => Center(
+          child: Text(
+            'エラー: $error',
+            style: TextStylePalette.normalText,
+          ),
+        ),
       ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(SpacePalette.base),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFFFF),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, -2),
+              color: ColorPalette.neutral900,
+              border: Border(
+                top: BorderSide(
+                  color: ColorPalette.neutral600,
+                  width: 1,
                 ),
-              ],
+              ),
             ),
             child: ElevatedButton(
               onPressed: () {
                 context.push('/jobs/$jobId/apply/confirm');
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF323232),
-                foregroundColor: const Color(0xFFFFFFFF),
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: ColorPalette.primaryColor,
+                foregroundColor: ColorPalette.neutral0,
               ),
-              child: const Text('応募する'),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '応募する',
+                    style: TextStyle(
+                      color: ColorPalette.neutral0,
+                      fontSize: FontSizePalette.size16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(width: SpacePalette.sm),
+                  const Icon(
+                    Icons.north_east,
+                    color: ColorPalette.neutral0,
+                    size: 20,
+                  ),
+                ],
+              ),
             ),
           ),
           AppFooter(currentRoute: currentRoute),
@@ -104,25 +131,18 @@ class JobDetailPage extends ConsumerWidget {
 
   Widget _buildSection(String title, String content) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: SpacePalette.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF323232),
-            ),
+            style: TextStylePalette.smHeader,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: SpacePalette.sm),
           Text(
             content,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF666666),
-            ),
+            style: TextStylePalette.subText,
           ),
         ],
       ),

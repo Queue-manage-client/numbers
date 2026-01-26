@@ -14,6 +14,7 @@ import 'package:numbers/features/user/company/presentation/pages/company_video_l
 import 'package:numbers/features/user/company/presentation/pages/company_job_list_page.dart';
 import 'package:numbers/features/user/company/presentation/pages/company_intern_list_page.dart';
 import 'package:numbers/features/user/search/presentation/pages/video_search_page.dart';
+import 'package:numbers/features/user/feed/presentation/pages/video_detail_page.dart';
 import 'package:numbers/features/user/job/presentation/pages/job_map_page.dart';
 import 'package:numbers/features/user/job/presentation/pages/job_detail_page.dart';
 import 'package:numbers/features/user/job/presentation/pages/job_application_confirm_page.dart';
@@ -111,6 +112,16 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/company/:id/interns',
       builder: (context, state) => const CompanyInternListPage(),
+    ),
+
+    // User - Video Detail (from feed)
+    GoRoute(
+      path: '/companies/:companyId/videos/:videoId',
+      builder: (context, state) {
+        final companyId = state.pathParameters['companyId'] ?? '';
+        final videoId = state.pathParameters['videoId'] ?? '';
+        return VideoDetailPage(companyId: companyId, videoId: videoId);
+      },
     ),
 
     // User - Search

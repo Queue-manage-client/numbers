@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
@@ -12,49 +13,62 @@ class SplashPage extends ConsumerStatefulWidget {
   ConsumerState<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends ConsumerState<SplashPage> {
+class _SplashPageState extends ConsumerState<SplashPage>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late List<Animation<double>> _scaleAnimations;
+  bool _isNavigating = false;
+
   @override
   void initState() {
     super.initState();
-    _checkAuth();
+    _setupAnimations();
   }
 
-  Future<void> _checkAuth() async {
-    await Future.delayed(const Duration(seconds: 1));
+  void _setupAnimations() {
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    )..repeat();
 
-    if (!mounted) return;
+    _scaleAnimations = List.generate(4, (index) {
+      final startInterval = index * 0.15;
+      final endInterval = startInterval + 0.5;
 
-    // 認証状態を監視
-    final authState = ref.read(authStateProvider);
+      return TweenSequence<double>([
+        TweenSequenceItem(
+          tween: Tween<double>(begin: 1.0, end: 1.6)
+              .chain(CurveTween(curve: Curves.easeOut)),
+          weight: 50,
+        ),
+        TweenSequenceItem(
+          tween: Tween<double>(begin: 1.6, end: 1.0)
+              .chain(CurveTween(curve: Curves.easeIn)),
+          weight: 50,
+        ),
+      ]).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Interval(
+            startInterval.clamp(0.0, 1.0),
+            endInterval.clamp(0.0, 1.0),
+            curve: Curves.linear,
+          ),
+        ),
+      );
+    });
+  }
 
-    authState.when(
-      data: (state) async {
-        if (!mounted) return;
-        // セッションが存在する場合はログイン済みと判断
-        if (state.session != null) {
-          // roleを取得して適切な画面へ遷移
-          await _navigateByRole(state.session!.user.id);
-        } else {
-          context.go('/login');
-        }
-      },
-      loading: () {
-        if (!mounted) return;
-        // ローディング中は待機
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            _checkAuth();
-          }
-        });
-      },
-      error: (_, __) {
-        if (!mounted) return;
-        context.go('/login');
-      },
-    );
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _navigateByRole(String userId) async {
+    if (_isNavigating) return;
+    _isNavigating = true;
+
     try {
       final supabase = Supabase.instance.client;
       final profile = await supabase
@@ -81,25 +95,90 @@ class _SplashPageState extends ConsumerState<SplashPage> {
     }
   }
 
+  void _handleAuthState(AuthState state) {
+    if (_isNavigating) return;
+
+    if (state.session != null) {
+      _navigateByRole(state.session!.user.id);
+    } else {
+      _isNavigating = true;
+      context.go('/login');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFFFFFFFF),
+    // 認証状態を監視し、状態が確定したらナビゲート
+    ref.listen<AsyncValue<AuthState>>(authStateProvider, (previous, next) {
+      next.whenData((state) {
+        if (mounted) {
+          _handleAuthState(state);
+        }
+      });
+    });
+
+    // 初回ビルド時に現在の状態をチェック
+    final authState = ref.watch(authStateProvider);
+    authState.whenData((state) {
+      // 次のフレームでナビゲート（ビルド中のナビゲートを避ける）
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_isNavigating) {
+          _handleAuthState(state);
+        }
+      });
+    });
+
+    return Scaffold(
+      backgroundColor: ColorPalette.neutral900,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Numbers',
+              'NBS',
               style: TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF323232),
+                fontSize: 56,
+                fontWeight: FontWeight.w900,
+                color: ColorPalette.primaryColor,
+                letterSpacing: 8,
               ),
             ),
-            SizedBox(height: 24),
-            CircularProgressIndicator(
-              color: Color(0xFF323232),
+            const SizedBox(height: 48),
+            AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(4, (index) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Transform.scale(
+                        scale: _scaleAnimations[index].value,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: ColorPalette.primaryColor.withOpacity(
+                              0.4 + (_scaleAnimations[index].value - 1.0) * 0.6,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                );
+              },
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Loading...',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: ColorPalette.neutral400,
+                letterSpacing: 2,
+              ),
             ),
           ],
         ),

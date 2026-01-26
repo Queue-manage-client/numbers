@@ -1,246 +1,23 @@
 // feed/presentation/pages/feed_page.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:video_player/video_player.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/user/feed/presentation/providers/feed_provider.dart';
-import 'package:numbers/features/user/feed/presentation/widgets/video_search_bar.dart';
-import 'package:numbers/features/user/feed/presentation/widgets/video_card.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
-// Empty State Widget
-Widget _buildEmptyState(BuildContext context) {
-  return Center(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(SpacePalette.base),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.video_library_outlined,
-            size: 80,
-            color: ColorPalette.neutral400,
-          ),
-          const SizedBox(height: SpacePalette.lg),
-          Text(
-            '動画がありません',
-            style: TextStylePalette.header,
-          ),
-          const SizedBox(height: SpacePalette.sm),
-          Text(
-            '企業が動画を投稿すると、\nここに表示されます',
-            textAlign: TextAlign.center,
-            style: TextStylePalette.subText,
-          ),
-          const SizedBox(height: SpacePalette.lg * 2),
-          ElevatedButton.icon(
-            onPressed: () {
-              context.go('/search/videos');
-            },
-            icon: const Icon(Icons.search),
-            label: const Text('動画を検索する'),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-// Error State Widget
-Widget _buildErrorState(BuildContext context, WidgetRef ref) {
-  return Center(
-    child: Padding(
-      padding: const EdgeInsets.all(SpacePalette.base),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 80,
-            color: ColorPalette.primaryColor,
-          ),
-          const SizedBox(height: SpacePalette.lg),
-          Text(
-            '動画の読み込みに失敗しました',
-            style: TextStylePalette.header,
-          ),
-          const SizedBox(height: SpacePalette.sm),
-          Text(
-            'もう一度お試しください',
-            style: TextStylePalette.subText,
-          ),
-          const SizedBox(height: SpacePalette.lg * 2),
-          OutlinedButton(
-            onPressed: () {
-              ref.invalidate(feedVideosProvider);
-            },
-            style: OutlinedButton.styleFrom(
-              foregroundColor: ColorPalette.primaryColor,
-              side: const BorderSide(
-                color: ColorPalette.primaryColor,
-                width: 2,
-              ),
-              minimumSize: const Size(120, ButtonSizePalette.button),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(RadiusPalette.base),
-              ),
-            ),
-            child: const Text('再試行'),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class FeedPage extends HookConsumerWidget {
+class FeedPage extends ConsumerWidget {
   const FeedPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pageController = usePageController();
-    final currentIndex = useState(0);
-    final videoControllers = useState<Map<int, VideoPlayerController>>({});
-    final initializationFailed = useState<Map<int, bool>>({});
-
-    // クリーンアップ
-    useEffect(() {
-      return () {
-        for (var controller in videoControllers.value.values) {
-          controller.dispose();
-        }
-        videoControllers.value.clear();
-      };
-    }, []);
-
-    final handleInitializationError = useCallback((int index) {
-      // エラーが発生したコントローラーを削除
-      if (videoControllers.value.containsKey(index)) {
-        videoControllers.value[index]?.dispose();
-        final newControllers = Map<int, VideoPlayerController>.from(videoControllers.value);
-        newControllers.remove(index);
-        videoControllers.value = newControllers;
-      }
-      // 初期化失敗フラグを立てる
-      final newFailed = Map<int, bool>.from(initializationFailed.value);
-      newFailed[index] = true;
-      initializationFailed.value = newFailed;
-    }, [videoControllers.value, initializationFailed.value]);
-
-    final initializeVideo = useCallback((int index, String videoUrl) {
-      // 既に初期化済み、または初期化に失敗している場合はスキップ
-      if (videoControllers.value.containsKey(index) || 
-          initializationFailed.value[index] == true) {
-        return;
-      }
-
-      // URLの検証
-      if (videoUrl.isEmpty || !(Uri.tryParse(videoUrl)?.hasAbsolutePath ?? false)) {
-        print('無効なビデオURL (index: $index): $videoUrl');
-        final newFailed = Map<int, bool>.from(initializationFailed.value);
-        newFailed[index] = true;
-        initializationFailed.value = newFailed;
-        return;
-      }
-
-      try {
-        final controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
-        final newControllers = Map<int, VideoPlayerController>.from(videoControllers.value);
-        newControllers[index] = controller;
-        videoControllers.value = newControllers;
-        
-        controller.initialize().then((_) {
-          // 初期化成功後の状態確認
-          if (controller.value.hasError) {
-            print('ビデオ初期化エラー (index: $index): ${controller.value.errorDescription}');
-            handleInitializationError(index);
-            return;
-          }
-
-          // 現在のインデックスの動画のみ自動再生
-          if (currentIndex.value == index) {
-            controller.play();
-            controller.setLooping(true);
-          }
-        }).catchError((error, stackTrace) {
-          print('ビデオ初期化エラー (index: $index, URL: $videoUrl): $error');
-          print('スタックトレース: $stackTrace');
-          handleInitializationError(index);
-        });
-      } catch (e, stackTrace) {
-        print('ビデオコントローラー作成エラー (index: $index, URL: $videoUrl): $e');
-        print('スタックトレース: $stackTrace');
-        handleInitializationError(index);
-      }
-    }, [videoControllers.value, initializationFailed.value, currentIndex.value, handleInitializationError]);
-
-    final onPageChanged = useCallback((int index) {
-      // 前の動画を停止
-      if (videoControllers.value.containsKey(currentIndex.value)) {
-        videoControllers.value[currentIndex.value]!.pause();
-      }
-
-      currentIndex.value = index;
-
-      // 新しい動画を再生
-      if (videoControllers.value.containsKey(index)) {
-        videoControllers.value[index]!.play();
-        videoControllers.value[index]!.setLooping(true);
-      }
-    }, [videoControllers.value, currentIndex.value]);
-
-    final initializeVideos = useCallback((List<Map<String, dynamic>> videos) {
-      try {
-        for (int i = 0; i < videos.length; i++) {
-          final video = videos[i];
-          final videoPath = video['video_path'] as String?;
-          
-          if (videoPath != null && videoPath.isNotEmpty) {
-            try {
-              final supabase = Supabase.instance.client;
-              final videoUrl = supabase.storage.from('videos').getPublicUrl(videoPath);
-              
-              if (videoUrl.isNotEmpty) {
-                final uri = Uri.tryParse(videoUrl);
-                if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
-                  initializeVideo(i, videoUrl);
-                } else {
-                  print('無効なビデオURL形式 (index: $i): $videoUrl');
-                  final newFailed = Map<int, bool>.from(initializationFailed.value);
-                  newFailed[i] = true;
-                  initializationFailed.value = newFailed;
-                }
-              } else {
-                print('ビデオURLが空です (index: $i, path: $videoPath)');
-                final newFailed = Map<int, bool>.from(initializationFailed.value);
-                newFailed[i] = true;
-                initializationFailed.value = newFailed;
-              }
-            } catch (e) {
-              print('動画URL取得エラー (index: $i, path: $videoPath): $e');
-              final newFailed = Map<int, bool>.from(initializationFailed.value);
-              newFailed[i] = true;
-              initializationFailed.value = newFailed;
-            }
-          } else {
-            print('ビデオパスが空です (index: $i)');
-            final newFailed = Map<int, bool>.from(initializationFailed.value);
-            newFailed[i] = true;
-            initializationFailed.value = newFailed;
-          }
-        }
-      } catch (e) {
-        print('動画初期化エラー: $e');
-      }
-    }, [initializeVideo, initializationFailed.value]);
-
     final authState = ref.watch(authStateProvider);
     final user = ref.watch(currentUserProvider);
-    final videosAsync = ref.watch(feedVideosProvider);
+    final categoriesAsync = ref.watch(videoCategoriesProvider);
+    final videosAsync = ref.watch(filteredVideosProvider);
+    final selectedCategory = ref.watch(selectedCategoryProvider);
 
     // 認証状態の変更を監視
     ref.listen<AsyncValue<AuthState>>(authStateProvider, (previous, next) {
@@ -260,7 +37,7 @@ class FeedPage extends HookConsumerWidget {
     // 認証状態がローディング中
     if (authState.isLoading || user == null) {
       return Scaffold(
-        backgroundColor: ColorPalette.neutral100,
+        backgroundColor: ColorPalette.neutral900,
         body: Center(
           child: CircularProgressIndicator(
             color: ColorPalette.primaryColor,
@@ -273,7 +50,7 @@ class FeedPage extends HookConsumerWidget {
     final session = authState.value?.session;
     if (session == null || session.user == null) {
       return Scaffold(
-        backgroundColor: ColorPalette.neutral100,
+        backgroundColor: ColorPalette.neutral900,
         body: Center(
           child: CircularProgressIndicator(
             color: ColorPalette.primaryColor,
@@ -285,61 +62,373 @@ class FeedPage extends HookConsumerWidget {
     final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
-      backgroundColor: ColorPalette.neutral100,
+      backgroundColor: ColorPalette.neutral900,
+      appBar: AppBar(
+        title: const Text('ホーム'),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            onPressed: () => context.go('/search/videos'),
+            icon: const Icon(Icons.search),
+          ),
+        ],
+      ),
       bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
-            // メインコンテンツ
-            videosAsync.when(
-              data: (videos) {
-                if (videos.isEmpty) {
-                  return _buildEmptyState(context);
-                }
-
-                // 動画URL取得と初期化
-                initializeVideos(videos);
-
-                return PageView.builder(
-                  controller: pageController,
-                  scrollDirection: Axis.vertical,
-                  onPageChanged: onPageChanged,
-                  itemCount: videos.length,
-                  itemBuilder: (context, index) {
-                    final video = videos[index];
-                    final controller = videoControllers.value[index];
-
-                    return Padding(
-                      padding: const EdgeInsets.all(SpacePalette.base),
-                      child: VideoCard(
-                        video: video,
-                        controller: controller,
-                        supabase: Supabase.instance.client,
-                      ),
-                    );
-                  },
-                );
-              },
-              loading: () => Center(
-                child: CircularProgressIndicator(
-                  color: ColorPalette.primaryColor,
-                ),
+            // カテゴリタブ
+            Container(
+              height: 44,
+              margin: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
+              child: categoriesAsync.when(
+                data: (categories) {
+                  final tabs = ['すべて', ...categories];
+                  return ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: tabs.length,
+                    itemBuilder: (context, index) {
+                      final tab = tabs[index];
+                      final isSelected = (index == 0 && selectedCategory == null) ||
+                          (index > 0 && selectedCategory == tab);
+                      return GestureDetector(
+                        onTap: () {
+                          ref.read(selectedCategoryProvider.notifier).state =
+                              index == 0 ? null : tab;
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: SpacePalette.base,
+                            vertical: SpacePalette.sm,
+                          ),
+                          margin: const EdgeInsets.only(right: SpacePalette.sm),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: isSelected
+                                    ? ColorPalette.primaryColor
+                                    : Colors.transparent,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            tab,
+                            style: TextStyle(
+                              fontFamily: 'NotoSansJP',
+                              fontSize: FontSizePalette.size14,
+                              fontVariations: [
+                                FontVariation('wght', isSelected ? 800 : 600),
+                              ],
+                              color: isSelected
+                                  ? ColorPalette.neutral0
+                                  : ColorPalette.neutral400,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
               ),
-              error: (error, stack) => _buildErrorState(context, ref),
             ),
-            
-            // 検索バー（上部に配置）
-            Positioned(
-              top: SpacePalette.base,
-              left: 0,
-              right: 0,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: SpacePalette.base),
-                child: VideoSearchBar(),
+
+            const SizedBox(height: SpacePalette.base),
+
+            // メインコンテンツ
+            Expanded(
+              child: videosAsync.when(
+                data: (videos) {
+                  if (videos.isEmpty) {
+                    return _buildEmptyState(context);
+                  }
+                  return _buildVideoGrid(context, videos);
+                },
+                loading: () => Center(
+                  child: CircularProgressIndicator(
+                    color: ColorPalette.primaryColor,
+                  ),
+                ),
+                error: (error, stack) => _buildErrorState(context, ref),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildVideoGrid(BuildContext context, List<Map<String, dynamic>> videos) {
+    final supabase = Supabase.instance.client;
+
+    return RefreshIndicator(
+      color: ColorPalette.primaryColor,
+      onRefresh: () async {
+        // Pull to refresh
+      },
+      child: GridView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.7,
+          crossAxisSpacing: SpacePalette.sm,
+          mainAxisSpacing: SpacePalette.base,
+        ),
+        itemCount: videos.length,
+        itemBuilder: (context, index) {
+          final video = videos[index];
+          return _VideoThumbnailCard(
+            video: video,
+            supabase: supabase,
+            onTap: () {
+              // 動画詳細ページへ遷移
+              final companyId = video['company_id'] as String?;
+              final videoId = video['id'] as String?;
+              if (companyId != null && videoId != null) {
+                context.push('/companies/$companyId/videos/$videoId');
+              }
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(SpacePalette.base),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.video_library_outlined,
+              size: 80,
+              color: ColorPalette.neutral400,
+            ),
+            const SizedBox(height: SpacePalette.lg),
+            Text(
+              '動画がありません',
+              style: TextStylePalette.header,
+            ),
+            const SizedBox(height: SpacePalette.sm),
+            Text(
+              '企業が動画を投稿すると、\nここに表示されます',
+              textAlign: TextAlign.center,
+              style: TextStylePalette.subText,
+            ),
+            const SizedBox(height: SpacePalette.lg * 2),
+            ElevatedButton.icon(
+              onPressed: () {
+                context.go('/search/videos');
+              },
+              icon: const Icon(Icons.search),
+              label: const Text('動画を検索する'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, WidgetRef ref) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(SpacePalette.base),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 80,
+              color: ColorPalette.primaryColor,
+            ),
+            const SizedBox(height: SpacePalette.lg),
+            Text(
+              '動画の読み込みに失敗しました',
+              style: TextStylePalette.header,
+            ),
+            const SizedBox(height: SpacePalette.sm),
+            Text(
+              'もう一度お試しください',
+              style: TextStylePalette.subText,
+            ),
+            const SizedBox(height: SpacePalette.lg * 2),
+            OutlinedButton(
+              onPressed: () {
+                ref.invalidate(feedVideosProvider);
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: ColorPalette.primaryColor,
+                side: const BorderSide(
+                  color: ColorPalette.primaryColor,
+                  width: 2,
+                ),
+                minimumSize: const Size(120, ButtonSizePalette.button),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(RadiusPalette.base),
+                ),
+              ),
+              child: const Text('再試行'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _VideoThumbnailCard extends StatelessWidget {
+  final Map<String, dynamic> video;
+  final SupabaseClient supabase;
+  final VoidCallback onTap;
+
+  const _VideoThumbnailCard({
+    required this.video,
+    required this.supabase,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final title = video['title'] as String? ?? '無題';
+    final thumbnailPath = video['thumbnail_path'] as String?;
+    final companyName = video['companies']?['name'] as String? ?? '';
+    final tags = (video['tags'] as List<dynamic>?)?.cast<String>() ?? [];
+
+    // サムネイルURL取得
+    String? thumbnailUrl;
+    if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+      thumbnailUrl = supabase.storage
+          .from('company-thumbnails')
+          .getPublicUrl(thumbnailPath);
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(5),
+          color: ColorPalette.neutral800,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // サムネイル
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: ColorPalette.neutral600,
+                ),
+                child: thumbnailUrl != null
+                    ? Image.network(
+                        thumbnailUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildPlaceholder();
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return _buildPlaceholder(isLoading: true);
+                        },
+                      )
+                    : _buildPlaceholder(),
+              ),
+            ),
+
+            // 情報部分
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(SpacePalette.sm),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // タイトル
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontFamily: 'NotoSansJP',
+                        fontSize: FontSizePalette.size12,
+                        fontVariations: [FontVariation('wght', 800)],
+                        color: ColorPalette.neutral0,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: SpacePalette.xs),
+
+                    // 企業名
+                    if (companyName.isNotEmpty)
+                      Text(
+                        companyName,
+                        style: const TextStyle(
+                          fontFamily: 'NotoSansJP',
+                          fontSize: FontSizePalette.size12,
+                          fontVariations: [FontVariation('wght', 700)],
+                          color: ColorPalette.neutral400,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                    const Spacer(),
+
+                    // タグ
+                    if (tags.isNotEmpty)
+                      SizedBox(
+                        height: 20,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: tags.length > 2 ? 2 : tags.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: SpacePalette.xs),
+                          itemBuilder: (context, index) {
+                            return Text(
+                              '#${tags[index]}',
+                              style: const TextStyle(
+                                fontFamily: 'NotoSansJP',
+                                fontSize: 10,
+                                fontVariations: [FontVariation('wght', 600)],
+                                color: ColorPalette.neutral400,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder({bool isLoading = false}) {
+    return Container(
+      color: ColorPalette.neutral600,
+      child: Center(
+        child: isLoading
+            ? SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: ColorPalette.neutral400,
+                ),
+              )
+            : Icon(
+                Icons.play_circle_outline,
+                size: 48,
+                color: ColorPalette.neutral400,
+              ),
       ),
     );
   }

@@ -148,6 +148,9 @@ class LoginPage extends HookConsumerWidget {
                   // ログインボタン
                   ElevatedButton(
                     onPressed: isLoading.value ? null : login,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: ColorPalette.neutral0,
+                    ),
                     child: isLoading.value
                         ? SizedBox(
                             height: 20,
@@ -157,11 +160,23 @@ class LoginPage extends HookConsumerWidget {
                               color: ColorPalette.neutral0,
                             ),
                           )
-                        : const Text(
-                          'ログイン',
-                          style: TextStyle(
-                            color: ColorPalette.neutral0
-                          ),
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'ログイン',
+                                style: TextStylePalette.buttonTextBlack,
+                              ),
+                              const SizedBox(width: SpacePalette.sm),
+                              Transform.rotate(
+                                angle: -0.5,
+                                child: Icon(
+                                  Icons.send,
+                                  color: ColorPalette.neutral0,
+                                  size: 18,
+                                ),
+                              ),
+                            ],
                           ),
                   ),
                   const SizedBox(height: SpacePalette.lg), // 別機能間隔

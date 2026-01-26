@@ -260,6 +260,9 @@ class CompanySignupPage extends HookConsumerWidget {
                   // 登録ボタン
                   ElevatedButton(
                     onPressed: isLoading.value ? null : signup,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: ColorPalette.neutral0,
+                    ),
                     child: isLoading.value
                         ? SizedBox(
                             height: 20,
@@ -269,7 +272,21 @@ class CompanySignupPage extends HookConsumerWidget {
                               color: ColorPalette.neutral0,
                             ),
                           )
-                        : const Text('登録'),
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '登録',
+                                style: TextStylePalette.buttonTextBlack,
+                              ),
+                              const SizedBox(width: SpacePalette.sm),
+                              Icon(
+                                Icons.send,
+                                color: ColorPalette.neutral0,
+                                size: 18,
+                              ),
+                            ],
+                          ),
                   ),
                   const SizedBox(height: SpacePalette.lg), // 別機能間隔
                   

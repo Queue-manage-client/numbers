@@ -149,9 +149,10 @@ class ChatListPage extends HookConsumerWidget {
                           onPressed: () {
                             context.push('/chats/$roomId');
                           },
-                          icon: const Icon(Icons.login, size: 18),
-                          label: const Text('参加する'),
+                          icon: const Icon(Icons.login, size: 18, color: ColorPalette.neutral0),
+                          label: Text('参加する', style: TextStylePalette.buttonTextBlack),
                           style: ElevatedButton.styleFrom(
+                            foregroundColor: ColorPalette.neutral0,
                             padding: const EdgeInsets.symmetric(
                               vertical: SpacePalette.inner,
                             ),

@@ -94,6 +94,9 @@ class PasswordResetPage extends HookConsumerWidget {
                   
                   ElevatedButton(
                     onPressed: isLoading.value ? null : sendResetEmail,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: ColorPalette.neutral0,
+                    ),
                     child: isLoading.value
                         ? SizedBox(
                             height: 20,
@@ -103,10 +106,28 @@ class PasswordResetPage extends HookConsumerWidget {
                               color: ColorPalette.neutral0,
                             ),
                           )
-                        : const Text(
-                          'リセットメールを送信',
-                          // スタイル指定できない？
-                        ),
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'リセットメールを送信',
+                                style: TextStyle(
+                                  color: ColorPalette.neutral0,
+                                  fontSize: FontSizePalette.size16,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(width: SpacePalette.sm),
+                              Transform.rotate(
+                                angle: -0.5,
+                                child: Icon(
+                                  Icons.send,
+                                  color: ColorPalette.neutral0,
+                                  size: 18,
+                                ),
+                              ),
+                            ],
+                          ),
                   ),
                   const SizedBox(height: SpacePalette.lg), // 別機能間隔
                   Align(

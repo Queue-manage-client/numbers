@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/intern/presentation/providers/intern_provider.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
 class InternListPage extends ConsumerWidget {
   const InternListPage({super.key});
@@ -14,57 +15,83 @@ class InternListPage extends ConsumerWidget {
     final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
-        title: const Text('インターン一覧'),
-        backgroundColor: const Color(0xFF323232),
-        foregroundColor: const Color(0xFFFFFFFF),
+        title: Text(
+          'インターン一覧',
+          style: TextStylePalette.title,
+        ),
+        backgroundColor: ColorPalette.neutral900,
+        elevation: 0,
       ),
       bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: internshipsAsync.when(
         data: (internships) {
           if (internships.isEmpty) {
-            return const Center(child: Text('インターンがありません'));
+            return Center(
+              child: Text(
+                'インターンがありません',
+                style: TextStylePalette.subText,
+              ),
+            );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(SpacePalette.base),
             itemCount: internships.length,
             itemBuilder: (context, index) {
               final internship = internships[index];
               final company = internship['companies'] as Map<String, dynamic>?;
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
+              return Container(
+                margin: const EdgeInsets.only(bottom: SpacePalette.base),
+                decoration: BoxDecoration(
+                  color: ColorPalette.neutral800,
+                  borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                  border: Border.all(color: ColorPalette.neutral600),
+                ),
                 child: ListTile(
+                  contentPadding: const EdgeInsets.all(SpacePalette.base),
                   title: Text(
                     internship['title'] ?? 'タイトル未設定',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF323232),
-                    ),
+                    style: TextStylePalette.smListTitle,
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 4),
-                      Text(company?['name'] ?? '企業名未設定'),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: SpacePalette.sm),
+                      Text(
+                        company?['name'] ?? '企業名未設定',
+                        style: TextStylePalette.subText,
+                      ),
+                      const SizedBox(height: SpacePalette.xs),
                       Text(
                         '期間: ${internship['start_date'] ?? '未定'} 〜 ${internship['end_date'] ?? '未定'}',
-                        style: const TextStyle(fontSize: 12),
+                        style: TextStylePalette.smSubText,
                       ),
                     ],
                   ),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const Icon(
+                    Icons.chevron_right,
+                    color: ColorPalette.neutral400,
+                  ),
                   onTap: () => context.push('/interns/${internship['id']}'),
                 ),
               );
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('エラー: $error')),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: ColorPalette.primaryColor,
+          ),
+        ),
+        error: (error, stack) => Center(
+          child: Text(
+            'エラー: $error',
+            style: TextStylePalette.normalText,
+          ),
+        ),
       ),
     );
   }

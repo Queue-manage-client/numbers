@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/user/profile/presentation/providers/profile_provider.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
 class MyPage extends ConsumerWidget {
   const MyPage({super.key});
@@ -16,106 +17,163 @@ class MyPage extends ConsumerWidget {
     final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
-        title: const Text('マイページ'),
-        backgroundColor: const Color(0xFF323232),
-        foregroundColor: const Color(0xFFFFFFFF),
+        title: Text(
+          'マイページ',
+          style: TextStylePalette.title,
+        ),
+        backgroundColor: ColorPalette.neutral900,
+        elevation: 0,
       ),
       bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: profileAsync.when(
         data: (profile) {
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(SpacePalette.base),
             children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'プロフィール',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF323232),
+              // プロフィールカード
+              Container(
+                padding: const EdgeInsets.all(SpacePalette.base),
+                decoration: BoxDecoration(
+                  color: ColorPalette.neutral800,
+                  borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                  border: Border.all(color: ColorPalette.neutral600),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'プロフィール',
+                          style: TextStylePalette.smHeader,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInfoRow('メール', user?.email ?? '未設定'),
-                      _buildInfoRow(
-                          'ニックネーム', profile?['nickname'] ?? '未設定'),
-                      _buildInfoRow('性別', _getGenderText(profile?['gender'])),
-                      _buildInfoRow('大学', profile?['university'] ?? '未設定'),
-                      _buildInfoRow('所在地', profile?['location'] ?? '未設定'),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () => context.push('/profile/edit'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF323232),
-                            foregroundColor: const Color(0xFFFFFFFF),
+                        GestureDetector(
+                          onTap: () => context.push('/profile/edit'),
+                          child: const Icon(
+                            Icons.edit,
+                            color: ColorPalette.neutral0,
+                            size: 20,
                           ),
-                          child: const Text('プロフィール編集'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: SpacePalette.base),
+                    _buildInfoRow('メール', user?.email ?? '未設定'),
+                    _buildInfoRow('ニックネーム', profile?['nickname'] ?? '未設定'),
+                    _buildInfoRow('性別', _getGenderText(profile?['gender'])),
+                    _buildInfoRow('大学', profile?['university'] ?? '未設定'),
+                    _buildInfoRow('所在地', profile?['location'] ?? '未設定'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: SpacePalette.base),
+
+              // メニューカード
+              Container(
+                decoration: BoxDecoration(
+                  color: ColorPalette.neutral800,
+                  borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                  border: Border.all(color: ColorPalette.neutral600),
+                ),
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(
+                        Icons.history,
+                        color: ColorPalette.neutral0,
+                      ),
+                      title: Text(
+                        '応募履歴',
+                        style: TextStylePalette.normalText,
+                      ),
+                      trailing: const Icon(
+                        Icons.chevron_right,
+                        color: ColorPalette.neutral400,
+                      ),
+                      onTap: () => context.push('/applications'),
+                    ),
+                    Divider(
+                      height: 1,
+                      color: ColorPalette.neutral600,
+                    ),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.settings,
+                        color: ColorPalette.neutral0,
+                      ),
+                      title: Text(
+                        '設定',
+                        style: TextStylePalette.normalText,
+                      ),
+                      trailing: const Icon(
+                        Icons.chevron_right,
+                        color: ColorPalette.neutral400,
+                      ),
+                      onTap: () => context.push('/settings'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: SpacePalette.base),
+
+              // ログアウトカード
+              GestureDetector(
+                onTap: () async {
+                  final repository = ref.read(authRepositoryProvider);
+                  await repository.signOut();
+                  if (context.mounted) {
+                    context.go('/login');
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(SpacePalette.base),
+                  decoration: BoxDecoration(
+                    color: ColorPalette.neutral800,
+                    borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                    border: Border.all(color: ColorPalette.neutral600),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.logout, color: Colors.red),
+                      const SizedBox(width: SpacePalette.sm),
+                      Text(
+                        'ログアウト',
+                        style: TextStyle(
+                          fontFamily: 'NotoSansJP',
+                          color: Colors.red,
+                          fontSize: FontSizePalette.size14,
+                          fontVariations: const [FontVariation('wght', 700)],
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Card(
-                child: Column(
-                  children: [
-                    ListTile(
-                      leading:
-                          const Icon(Icons.history, color: Color(0xFF323232)),
-                      title: const Text('応募履歴'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.push('/applications'),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading:
-                          const Icon(Icons.settings, color: Color(0xFF323232)),
-                      title: const Text('設定'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.push('/settings'),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.red),
-                  title: const Text(
-                    'ログアウト',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                  onTap: () async {
-                    final repository = ref.read(authRepositoryProvider);
-                    await repository.signOut();
-                    if (context.mounted) {
-                      context.go('/login');
-                    }
-                  },
-                ),
-              ),
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('エラー: $error')),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: ColorPalette.primaryColor,
+          ),
+        ),
+        error: (error, stack) => Center(
+          child: Text(
+            'エラー: $error',
+            style: TextStylePalette.normalText,
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: SpacePalette.sm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -123,19 +181,13 @@ class MyPage extends ConsumerWidget {
             width: 100,
             child: Text(
               label,
-              style: const TextStyle(
-                color: Color(0xFF666666),
-                fontSize: 14,
-              ),
+              style: TextStylePalette.subText,
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                color: Color(0xFF323232),
-                fontSize: 14,
-              ),
+              style: TextStylePalette.normalText,
             ),
           ),
         ],

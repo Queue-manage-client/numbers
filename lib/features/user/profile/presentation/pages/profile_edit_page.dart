@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/user/profile/presentation/providers/profile_provider.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
 class ProfileEditPage extends ConsumerStatefulWidget {
   const ProfileEditPage({super.key});
@@ -72,11 +73,14 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
-        title: const Text('プロフィール編集'),
-        backgroundColor: const Color(0xFF323232),
-        foregroundColor: const Color(0xFFFFFFFF),
+        title: Text(
+          'プロフィール編集',
+          style: TextStylePalette.title,
+        ),
+        backgroundColor: ColorPalette.neutral900,
+        elevation: 0,
       ),
       bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: profileAsync.when(
@@ -89,58 +93,104 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(SpacePalette.base),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // ニックネーム
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'ニックネーム',
+                      style: TextStylePalette.smTitle,
+                    ),
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
                   TextFormField(
                     controller: _nicknameController,
                     decoration: const InputDecoration(
-                      labelText: 'ニックネーム',
-                      border: OutlineInputBorder(),
+                      hintText: 'ニックネームを入力',
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SpacePalette.base),
+
+                  // 性別
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '性別',
+                      style: TextStylePalette.smTitle,
+                    ),
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
                   DropdownButtonFormField<String>(
                     value: _gender,
+                    dropdownColor: ColorPalette.neutral800,
                     decoration: const InputDecoration(
-                      labelText: '性別',
-                      border: OutlineInputBorder(),
+                      hintText: '性別を選択',
                     ),
-                    items: const [
-                      DropdownMenuItem(value: 'male', child: Text('男性')),
-                      DropdownMenuItem(value: 'female', child: Text('女性')),
-                      DropdownMenuItem(value: 'other', child: Text('その他')),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'male',
+                        child: Text('男性', style: TextStylePalette.normalText),
+                      ),
+                      DropdownMenuItem(
+                        value: 'female',
+                        child: Text('女性', style: TextStylePalette.normalText),
+                      ),
+                      DropdownMenuItem(
+                        value: 'other',
+                        child: Text('その他', style: TextStylePalette.normalText),
+                      ),
                     ],
                     onChanged: (value) {
                       setState(() => _gender = value);
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SpacePalette.base),
+
+                  // 大学
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '大学',
+                      style: TextStylePalette.smTitle,
+                    ),
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
                   TextFormField(
                     controller: _universityController,
                     decoration: const InputDecoration(
-                      labelText: '大学',
-                      border: OutlineInputBorder(),
+                      hintText: '大学名を入力',
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SpacePalette.base),
+
+                  // 所在地
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '所在地',
+                      style: TextStylePalette.smTitle,
+                    ),
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
                   TextFormField(
                     controller: _locationController,
                     decoration: const InputDecoration(
-                      labelText: '所在地',
-                      border: OutlineInputBorder(),
+                      hintText: '所在地を入力',
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: SpacePalette.lg),
+
+                  // 保存ボタン
                   ElevatedButton(
                     onPressed: _isLoading ? null : _saveProfile,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF323232),
-                      foregroundColor: const Color(0xFFFFFFFF),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: ColorPalette.primaryColor,
+                      foregroundColor: ColorPalette.neutral0,
                     ),
                     child: _isLoading
                         ? const SizedBox(
@@ -148,18 +198,45 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Color(0xFFFFFFFF),
+                              color: ColorPalette.neutral0,
                             ),
                           )
-                        : const Text('保存'),
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '保存',
+                                style: TextStyle(
+                                  color: ColorPalette.neutral0,
+                                  fontSize: FontSizePalette.size16,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(width: SpacePalette.sm),
+                              const Icon(
+                                Icons.north_east,
+                                color: ColorPalette.neutral0,
+                                size: 20,
+                              ),
+                            ],
+                          ),
                   ),
                 ],
               ),
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('エラー: $error')),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: ColorPalette.primaryColor,
+          ),
+        ),
+        error: (error, stack) => Center(
+          child: Text(
+            'エラー: $error',
+            style: TextStylePalette.normalText,
+          ),
+        ),
       ),
     );
   }

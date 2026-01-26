@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/job/presentation/providers/job_provider.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
 class ApplicationHistoryPage extends ConsumerWidget {
   const ApplicationHistoryPage({super.key});
@@ -14,23 +15,29 @@ class ApplicationHistoryPage extends ConsumerWidget {
     final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
-        title: const Text('応募履歴'),
-        backgroundColor: const Color(0xFF323232),
-        foregroundColor: const Color(0xFFFFFFFF),
+        title: Text(
+          '応募履歴',
+          style: TextStylePalette.title,
+        ),
+        backgroundColor: ColorPalette.neutral900,
+        elevation: 0,
       ),
       bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: applicationsAsync.when(
         data: (applications) {
           if (applications.isEmpty) {
-            return const Center(
-              child: Text('応募履歴がありません'),
+            return Center(
+              child: Text(
+                '応募履歴がありません',
+                style: TextStylePalette.subText,
+              ),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(SpacePalette.base),
             itemCount: applications.length,
             itemBuilder: (context, index) {
               final application = applications[index];
@@ -38,34 +45,52 @@ class ApplicationHistoryPage extends ConsumerWidget {
               final company = job?['companies'] as Map<String, dynamic>?;
               final status = application['status'] as String?;
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
+              return Container(
+                margin: const EdgeInsets.only(bottom: SpacePalette.base),
+                decoration: BoxDecoration(
+                  color: ColorPalette.neutral800,
+                  borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                  border: Border.all(color: ColorPalette.neutral600),
+                ),
                 child: ListTile(
+                  contentPadding: const EdgeInsets.all(SpacePalette.base),
                   title: Text(
                     job?['title'] ?? '求人名未設定',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF323232),
-                    ),
+                    style: TextStylePalette.smListTitle,
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 4),
-                      Text(company?['name'] ?? '企業名未設定'),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: SpacePalette.xs),
+                      Text(
+                        company?['name'] ?? '企業名未設定',
+                        style: TextStylePalette.subText,
+                      ),
+                      const SizedBox(height: SpacePalette.sm),
                       _buildStatusChip(status),
                     ],
                   ),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const Icon(
+                    Icons.chevron_right,
+                    color: ColorPalette.neutral400,
+                  ),
                   onTap: () => context.push('/applications/${application['id']}'),
                 ),
               );
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('エラー: $error')),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: ColorPalette.primaryColor,
+          ),
+        ),
+        error: (error, stack) => Center(
+          child: Text(
+            'エラー: $error',
+            style: TextStylePalette.normalText,
+          ),
+        ),
       ),
     );
   }
@@ -84,7 +109,7 @@ class ApplicationHistoryPage extends ConsumerWidget {
         text = 'メッセージ中';
         break;
       case 'accepted':
-        color = Colors.green;
+        color = ColorPalette.primaryColor;
         text = '採用';
         break;
       case 'rejected':
@@ -92,22 +117,25 @@ class ApplicationHistoryPage extends ConsumerWidget {
         text = '不採用';
         break;
       default:
-        color = Colors.grey;
+        color = ColorPalette.neutral400;
         text = '不明';
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: SpacePalette.sm,
+        vertical: SpacePalette.xs,
+      ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(4),
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(RadiusPalette.mini),
         border: Border.all(color: color),
       ),
       child: Text(
         text,
         style: TextStyle(
           color: color,
-          fontSize: 12,
+          fontSize: FontSizePalette.size12,
           fontWeight: FontWeight.bold,
         ),
       ),
