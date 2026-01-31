@@ -4,6 +4,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
+import 'package:numbers/features/user/job/presentation/providers/job_map_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
 class CompanyJobPostPage extends HookConsumerWidget {
@@ -41,13 +42,29 @@ class CompanyJobPostPage extends HookConsumerWidget {
       isLoading.value = true;
 
       try {
+        // Get coordinates from address using Geocoding
+        double? latitude;
+        double? longitude;
+        final address = locationController.text.trim();
+
+        if (address.isNotEmpty) {
+          final geocodingService = ref.read(geocodingServiceProvider);
+          final result = await geocodingService.getCoordinatesFromAddress(address);
+          if (result != null) {
+            latitude = result.latitude;
+            longitude = result.longitude;
+          }
+        }
+
         final jobData = {
           'company_id': companyId,
           'title': titleController.text.trim(),
           'description': descriptionController.text.trim(),
           'salary': salaryController.text.trim(),
-          'location': locationController.text.trim(),
+          'location': address,
           'status': status.value,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
         };
 
         await ref.read(companyPortalRepositoryProvider).createJob(jobData);

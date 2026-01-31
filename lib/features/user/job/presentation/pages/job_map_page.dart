@@ -2,7 +2,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:numbers/features/user/job/presentation/providers/job_provider.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:numbers/features/user/job/data/models/job_location.dart';
+import 'package:numbers/features/user/job/presentation/providers/job_map_provider.dart';
+import 'package:numbers/features/user/job/presentation/widgets/job_map_view.dart';
+import 'package:numbers/features/user/job/presentation/widgets/job_marker_popup.dart';
+import 'package:numbers/features/user/job/presentation/widgets/map_filter_sheet.dart';
+import 'package:numbers/features/user/job/presentation/widgets/location_selector.dart';
+import 'package:numbers/features/user/job/presentation/widgets/radius_slider.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
@@ -14,12 +21,39 @@ class JobMapPage extends ConsumerStatefulWidget {
 }
 
 class _JobMapPageState extends ConsumerState<JobMapPage> {
-  Map<String, dynamic>? _selectedJob;
+  GoogleMapController? _mapController;
+  bool _showRadiusSlider = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize base location
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeLocation();
+    });
+  }
+
+  Future<void> _initializeLocation() async {
+    final currentBase = ref.read(selectedBaseLocationProvider);
+    if (currentBase != null) return;
+
+    // Try to get current position first
+    final position = await ref.read(currentPositionProvider.future);
+    if (position != null && mounted) {
+      ref.read(selectedBaseLocationProvider.notifier).state = BaseLocation(
+        name: '現在地',
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final currentRoute = GoRouterState.of(context).uri.path;
-    final jobsAsync = ref.watch(jobsProvider);
+    final baseLocation = ref.watch(selectedBaseLocationProvider);
+    final selectedJob = ref.watch(selectedMapJobProvider);
+    final filter = ref.watch(mapFilterProvider);
 
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
@@ -27,280 +61,218 @@ class _JobMapPageState extends ConsumerState<JobMapPage> {
         title: const Text('募集を探す'),
         centerTitle: true,
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: SpacePalette.base),
-            child: Center(
-              child: Text(
-                'Apply Now',
-                style: TextStyle(
-                  fontFamily: 'NotoSansJP',
-                  fontSize: FontSizePalette.size20,
-                  fontStyle: FontStyle.italic,
-                  fontVariations: const [FontVariation('wght', 900)],
-                  color: ColorPalette.neutral400,
-                ),
-              ),
+          // Filter button
+          IconButton(
+            icon: Stack(
+              children: [
+                const Icon(Icons.tune),
+                if (filter.hasActiveFilters)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: ColorPalette.primaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
             ),
+            onPressed: () => _showFilterSheet(context),
           ),
+          const SizedBox(width: SpacePalette.sm),
         ],
       ),
-      body: jobsAsync.when(
-        data: (jobs) {
-          // 最初の求人を自動選択（未選択の場合）
-          if (_selectedJob == null && jobs.isNotEmpty) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                setState(() {
-                  _selectedJob = jobs.first;
-                });
-              }
-            });
-          }
-
-          return Stack(
-            children: [
-              // 地図エリア（プレースホルダー）
-              Container(
-                color: ColorPalette.neutral800,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.map,
-                        size: 100,
-                        color: ColorPalette.neutral600,
-                      ),
-                      const SizedBox(height: SpacePalette.base),
-                      Text(
-                        '${jobs.length}件の求人',
-                        style: TextStylePalette.subText,
-                      ),
-                    ],
+      body: baseLocation == null
+          ? _buildLoadingState()
+          : Stack(
+              children: [
+                // Google Map
+                JobMapView(
+                  initialPosition: LatLng(
+                    baseLocation.latitude,
+                    baseLocation.longitude,
                   ),
+                  radiusKm: filter.radiusKm,
+                  onMapCreated: (controller) {
+                    _mapController = controller;
+                  },
+                  onMarkerTapped: (job) {
+                    ref.read(selectedMapJobProvider.notifier).state = job;
+                  },
                 ),
-              ),
 
-              // 求人カード
-              if (_selectedJob != null)
+                // Location selector (top)
                 Positioned(
                   top: SpacePalette.base,
                   left: SpacePalette.base,
                   right: SpacePalette.base,
-                  child: _buildJobCard(_selectedJob!),
+                  child: LocationSelector(
+                    onLocationSelected: (location) {
+                      ref.read(selectedBaseLocationProvider.notifier).state =
+                          location;
+                      _mapController?.animateCamera(
+                        CameraUpdate.newLatLng(
+                          LatLng(location.latitude, location.longitude),
+                        ),
+                      );
+                    },
+                  ),
                 ),
 
-              // 下部：NBS SELECT
-              Positioned(
-                bottom: 80,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(SpacePalette.base),
-                  child: Center(
-                    child: Text(
-                      'NBS SELECT',
-                      style: TextStyle(
-                        fontSize: FontSizePalette.size12,
-                        fontWeight: FontWeight.bold,
-                        color: ColorPalette.neutral400,
-                        letterSpacing: 1.5,
-                      ),
+                // Radius slider toggle button
+                Positioned(
+                  bottom: selectedJob != null ? 280 : 100,
+                  left: SpacePalette.base,
+                  child: FloatingActionButton.small(
+                    heroTag: 'radiusToggle',
+                    backgroundColor: ColorPalette.neutral800,
+                    onPressed: () {
+                      setState(() {
+                        _showRadiusSlider = !_showRadiusSlider;
+                      });
+                    },
+                    child: Icon(
+                      _showRadiusSlider ? Icons.close : Icons.radar,
+                      color: ColorPalette.primaryColor,
                     ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
-        loading: () => Center(
-          child: CircularProgressIndicator(
-            color: ColorPalette.primaryColor,
-          ),
-        ),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 80,
-                color: ColorPalette.primaryColor,
-              ),
-              const SizedBox(height: SpacePalette.lg),
-              Text(
-                'エラーが発生しました',
-                style: TextStylePalette.header,
-              ),
-              const SizedBox(height: SpacePalette.sm),
-              Text(
-                '$error',
-                style: TextStylePalette.subText,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: SpacePalette.lg),
-              OutlinedButton(
-                onPressed: () {
-                  ref.invalidate(jobsProvider);
-                },
-                child: const Text('再試行'),
-              ),
-            ],
-          ),
-        ),
-      ),
+
+                // Radius slider
+                if (_showRadiusSlider)
+                  Positioned(
+                    bottom: selectedJob != null ? 280 : 100,
+                    left: 0,
+                    right: 0,
+                    child: RadiusSlider(
+                      value: filter.radiusKm,
+                      onChanged: (value) {
+                        ref.read(mapFilterProvider.notifier).updateRadius(value);
+                      },
+                    ),
+                  ),
+
+                // Job popup (bottom)
+                if (selectedJob != null)
+                  Positioned(
+                    bottom: 100,
+                    left: SpacePalette.base,
+                    right: SpacePalette.base,
+                    child: JobMarkerPopup(
+                      job: selectedJob,
+                      onClose: () {
+                        ref.read(selectedMapJobProvider.notifier).state = null;
+                      },
+                      onDetailTap: () {
+                        // Navigate to job or intern detail page
+                        if (selectedJob.jobType == 'intern') {
+                          context.push('/interns/${selectedJob.id}');
+                        } else {
+                          context.push('/jobs/${selectedJob.id}');
+                        }
+                      },
+                    ),
+                  ),
+
+                // Legend
+                Positioned(
+                  bottom: selectedJob != null ? 340 : 160,
+                  right: SpacePalette.base,
+                  child: _buildLegend(),
+                ),
+              ],
+            ),
       bottomNavigationBar: AppFooter(currentRoute: currentRoute),
     );
   }
 
-  Widget _buildJobCard(Map<String, dynamic> job) {
-    final jobId = job['id'] as String? ?? '';
-    final title = job['title'] as String? ?? 'タイトルなし';
-    final company = job['companies'] as Map<String, dynamic>?;
-    final companyName = company?['name'] as String? ?? '企業名不明';
-    final salary = job['salary'] as String? ?? '給与未設定';
-    final description = job['description'] as String? ?? '';
-
-    return Container(
-      decoration: BoxDecoration(
-        color: ColorPalette.neutral800,
-        borderRadius: BorderRadius.circular(RadiusPalette.lg),
-        border: Border.all(color: ColorPalette.neutral600),
-      ),
+  Widget _buildLoadingState() {
+    return Center(
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // カードヘッダー（閉じるボタン）
-          Padding(
-            padding: const EdgeInsets.only(right: SpacePalette.sm, top: SpacePalette.sm),
-            child: Align(
-              alignment: Alignment.topRight,
-              child: IconButton(
-                icon: Icon(
-                  Icons.close,
-                  size: 20,
-                  color: ColorPalette.neutral400,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _selectedJob = null;
-                  });
-                },
-              ),
-            ),
+          CircularProgressIndicator(
+            color: ColorPalette.primaryColor,
           ),
-
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              SpacePalette.base,
-              0,
-              SpacePalette.base,
-              SpacePalette.base,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // タイトル
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: 'NotoSansJP',
-                    fontSize: FontSizePalette.size18,
-                    fontVariations: const [FontVariation('wght', 800)],
-                    color: ColorPalette.neutral0,
-                  ),
-                ),
-                const SizedBox(height: SpacePalette.sm),
-
-                // 企業名
-                Text(
-                  companyName,
-                  style: TextStyle(
-                    fontFamily: 'NotoSansJP',
-                    fontSize: FontSizePalette.size14,
-                    fontVariations: const [FontVariation('wght', 500)],
-                    color: ColorPalette.neutral400,
-                  ),
-                ),
-                const SizedBox(height: SpacePalette.base),
-
-                // 給与
-                Row(
-                  children: [
-                    Text(
-                      '給与',
-                      style: TextStyle(
-                        fontFamily: 'NotoSansJP',
-                        fontSize: FontSizePalette.size14,
-                        fontVariations: const [FontVariation('wght', 700)],
-                        color: ColorPalette.neutral0,
-                      ),
-                    ),
-                    const SizedBox(width: SpacePalette.sm),
-                    Expanded(
-                      child: Text(
-                        salary,
-                        style: TextStyle(
-                          fontFamily: 'NotoSansJP',
-                          fontSize: FontSizePalette.size14,
-                          fontVariations: const [FontVariation('wght', 500)],
-                          color: ColorPalette.neutral200,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: SpacePalette.sm),
-
-                // 説明
-                if (description.isNotEmpty) ...[
-                  Text(
-                    description,
-                    style: TextStyle(
-                      fontFamily: 'NotoSansJP',
-                      fontSize: FontSizePalette.size14,
-                      fontVariations: const [FontVariation('wght', 400)],
-                      color: ColorPalette.neutral400,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: SpacePalette.sm),
-                ],
-
-                // 詳細リンク
-                GestureDetector(
-                  onTap: () {
-                    context.push('/jobs/$jobId');
-                  },
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '詳細を見る',
-                        style: TextStyle(
-                          fontFamily: 'NotoSansJP',
-                          fontSize: FontSizePalette.size12,
-                          fontVariations: const [FontVariation('wght', 600)],
-                          color: ColorPalette.primaryColor,
-                        ),
-                      ),
-                      const SizedBox(width: SpacePalette.xs),
-                      const Icon(
-                        Icons.arrow_forward_ios,
-                        color: ColorPalette.primaryColor,
-                        size: 12,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          const SizedBox(height: SpacePalette.lg),
+          Text(
+            '位置情報を取得中...',
+            style: TextStylePalette.subText,
+          ),
+          const SizedBox(height: SpacePalette.sm),
+          TextButton(
+            onPressed: () async {
+              final service = ref.read(locationServiceProvider);
+              final hasPermission = await service.hasPermission();
+              if (!hasPermission) {
+                await service.requestPermission();
+              }
+              ref.invalidate(currentPositionProvider);
+              _initializeLocation();
+            },
+            child: Text(
+              '再試行',
+              style: TextStylePalette.guide,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLegend() {
+    return Container(
+      padding: const EdgeInsets.all(SpacePalette.sm),
+      decoration: BoxDecoration(
+        color: ColorPalette.neutral800.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(RadiusPalette.base),
+        border: Border.all(color: ColorPalette.neutral600),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildLegendItem(Colors.blue, 'バイト'),
+          const SizedBox(height: SpacePalette.xs),
+          _buildLegendItem(Colors.orange, 'インターン'),
+          const SizedBox(height: SpacePalette.xs),
+          _buildLegendItem(Colors.green, '正社員'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: SpacePalette.sm),
+        Text(
+          label,
+          style: TextStylePalette.smSubText,
+        ),
+      ],
+    );
+  }
+
+  void _showFilterSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const MapFilterSheet(),
     );
   }
 }

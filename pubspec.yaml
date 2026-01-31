@@ -56,6 +56,14 @@ dependencies:
   # Video player
   video_player: ^2.8.0
 
+  # Google Maps
+  google_maps_flutter: ^2.5.3
+
+  # Location services
+  geolocator: ^11.0.0
+  permission_handler: ^11.3.0
+  geocoding: ^2.1.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
