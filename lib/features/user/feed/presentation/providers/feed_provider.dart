@@ -89,6 +89,28 @@ final filteredVideosProvider = Provider<AsyncValue<List<Map<String, dynamic>>>>(
   );
 });
 
+// 企業ごとにグループ化した動画プロバイダー（特集タブ用）
+final groupedVideosByCompanyProvider =
+    Provider<AsyncValue<Map<String, List<Map<String, dynamic>>>>>((ref) {
+  final videosAsync = ref.watch(feedVideosProvider);
+
+  return videosAsync.when(
+    data: (videos) {
+      final Map<String, List<Map<String, dynamic>>> grouped = {};
+      for (final video in videos) {
+        final company = video['companies'] as Map<String, dynamic>?;
+        final companyName = company?['name'] as String? ?? '不明な企業';
+        final companyId = company?['id'] as String? ?? 'unknown';
+        final key = '$companyId|$companyName';
+        grouped.putIfAbsent(key, () => []).add(video);
+      }
+      return AsyncValue.data(grouped);
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (e, s) => AsyncValue.error(e, s),
+  );
+});
+
 // 特定の動画取得プロバイダー
 final videoByIdProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, videoId) async {
   final supabase = ref.watch(supabaseClientProvider);

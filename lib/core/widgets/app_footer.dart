@@ -43,6 +43,14 @@ class AppFooter extends StatelessWidget {
           ),
           _buildNavItem(
             context,
+            icon: Icons.auto_awesome_outlined,
+            activeIcon: Icons.auto_awesome,
+            label: 'AI',
+            route: '/ai-chat',
+            isActive: currentRoute == '/ai-chat',
+          ),
+          _buildNavItem(
+            context,
             icon: Icons.forum_outlined,
             activeIcon: Icons.forum,
             label: 'チャット',
@@ -56,18 +64,6 @@ class AppFooter extends StatelessWidget {
             label: 'インターン',
             route: '/interns',
             isActive: currentRoute == '/interns' || currentRoute.startsWith('/interns/'),
-          ),
-          _buildNavItem(
-            context,
-            icon: Icons.grid_view_outlined,
-            activeIcon: Icons.grid_view,
-            label: 'その他',
-            route: '/my-page',
-            isActive: currentRoute == '/my-page' ||
-                     currentRoute == '/profile/edit' ||
-                     currentRoute == '/applications' ||
-                     currentRoute.startsWith('/applications/') ||
-                     currentRoute == '/settings',
           ),
         ],
       ),
