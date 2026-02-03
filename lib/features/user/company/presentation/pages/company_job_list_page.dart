@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/company/presentation/providers/company_provider.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
 class CompanyJobListPage extends ConsumerWidget {
   const CompanyJobListPage({super.key});
@@ -15,7 +16,7 @@ class CompanyJobListPage extends ConsumerWidget {
     final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         title: const Text('求人一覧'),
         backgroundColor: const Color(0xFF323232),

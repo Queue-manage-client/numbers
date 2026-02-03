@@ -236,7 +236,7 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.5),
+                    color: ColorPalette.neutral900.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -261,7 +261,7 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.black.withValues(alpha: 0.7),
+                    ColorPalette.neutral900.withValues(alpha: 0.7),
                   ],
                 ),
               ),
@@ -321,7 +321,7 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
                               vertical: SpacePalette.xs,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
+                              color: ColorPalette.neutral400.withValues(alpha: 0.3),
                               borderRadius:
                                   BorderRadius.circular(RadiusPalette.mini),
                             ),
@@ -397,7 +397,7 @@ class _ActionButton extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.5),
+              color: ColorPalette.neutral900.withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
             child: Icon(

@@ -311,7 +311,7 @@ class CompanyVideoEditPage extends HookConsumerWidget {
     }, [videoId]);
 
     return Scaffold(
-      backgroundColor: ColorPalette.neutral100,
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         title: const Text('動画編集'),
       ),

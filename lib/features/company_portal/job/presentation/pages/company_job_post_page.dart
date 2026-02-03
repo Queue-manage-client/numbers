@@ -107,7 +107,7 @@ class CompanyJobPostPage extends HookConsumerWidget {
     }, [titleController, descriptionController, salaryController, locationController, status.value]);
 
     return Scaffold(
-      backgroundColor: ColorPalette.neutral100,
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         title: const Text('求人投稿'),
       ),

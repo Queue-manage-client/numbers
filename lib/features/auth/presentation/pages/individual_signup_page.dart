@@ -66,7 +66,7 @@ class IndividualSignupPage extends HookConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: ColorPalette.neutral100,
+      backgroundColor: ColorPalette.neutral900,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

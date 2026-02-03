@@ -113,7 +113,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
     ]);
 
     return Scaffold(
-      backgroundColor: ColorPalette.neutral100,
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         title: const Text('企業情報編集'),
       ),

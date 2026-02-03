@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
 import 'package:numbers/features/user/company/presentation/providers/company_provider.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
 class CompanyVideoListPage extends ConsumerStatefulWidget {
   const CompanyVideoListPage({super.key});
@@ -83,7 +84,7 @@ class _CompanyVideoListPageState extends ConsumerState<CompanyVideoListPage> {
     final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         title: const Text('企業動画'),
         backgroundColor: const Color(0xFF323232),

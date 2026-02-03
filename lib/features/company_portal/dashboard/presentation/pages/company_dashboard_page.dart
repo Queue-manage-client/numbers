@@ -49,7 +49,7 @@ class CompanyDashboardPage extends HookConsumerWidget {
     final companyInfoAsync = ref.watch(companyInfoProvider);
 
     return Scaffold(
-      backgroundColor: ColorPalette.neutral100,
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         title: companyInfoAsync.when(
           data: (company) => Text(company?['name'] ?? '企業ポータル'),

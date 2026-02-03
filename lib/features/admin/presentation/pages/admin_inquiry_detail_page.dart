@@ -18,7 +18,7 @@ class AdminInquiryDetailPage extends HookConsumerWidget {
     final inquiryAsync = ref.watch(adminInquiryByIdProvider(inquiryId));
 
     return Scaffold(
-      backgroundColor: ColorPalette.neutral100,
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

@@ -88,7 +88,7 @@ class CompanyChatRoomCreatePage extends HookConsumerWidget {
     }, [nameController, descriptionController]);
 
     return Scaffold(
-      backgroundColor: ColorPalette.neutral100,
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         title: const Text('グループチャット作成'),
       ),

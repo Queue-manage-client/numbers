@@ -14,7 +14,7 @@ class AdminInquiryManagementPage extends HookConsumerWidget {
     final filter = ref.watch(inquiryFilterProvider);
 
     return Scaffold(
-      backgroundColor: ColorPalette.neutral100,
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

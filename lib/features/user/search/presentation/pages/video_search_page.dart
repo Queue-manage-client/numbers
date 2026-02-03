@@ -84,9 +84,9 @@ class VideoSearchPage extends HookConsumerWidget {
     final videosAsync = ref.watch(feedVideosProvider);
 
     return Scaffold(
-      backgroundColor: ColorPalette.neutral100,
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
-        backgroundColor: ColorPalette.neutral100,
+        backgroundColor: ColorPalette.neutral900,
         foregroundColor: ColorPalette.neutral800,
         title: Text(
           '動画検索',

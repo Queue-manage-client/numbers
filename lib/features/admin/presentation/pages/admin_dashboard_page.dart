@@ -14,7 +14,7 @@ class AdminDashboardPage extends HookConsumerWidget {
     final statsAsync = ref.watch(adminDashboardStatsProvider);
 
     return Scaffold(
-      backgroundColor: ColorPalette.neutral100,
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         title: const Text('管理者ダッシュボード'),
         actions: [

@@ -1,6 +1,7 @@
 // company_portal/presentation/pages/company_intern_edit_page.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
 class CompanyInternEditPage extends StatefulWidget {
   const CompanyInternEditPage({super.key});
@@ -146,10 +147,10 @@ class _CompanyInternEditPageState extends State<CompanyInternEditPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF323232),
-        foregroundColor: const Color(0xFFFFFFFF),
+        backgroundColor: ColorPalette.neutral900,
+        foregroundColor: ColorPalette.neutral0,
         title: const Text('インターン編集'),
       ),
       body: SingleChildScrollView(

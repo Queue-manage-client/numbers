@@ -15,7 +15,7 @@ class AdminJobManagementPage extends HookConsumerWidget {
     final filter = ref.watch(jobFilterProvider);
 
     return Scaffold(
-      backgroundColor: ColorPalette.neutral100,
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

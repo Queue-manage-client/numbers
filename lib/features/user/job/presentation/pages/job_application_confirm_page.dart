@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/job/presentation/providers/job_provider.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
 class JobApplicationConfirmPage extends ConsumerStatefulWidget {
   const JobApplicationConfirmPage({super.key});
@@ -49,11 +50,11 @@ class _JobApplicationConfirmPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         title: const Text('応募確認'),
-        backgroundColor: const Color(0xFF323232),
-        foregroundColor: const Color(0xFFFFFFFF),
+        backgroundColor: ColorPalette.neutral900,
+        foregroundColor: ColorPalette.neutral0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),

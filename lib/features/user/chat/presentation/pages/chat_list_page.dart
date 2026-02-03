@@ -18,7 +18,7 @@ class ChatListPage extends HookConsumerWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: ColorPalette.neutral100,
+        backgroundColor: ColorPalette.neutral900,
         appBar: AppBar(
           title: const Text('チャット'),
           bottom: TabBar(

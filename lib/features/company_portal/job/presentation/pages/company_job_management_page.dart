@@ -13,7 +13,7 @@ class CompanyJobManagementPage extends ConsumerWidget {
     final jobsAsync = ref.watch(companyJobsProvider);
 
     return Scaffold(
-      backgroundColor: ColorPalette.neutral100,
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         title: const Text('求人管理'),
       ),

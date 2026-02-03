@@ -90,9 +90,9 @@ class CompanySignupPage extends HookConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: ColorPalette.neutral100,
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
-        backgroundColor: ColorPalette.neutral100,
+        backgroundColor: ColorPalette.neutral900,
         foregroundColor: ColorPalette.neutral800,
         title: Text(
           '企業アカウント登録',

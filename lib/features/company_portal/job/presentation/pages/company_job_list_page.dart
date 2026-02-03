@@ -1,6 +1,7 @@
 // company_portal/presentation/pages/company_job_list_page.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:numbers/core/theme/app_theme.dart';
 
 class CompanyJobListManagementPage extends StatelessWidget {
   const CompanyJobListManagementPage({super.key});
@@ -11,7 +12,7 @@ class CompanyJobListManagementPage extends StatelessWidget {
     final jobs = <Map<String, dynamic>>[];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         backgroundColor: const Color(0xFF323232),
         foregroundColor: const Color(0xFFFFFFFF),
