@@ -1,6 +1,7 @@
 // company_portal/intern/presentation/pages/company_intern_applications_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import 'package:numbers/features/company_portal/intern/presentation/providers/company_intern_provider.dart';
 import 'package:numbers/features/user/intern/domain/models/internship_application.dart';
@@ -25,7 +26,7 @@ class CompanyInternApplicationsPage extends ConsumerWidget {
         foregroundColor: ColorPalette.neutral0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
         title: internshipAsync.when(
           data: (intern) => Text(intern?.title ?? '申し込み一覧'),

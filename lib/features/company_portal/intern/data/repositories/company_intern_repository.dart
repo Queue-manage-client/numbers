@@ -281,6 +281,10 @@ class CompanyInternRepository {
       throw Exception('ログインが必要です');
     }
 
+    print('=== 承認処理開始 ===');
+    print('applicationId: $applicationId');
+    print('companyUserId: $userId');
+
     // 申し込みを承認
     final appResponse = await _supabase
         .from('internship_applications')
@@ -293,28 +297,45 @@ class CompanyInternRepository {
         .select('*')
         .single();
 
-    // インターンシップ情報を取得
-    final internship = await _supabase
+    print('=== DB更新完了 ===');
+    print('appResponse: $appResponse');
+
+    // インターンシップ情報を取得（companies情報含む）
+    final internshipData = await _supabase
         .from('internships')
         .select('*, companies(*)')
         .eq('id', appResponse['internship_id'])
         .single();
 
+    print('=== インターンシップ取得完了 ===');
+    print('internshipData: $internshipData');
+    print('internshipData[companies]: ${internshipData['companies']}');
+
     // プロフィール情報を取得
-    final profile = await _supabase
+    final profileData = await _supabase
         .from('profiles')
         .select('*')
         .eq('id', appResponse['user_id'])
         .maybeSingle();
 
-    // 結合
-    final combined = {
-      ...appResponse,
-      'internships': internship,
-      'profiles': profile,
-    };
+    print('=== プロフィール取得完了 ===');
+    print('profileData: $profileData');
+
+    // 結合（internshipsキーとprofilesキーで設定）
+    final combined = Map<String, dynamic>.from(appResponse as Map);
+    combined['internships'] = internshipData;
+    combined['profiles'] = profileData;
+
+    print('=== combined作成完了 ===');
+    print('combined keys: ${combined.keys.toList()}');
 
     final application = InternshipApplication.fromJson(combined);
+
+    print('=== InternshipApplication作成完了 ===');
+    print('application.internship: ${application.internship}');
+    print('application.internship?.title: ${application.internship?.title}');
+    print('application.internship?.company: ${application.internship?.company}');
+    print('application.internship?.company?.name: ${application.internship?.company?.name}');
 
     // チャットルームを作成してユーザーを追加
     await _createChatRoomForApprovedApplication(application, userId);
@@ -328,18 +349,93 @@ class CompanyInternRepository {
     String companyUserId,
   ) async {
     try {
-      final internship = application.internship;
-      final company = internship?.company;
+      print('');
+      print('========================================');
+      print('=== チャットルーム作成開始 ===');
+      print('========================================');
+      print('application.id: ${application.id}');
+      print('application.userId: ${application.userId}');
+      print('companyUserId: $companyUserId');
 
-      if (internship == null || company == null) {
-        return; // インターンまたは企業情報がない場合はスキップ
+      final internship = application.internship;
+      print('internship: $internship');
+
+      if (internship == null) {
+        print('');
+        print('❌❌❌ エラー: internship が null です ❌❌❌');
+        print('application.internshipId: ${application.internshipId}');
+        print('これは InternshipApplication.fromJson で internships キーが見つからなかったことを意味します');
+        return;
       }
 
-      // 既存のチャットルームを確認（同じインターン・ユーザーの組み合わせ）
-      // インターン名を含むルーム名で検索
-      final roomName = '${internship.title} - インターン参加者';
+      final company = internship.company;
+      print('company: $company');
 
-      // チャットルームを作成
+      if (company == null) {
+        print('');
+        print('❌❌❌ エラー: company が null です ❌❌❌');
+        print('internship.companyId: ${internship.companyId}');
+        print('これは Internship.fromJson で companies キーが見つからなかったことを意味します');
+        return;
+      }
+
+      print('');
+      print('✅ データ検証OK');
+      print('インターン名: ${internship.title}');
+      print('企業名: ${company.name}');
+      print('企業ID: ${company.id}');
+
+      // 既存のチャットルームを確認
+      print('');
+      print('=== 既存ルームチェック開始 ===');
+      final existingRooms = await _supabase
+          .from('chat_rooms')
+          .select('id, name')
+          .eq('company_id', company.id)
+          .eq('room_type', 'intern');
+
+      print('既存のインターンルーム数: ${(existingRooms as List).length}');
+
+      // 重複チェック
+      for (final room in existingRooms) {
+        final roomId = room['id'] as String;
+        final roomName = room['name'] as String;
+        print('チェック中: $roomName ($roomId)');
+
+        if (!roomName.contains(internship.title)) {
+          print('  → インターン名が含まれていないのでスキップ');
+          continue;
+        }
+
+        final members = await _supabase
+            .from('chat_room_members')
+            .select('profile_id')
+            .eq('room_id', roomId);
+
+        final memberIds = (members as List)
+            .map((m) => m['profile_id'] as String)
+            .toSet();
+
+        print('  → メンバー数: ${memberIds.length}');
+
+        if (memberIds.contains(application.userId)) {
+          print('');
+          print('⚠️ 既存のチャットルームが見つかりました');
+          print('roomId: $roomId');
+          print('roomName: $roomName');
+          print('=== チャットルーム作成スキップ（重複防止） ===');
+          return;
+        }
+      }
+
+      // 新規チャットルームを作成
+      final userName = application.userProfile?.nickname ?? 'インターン参加者';
+      final roomName = '${internship.title} - $userName';
+
+      print('');
+      print('=== 新規チャットルーム作成 ===');
+      print('ルーム名: $roomName');
+
       final roomData = {
         'company_id': company.id,
         'name': roomName,
@@ -349,6 +445,8 @@ class CompanyInternRepository {
         'updated_at': DateTime.now().toIso8601String(),
       };
 
+      print('roomData: $roomData');
+
       final roomResponse = await _supabase
           .from('chat_rooms')
           .insert(roomData)
@@ -356,25 +454,45 @@ class CompanyInternRepository {
           .single();
 
       final roomId = roomResponse['id'] as String;
+      print('✅ チャットルーム作成成功: $roomId');
 
-      // メンバーを追加（企業ユーザーとインターン参加者）
+      // メンバーを追加
+      print('');
+      print('=== メンバー追加 ===');
       final members = [
         {'room_id': roomId, 'profile_id': companyUserId},
         {'room_id': roomId, 'profile_id': application.userId},
       ];
+      print('追加するメンバー: $members');
 
       await _supabase.from('chat_room_members').insert(members);
+      print('✅ メンバー追加成功');
 
       // システムメッセージを送信
+      print('');
+      print('=== システムメッセージ送信 ===');
       await _supabase.from('chat_messages').insert({
         'room_id': roomId,
         'profile_id': companyUserId,
         'content': 'インターン「${internship.title}」への参加が承認されました。このチャットでやり取りを行ってください。',
         'created_at': DateTime.now().toIso8601String(),
       });
-    } catch (e) {
-      // チャットルーム作成に失敗しても承認自体は成功させる
-      print('チャットルーム作成エラー（承認は成功）: $e');
+      print('✅ システムメッセージ送信成功');
+
+      print('');
+      print('========================================');
+      print('=== チャットルーム作成完了 ===');
+      print('========================================');
+      print('');
+    } catch (e, st) {
+      print('');
+      print('❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌');
+      print('チャットルーム作成でエラーが発生しました');
+      print('エラー: $e');
+      print('スタックトレース: $st');
+      print('❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌');
+      print('');
+      // エラーを再スローしない（承認自体は成功させる）
     }
   }
 

@@ -67,6 +67,9 @@ dependencies:
   # UUID
   uuid: ^4.0.0
 
+  # Google Generative AI (Gemini)
+  google_generative_ai: ^0.4.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

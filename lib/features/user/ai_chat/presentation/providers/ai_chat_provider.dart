@@ -2,10 +2,16 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import '../../data/services/gemini_service.dart';
 import '../../domain/models/ai_conversation.dart';
 import '../../domain/models/ai_message.dart';
 
 const _uuid = Uuid();
+
+// Gemini service provider
+final geminiServiceProvider = Provider<GeminiService>((ref) {
+  return GeminiService.instance;
+});
 
 // 会話一覧を管理するプロバイダー
 final aiConversationsProvider =
@@ -77,7 +83,7 @@ class AiConversationsNotifier extends StateNotifier<List<AiConversation>> {
     }).toList();
   }
 
-  // AI応答を生成（サンプル）
+  // AI応答を生成（Gemini API）
   Future<void> generateAiResponse(String conversationId, String userMessage) async {
     // ユーザーメッセージを追加
     final userMsg = AiMessage(
@@ -88,28 +94,40 @@ class AiConversationsNotifier extends StateNotifier<List<AiConversation>> {
     );
     addMessage(conversationId, userMsg);
 
-    // 模擬遅延
-    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      // 会話履歴を取得
+      final conversation = state.firstWhere((c) => c.id == conversationId);
+      final previousMessages = conversation.messages
+          .map((m) => {
+                'role': m.isUser ? 'user' : 'assistant',
+                'content': m.content,
+              })
+          .toList();
 
-    // サンプル応答を生成
-    String response;
-    if (userMessage.contains('就活') || userMessage.contains('就職')) {
-      response = '就活についてのご質問ですね。就職活動では自己分析、企業研究、面接対策が重要です。何か具体的にお聞きになりたいことはありますか？';
-    } else if (userMessage.contains('インターン')) {
-      response = 'インターンシップは実際の業務を経験できる貴重な機会です。気になる企業があれば、インターンページから探してみてください。';
-    } else if (userMessage.contains('面接')) {
-      response = '面接では、自己PRや志望動機をしっかり準備することが大切です。また、企業研究を行い、質問に具体的に答えられるようにしましょう。';
-    } else {
-      response = 'ご質問ありがとうございます。就活に関することなら何でもお気軽にお聞きください。実装時にAI APIと連携してより詳しい回答ができるようになります。';
+      // Gemini APIで応答を生成
+      final geminiService = GeminiService.instance;
+      final response = await geminiService.generateResponseWithContext(
+        userMessage,
+        previousMessages,
+      );
+
+      // AI応答を追加
+      final aiMsg = AiMessage(
+        id: _uuid.v4(),
+        content: response,
+        isUser: false,
+        createdAt: DateTime.now(),
+      );
+      addMessage(conversationId, aiMsg);
+    } catch (e) {
+      // エラー時のフォールバック応答
+      final aiMsg = AiMessage(
+        id: _uuid.v4(),
+        content: 'すみません、エラーが発生しました。しばらくしてからもう一度お試しください。',
+        isUser: false,
+        createdAt: DateTime.now(),
+      );
+      addMessage(conversationId, aiMsg);
     }
-
-    // AI応答を追加
-    final aiMsg = AiMessage(
-      id: _uuid.v4(),
-      content: response,
-      isUser: false,
-      createdAt: DateTime.now(),
-    );
-    addMessage(conversationId, aiMsg);
   }
 }
