@@ -392,7 +392,7 @@ class CompanyInternRepository {
           .from('chat_rooms')
           .select('id, name')
           .eq('company_id', company.id)
-          .eq('room_type', 'intern');
+          .eq('room_type', 'direct');
 
       print('既存のインターンルーム数: ${(existingRooms as List).length}');
 
@@ -440,7 +440,7 @@ class CompanyInternRepository {
         'company_id': company.id,
         'name': roomName,
         'description': '${internship.title}のインターン参加者用チャットルームです',
-        'room_type': 'intern',
+        'room_type': 'direct',
         'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       };
