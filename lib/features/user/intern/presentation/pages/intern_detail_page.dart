@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/intern/presentation/providers/intern_provider.dart';
+import 'package:numbers/features/user/intern/domain/models/internship_application.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
@@ -32,6 +33,8 @@ class InternDetailPage extends ConsumerWidget {
     }
 
     final internshipAsync = ref.watch(internshipProvider(internshipId));
+    final applicationStatusAsync = ref.watch(applicationStatusProvider(internshipId));
+    final applicationState = ref.watch(internApplicationNotifierProvider);
 
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
@@ -212,20 +215,24 @@ class InternDetailPage extends ConsumerWidget {
 
                     const SizedBox(height: SpacePalette.lg),
 
-                    // 応募ボタン
+                    // 応募ボタン（状態に応じて変化）
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
-                      child: GradientButton(
-                        text: 'インターン応募',
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('応募機能は準備中です')),
-                          );
-                        },
-                        icon: const Icon(
-                          Icons.north_east,
-                          color: ColorPalette.neutral0,
-                          size: 20,
+                      child: applicationStatusAsync.when(
+                        data: (application) => _buildApplicationButton(
+                          context,
+                          ref,
+                          internshipId,
+                          application,
+                          applicationState.isLoading,
+                        ),
+                        loading: () => _buildLoadingButton(),
+                        error: (_, __) => _buildApplicationButton(
+                          context,
+                          ref,
+                          internshipId,
+                          null,
+                          applicationState.isLoading,
                         ),
                       ),
                     ),
@@ -325,6 +332,248 @@ class InternDetailPage extends ConsumerWidget {
         ),
       ),
       bottomNavigationBar: AppFooter(currentRoute: currentRoute),
+    );
+  }
+
+  Widget _buildApplicationButton(
+    BuildContext context,
+    WidgetRef ref,
+    String internshipId,
+    InternshipApplication? application,
+    bool isLoading,
+  ) {
+    if (isLoading) {
+      return _buildLoadingButton();
+    }
+
+    // 申し込み済みの場合
+    if (application != null) {
+      switch (application.status) {
+        case ApplicationStatus.pending:
+          return _buildStatusButton(
+            context,
+            ref,
+            '審査中',
+            Icons.hourglass_empty,
+            ColorPalette.neutral600,
+            onPressed: () => _showCancelDialog(context, ref, application.id, internshipId),
+          );
+        case ApplicationStatus.approved:
+          return _buildStatusButton(
+            context,
+            ref,
+            '承認済み - チャットで連絡できます',
+            Icons.check_circle,
+            ColorPalette.primaryColor,
+            onPressed: () {
+              // チャットへ遷移
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('チャット機能へ移動します')),
+              );
+            },
+          );
+        case ApplicationStatus.rejected:
+          return _buildStatusButton(
+            context,
+            ref,
+            '申し込みが却下されました',
+            Icons.cancel,
+            Colors.red,
+          );
+        case ApplicationStatus.cancelled:
+          // キャンセル済みの場合は再申し込み可能
+          return _buildApplyButton(context, ref, internshipId);
+      }
+    }
+
+    // 未申し込みの場合
+    return _buildApplyButton(context, ref, internshipId);
+  }
+
+  Widget _buildApplyButton(BuildContext context, WidgetRef ref, String internshipId) {
+    return GradientButton(
+      text: 'インターン応募',
+      onPressed: () => _showApplyDialog(context, ref, internshipId),
+      icon: const Icon(
+        Icons.north_east,
+        color: ColorPalette.neutral0,
+        size: 20,
+      ),
+    );
+  }
+
+  Widget _buildStatusButton(
+    BuildContext context,
+    WidgetRef ref,
+    String text,
+    IconData icon,
+    Color color, {
+    VoidCallback? onPressed,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: ColorPalette.neutral800,
+          foregroundColor: color,
+          padding: const EdgeInsets.symmetric(vertical: SpacePalette.base),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(RadiusPalette.base),
+            side: BorderSide(color: color),
+          ),
+        ),
+        icon: Icon(icon, size: 20),
+        label: Text(text),
+      ),
+    );
+  }
+
+  Widget _buildLoadingButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: ColorPalette.neutral800,
+          padding: const EdgeInsets.symmetric(vertical: SpacePalette.base),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(RadiusPalette.base),
+          ),
+        ),
+        child: SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: ColorPalette.primaryColor,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showApplyDialog(BuildContext context, WidgetRef ref, String internshipId) {
+    final messageController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: ColorPalette.neutral800,
+        title: Text(
+          'インターン応募',
+          style: TextStylePalette.smTitle,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'このインターンに応募しますか？',
+              style: TextStylePalette.normalText,
+            ),
+            const SizedBox(height: SpacePalette.base),
+            TextField(
+              controller: messageController,
+              maxLines: 3,
+              style: TextStylePalette.normalText,
+              decoration: InputDecoration(
+                hintText: 'メッセージ（任意）',
+                hintStyle: TextStylePalette.hintText,
+                filled: true,
+                fillColor: ColorPalette.neutral900,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(RadiusPalette.base),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'キャンセル',
+              style: TextStyle(color: ColorPalette.neutral400),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              final notifier = ref.read(internApplicationNotifierProvider.notifier);
+              final success = await notifier.apply(
+                internshipId,
+                message: messageController.text.isNotEmpty ? messageController.text : null,
+              );
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success ? '応募しました！' : '応募に失敗しました'),
+                    backgroundColor: success ? ColorPalette.primaryColor : Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ColorPalette.primaryColor,
+            ),
+            child: const Text('応募する'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCancelDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String applicationId,
+    String internshipId,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: ColorPalette.neutral800,
+        title: Text(
+          '応募キャンセル',
+          style: TextStylePalette.smTitle,
+        ),
+        content: Text(
+          '応募をキャンセルしますか？',
+          style: TextStylePalette.normalText,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              '戻る',
+              style: TextStyle(color: ColorPalette.neutral400),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              final notifier = ref.read(internApplicationNotifierProvider.notifier);
+              final success = await notifier.cancel(applicationId, internshipId);
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success ? 'キャンセルしました' : 'キャンセルに失敗しました'),
+                    backgroundColor: success ? ColorPalette.neutral600 : Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('キャンセルする'),
+          ),
+        ],
+      ),
     );
   }
 

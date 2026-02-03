@@ -151,6 +151,10 @@ class _CompanyInternEditPageState extends State<CompanyInternEditPage> {
       appBar: AppBar(
         backgroundColor: ColorPalette.neutral900,
         foregroundColor: ColorPalette.neutral0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
+          onPressed: () => context.go('/company-portal/interns/list'),
+        ),
         title: const Text('インターン編集'),
       ),
       body: SingleChildScrollView(

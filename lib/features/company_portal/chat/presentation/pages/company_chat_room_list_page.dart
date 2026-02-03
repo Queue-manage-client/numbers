@@ -18,7 +18,7 @@ class CompanyChatRoomListPage extends ConsumerWidget {
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: ColorPalette.neutral800,
+            color: ColorPalette.neutral0,
           ),
           onPressed: () => context.go('/company-portal/chats'),
         ),
@@ -27,7 +27,7 @@ class CompanyChatRoomListPage extends ConsumerWidget {
           IconButton(
             icon: Icon(
               Icons.add,
-              color: ColorPalette.neutral800,
+              color: ColorPalette.neutral0,
             ),
             onPressed: () => context.go('/company-portal/chats/create'),
           ),

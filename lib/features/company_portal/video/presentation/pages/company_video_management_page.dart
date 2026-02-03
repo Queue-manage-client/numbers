@@ -15,6 +15,10 @@ class CompanyVideoManagementPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
+          onPressed: () => context.go('/company-portal/dashboard'),
+        ),
         title: const Text('動画管理'),
       ),
       body: Padding(

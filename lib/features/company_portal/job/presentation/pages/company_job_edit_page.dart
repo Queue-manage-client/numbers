@@ -115,6 +115,10 @@ class _CompanyJobEditPageState extends State<CompanyJobEditPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF323232),
         foregroundColor: const Color(0xFFFFFFFF),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFFFFFFFF)),
+          onPressed: () => context.go('/company-portal/jobs/list'),
+        ),
         title: const Text('求人編集'),
       ),
       body: SingleChildScrollView(

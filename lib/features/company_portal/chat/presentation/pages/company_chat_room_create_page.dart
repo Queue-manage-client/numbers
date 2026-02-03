@@ -90,6 +90,10 @@ class CompanyChatRoomCreatePage extends HookConsumerWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
+          onPressed: () => context.go('/company-portal/chats'),
+        ),
         title: const Text('グループチャット作成'),
       ),
       body: SingleChildScrollView(

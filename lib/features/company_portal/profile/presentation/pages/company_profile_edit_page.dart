@@ -115,6 +115,10 @@ class CompanyProfileEditPage extends HookConsumerWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
+          onPressed: () => context.go('/company-portal/dashboard'),
+        ),
         title: const Text('企業情報編集'),
       ),
       body: companyInfoAsync.when(

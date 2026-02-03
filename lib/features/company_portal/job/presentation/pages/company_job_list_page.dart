@@ -16,6 +16,10 @@ class CompanyJobListManagementPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF323232),
         foregroundColor: const Color(0xFFFFFFFF),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFFFFFFFF)),
+          onPressed: () => context.go('/company-portal/jobs'),
+        ),
         title: const Text('求人一覧'),
         actions: [
           IconButton(

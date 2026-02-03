@@ -45,6 +45,7 @@ import 'package:numbers/features/company_portal/intern/presentation/pages/compan
 import 'package:numbers/features/company_portal/intern/presentation/pages/company_intern_post_page.dart';
 import 'package:numbers/features/company_portal/intern/presentation/pages/company_intern_list_page.dart';
 import 'package:numbers/features/company_portal/intern/presentation/pages/company_intern_edit_page.dart';
+import 'package:numbers/features/company_portal/intern/presentation/pages/company_intern_applications_page.dart';
 import 'package:numbers/features/company_portal/chat/presentation/pages/company_chat_management_page.dart';
 import 'package:numbers/features/company_portal/chat/presentation/pages/company_chat_room_create_page.dart';
 import 'package:numbers/features/company_portal/chat/presentation/pages/company_chat_room_list_page.dart';
@@ -268,6 +269,13 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/company-portal/interns/:id/edit',
       builder: (context, state) => const CompanyInternEditPage(),
+    ),
+    GoRoute(
+      path: '/company-portal/interns/:id/applications',
+      builder: (context, state) {
+        final internshipId = state.pathParameters['id'] ?? '';
+        return CompanyInternApplicationsPage(internshipId: internshipId);
+      },
     ),
     GoRoute(
       path: '/company-portal/chats',

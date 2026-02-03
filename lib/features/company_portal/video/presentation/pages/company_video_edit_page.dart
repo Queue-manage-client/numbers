@@ -313,6 +313,10 @@ class CompanyVideoEditPage extends HookConsumerWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
+          onPressed: () => context.go('/company-portal/videos/list'),
+        ),
         title: const Text('動画編集'),
       ),
       body: videoAsync.when(

@@ -14,7 +14,7 @@ class CompanyChatManagementPage extends StatelessWidget {
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: ColorPalette.neutral800,
+            color: ColorPalette.neutral0,
           ),
           onPressed: () => context.go('/company-portal/dashboard'),
         ),

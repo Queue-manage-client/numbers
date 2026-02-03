@@ -15,6 +15,10 @@ class CompanyVideoListManagementPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
+          onPressed: () => context.go('/company-portal/videos'),
+        ),
         title: const Text('動画一覧'),
         actions: [
           IconButton(

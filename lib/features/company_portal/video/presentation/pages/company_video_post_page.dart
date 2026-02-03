@@ -350,6 +350,10 @@ class CompanyVideoPostPage extends HookConsumerWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
+          onPressed: () => context.go('/company-portal/videos'),
+        ),
         title: const Text('動画投稿'),
       ),
       body: SingleChildScrollView(

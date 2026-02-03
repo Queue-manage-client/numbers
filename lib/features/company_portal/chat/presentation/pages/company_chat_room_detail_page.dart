@@ -75,7 +75,7 @@ class CompanyChatRoomDetailPage extends HookConsumerWidget {
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: ColorPalette.neutral800,
+            color: ColorPalette.neutral0,
           ),
           onPressed: () => context.go('/company-portal/chats/list'),
         ),
