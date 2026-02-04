@@ -55,5 +55,7 @@
 	<string>動画撮影時にマイクへのアクセスが必要です</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>近くの求人を探すために位置情報へのアクセスが必要です</string>
+	<key>GOOGLE_MAPS_API_KEY</key>
+	<string>$(GOOGLE_MAPS_API_KEY)</string>
 </dict>
 </plist>

@@ -29,33 +29,27 @@ class CompanyInternManagementPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => context.go('/company-portal/interns/post'),
-                    icon: const Icon(Icons.add),
-                    label: const Text('新規インターン投稿'),
-                  ),
-                ),
-                const SizedBox(width: SpacePalette.sm),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => context.go('/company-portal/interns/list'),
-                    icon: Icon(Icons.list, color: ColorPalette.primaryColor),
-                    label: const Text('インターン一覧'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: ColorPalette.primaryColor,
-                      side: const BorderSide(color: ColorPalette.primaryColor, width: 2),
-                    ),
-                  ),
-                ),
-              ],
+            ElevatedButton.icon(
+              onPressed: () => context.go('/company-portal/interns/post'),
+              icon: const Icon(Icons.add),
+              label: const Text('新規インターン投稿'),
             ),
             const SizedBox(height: SpacePalette.lg * 2),
-            Text(
-              '投稿済みインターン',
-              style: TextStylePalette.smHeader,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '投稿済みインターン',
+                  style: TextStylePalette.smHeader,
+                ),
+                internshipsAsync.maybeWhen(
+                  data: (interns) => Text(
+                    '${interns.length}件',
+                    style: TextStylePalette.subText,
+                  ),
+                  orElse: () => const SizedBox.shrink(),
+                ),
+              ],
             ),
             const SizedBox(height: SpacePalette.base),
             Expanded(
