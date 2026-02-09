@@ -104,7 +104,7 @@ class LocationService {
   }
 
   /// Open app settings (for permission settings)
-  Future<bool> openAppSettings() async {
+  Future<bool> openPermissionSettings() async {
     return await openAppSettings();
   }
 }

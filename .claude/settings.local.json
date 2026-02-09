@@ -7,7 +7,8 @@
       "Bash(ls -la \"C:\\\\Users\\\\4817m\\\\numbers\\\\lib\\\\features\\\\user\\\\chat\"\" 2>/dev/null || echo \"Directory not found \")",
       "Bash(ls -la \"C:\\\\Users\\\\4817m\\\\numbers\\\\lib\\\\features\\\\company_portal\\\\chat\"\" 2>/dev/null || echo \"Directory not found \")",
       "mcp__supabase__list_tables",
-      "mcp__supabase__execute_sql"
+      "mcp__supabase__execute_sql",
+      "Bash(dir:*)"
     ]
   },
   "enabledMcpjsonServers": [
