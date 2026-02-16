@@ -18,56 +18,44 @@ class JobApplicationCompletePage extends StatelessWidget {
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(SpacePalette.lg),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.check_circle,
                 size: 80,
-                color: Colors.green,
+                color: ColorPalette.systemGreen,
               ),
-              const SizedBox(height: 24),
-              const Text(
+              const SizedBox(height: SpacePalette.lg),
+              Text(
                 '応募が完了しました',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF323232),
-                ),
+                style: TextStylePalette.lgListTitle,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
-              const Text(
-                '企業からの返信をお待ちください。\nチャットでメッセージが届く場合があります。',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF666666),
-                ),
+              const SizedBox(height: SpacePalette.base),
+              Text(
+                '企業が承認するとチャットで\nやり取りできるようになります。',
+                style: TextStylePalette.subText,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: SpacePalette.lg * 2),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: GradientButton(
+                  text: 'ホームに戻る',
                   onPressed: () => context.go('/feed'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF323232),
-                    foregroundColor: const Color(0xFFFFFFFF),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: const Text('ホームに戻る'),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: SpacePalette.base),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: () => context.push('/applications'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF323232),
-                    side: const BorderSide(color: Color(0xFF323232)),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    foregroundColor: ColorPalette.primaryColor,
+                    side: const BorderSide(color: ColorPalette.primaryColor),
+                    padding: const EdgeInsets.symmetric(vertical: SpacePalette.base),
                   ),
                   child: const Text('応募履歴を見る'),
                 ),

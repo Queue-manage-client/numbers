@@ -285,7 +285,7 @@ class _MessageBubble extends StatelessWidget {
                     Text(
                       'AI',
                       style: TextStylePalette.subText.copyWith(
-                        color: ColorPalette.primaryColor,
+                        color: ColorPalette.neutral0,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

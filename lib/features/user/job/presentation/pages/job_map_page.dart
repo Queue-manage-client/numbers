@@ -168,13 +168,17 @@ class _JobMapPageState extends ConsumerState<JobMapPage> {
                         ref.read(selectedMapJobProvider.notifier).state = null;
                       },
                       onDetailTap: () {
-                        // Navigate to job or intern detail page
                         if (selectedJob.jobType == 'intern') {
                           context.push('/interns/${selectedJob.id}');
                         } else {
                           context.push('/jobs/${selectedJob.id}');
                         }
                       },
+                      onApplyTap: selectedJob.jobType == 'intern'
+                          ? null
+                          : () {
+                              context.push('/jobs/${selectedJob.id}/apply/confirm');
+                            },
                     ),
                   ),
 

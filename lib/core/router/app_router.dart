@@ -59,6 +59,7 @@ import 'package:numbers/features/admin/presentation/pages/admin_job_management_p
 import 'package:numbers/features/admin/presentation/pages/admin_intern_management_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_inquiry_management_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_inquiry_detail_page.dart';
+import 'package:numbers/features/company_portal/job/presentation/pages/company_job_applications_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -253,6 +254,13 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/company-portal/jobs/:id/edit',
       builder: (context, state) => const CompanyJobEditPage(),
+    ),
+    GoRoute(
+      path: '/company-portal/jobs/:id/applications',
+      builder: (context, state) {
+        final jobId = state.pathParameters['id'] ?? '';
+        return CompanyJobApplicationsPage(jobId: jobId);
+      },
     ),
     GoRoute(
       path: '/company-portal/interns',

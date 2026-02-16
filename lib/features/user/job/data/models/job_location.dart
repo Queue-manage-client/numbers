@@ -16,6 +16,10 @@ class JobLocation {
   final String? location;
   final String? industry;
   final String? description;
+  final String? jobCategory;
+  final String? workingHours;
+  final int? salaryMin;
+  final int? salaryMax;
 
   const JobLocation({
     required this.id,
@@ -32,6 +36,10 @@ class JobLocation {
     this.location,
     this.industry,
     this.description,
+    this.jobCategory,
+    this.workingHours,
+    this.salaryMin,
+    this.salaryMax,
   });
 
   factory JobLocation.fromJobJson(Map<String, dynamic> json) {
@@ -48,9 +56,13 @@ class JobLocation {
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
       salary: json['salary'] as String?,
-      location: json['location'] as String?,
+      location: json['location_text'] as String?,
       industry: company?['industry'] as String?,
       description: json['description'] as String?,
+      jobCategory: json['job_category'] as String?,
+      workingHours: json['working_hours'] as String?,
+      salaryMin: json['salary_min'] as int?,
+      salaryMax: json['salary_max'] as int?,
     );
   }
 
@@ -71,10 +83,25 @@ class JobLocation {
       location: json['location'] as String?,
       industry: company?['industry'] as String?,
       description: json['description'] as String?,
+      jobCategory: null,
+      workingHours: null,
+      salaryMin: null,
+      salaryMax: null,
     );
   }
 
   bool get hasValidCoordinates => latitude != 0 && longitude != 0;
+
+  String get salaryRangeDisplay {
+    if (salaryMin != null && salaryMax != null) {
+      return '月給${salaryMin}万円〜${salaryMax}万円';
+    } else if (salaryMin != null) {
+      return '月給${salaryMin}万円〜';
+    } else if (salaryMax != null) {
+      return '〜月給${salaryMax}万円';
+    }
+    return salary ?? '';
+  }
 }
 
 /// Represents a user's saved location (home, school, etc.)

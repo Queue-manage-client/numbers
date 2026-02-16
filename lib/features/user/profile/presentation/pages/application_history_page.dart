@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/job/presentation/providers/job_provider.dart';
+import 'package:numbers/features/user/intern/domain/models/internship_application.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
@@ -11,7 +12,7 @@ class ApplicationHistoryPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final applicationsAsync = ref.watch(applicationsProvider);
+    final applicationsAsync = ref.watch(jobApplicationsProvider);
     final currentRoute = GoRouterState.of(context).uri.path;
 
     return Scaffold(
@@ -41,9 +42,6 @@ class ApplicationHistoryPage extends ConsumerWidget {
             itemCount: applications.length,
             itemBuilder: (context, index) {
               final application = applications[index];
-              final job = application['jobs'] as Map<String, dynamic>?;
-              final company = job?['companies'] as Map<String, dynamic>?;
-              final status = application['status'] as String?;
 
               return Container(
                 margin: const EdgeInsets.only(bottom: SpacePalette.base),
@@ -55,7 +53,7 @@ class ApplicationHistoryPage extends ConsumerWidget {
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(SpacePalette.base),
                   title: Text(
-                    job?['title'] ?? '求人名未設定',
+                    application.job?.title ?? '求人名未設定',
                     style: TextStylePalette.smListTitle,
                   ),
                   subtitle: Column(
@@ -63,18 +61,18 @@ class ApplicationHistoryPage extends ConsumerWidget {
                     children: [
                       const SizedBox(height: SpacePalette.xs),
                       Text(
-                        company?['name'] ?? '企業名未設定',
+                        application.job?.company?.name ?? '企業名未設定',
                         style: TextStylePalette.subText,
                       ),
                       const SizedBox(height: SpacePalette.sm),
-                      _buildStatusChip(status),
+                      _buildStatusChip(application.status),
                     ],
                   ),
                   trailing: const Icon(
                     Icons.chevron_right,
                     color: ColorPalette.neutral400,
                   ),
-                  onTap: () => context.push('/applications/${application['id']}'),
+                  onTap: () => context.push('/jobs/${application.jobId}'),
                 ),
               );
             },
@@ -95,30 +93,27 @@ class ApplicationHistoryPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusChip(String? status) {
+  Widget _buildStatusChip(ApplicationStatus status) {
     Color color;
     String text;
 
     switch (status) {
-      case 'applied':
-        color = Colors.blue;
-        text = '応募済み';
-        break;
-      case 'messaging':
+      case ApplicationStatus.pending:
         color = Colors.orange;
-        text = 'メッセージ中';
+        text = '審査中';
         break;
-      case 'accepted':
+      case ApplicationStatus.approved:
         color = ColorPalette.primaryColor;
-        text = '採用';
+        text = '承認済み';
         break;
-      case 'rejected':
+      case ApplicationStatus.rejected:
         color = Colors.red;
-        text = '不採用';
+        text = '却下';
         break;
-      default:
+      case ApplicationStatus.cancelled:
         color = ColorPalette.neutral400;
-        text = '不明';
+        text = 'キャンセル';
+        break;
     }
 
     return Container(

@@ -11,8 +11,10 @@ enum ApplicationStatus {
   static ApplicationStatus fromString(String status) {
     switch (status) {
       case 'pending':
+      case 'applied':
         return ApplicationStatus.pending;
       case 'approved':
+      case 'accepted':
         return ApplicationStatus.approved;
       case 'rejected':
         return ApplicationStatus.rejected;

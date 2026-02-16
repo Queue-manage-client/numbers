@@ -258,7 +258,7 @@ class VideoSearchPage extends HookConsumerWidget {
                         if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
                           final supabase = Supabase.instance.client;
                           thumbnailUrl = supabase.storage
-                              .from('thumbnails')
+                              .from('company-thumbnails')
                               .getPublicUrl(thumbnailPath);
                         }
 

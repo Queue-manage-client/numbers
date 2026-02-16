@@ -1,9 +1,10 @@
-// company_portal/presentation/pages/company_job_post_page.dart
+// company_portal/job/presentation/pages/company_job_post_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
+import 'package:numbers/features/company_portal/job/presentation/providers/company_job_provider.dart';
+import 'package:numbers/features/user/job/domain/models/job.dart';
 import 'package:numbers/features/user/job/presentation/providers/job_map_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
@@ -17,27 +18,16 @@ class CompanyJobPostPage extends HookConsumerWidget {
     final descriptionController = useTextEditingController();
     final salaryController = useTextEditingController();
     final locationController = useTextEditingController();
+    final workingHoursController = useTextEditingController();
+    final salaryMinController = useTextEditingController();
+    final salaryMaxController = useTextEditingController();
     final status = useState('open');
+    final jobType = useState<String?>(null);
+    final jobCategory = useState<String?>(null);
     final isLoading = useState(false);
 
     final postJob = useCallback(() async {
       if (!formKey.currentState!.validate()) return;
-
-      final companyId = ref.read(currentCompanyIdProvider);
-      if (companyId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '企業IDが取得できません',
-              style: TextStylePalette.normalText.copyWith(
-                color: ColorPalette.neutral0,
-              ),
-            ),
-            backgroundColor: ColorPalette.primaryColor,
-          ),
-        );
-        return;
-      }
 
       isLoading.value = true;
 
@@ -49,43 +39,66 @@ class CompanyJobPostPage extends HookConsumerWidget {
 
         if (address.isNotEmpty) {
           final geocodingService = ref.read(geocodingServiceProvider);
-          final result = await geocodingService.getCoordinatesFromAddress(address);
+          final result =
+              await geocodingService.getCoordinatesFromAddress(address);
           if (result != null) {
             latitude = result.latitude;
             longitude = result.longitude;
           }
         }
 
-        final jobData = {
-          'company_id': companyId,
-          'title': titleController.text.trim(),
-          'description': descriptionController.text.trim(),
-          'salary': salaryController.text.trim(),
-          'location': address,
-          'status': status.value,
-          if (latitude != null) 'latitude': latitude,
-          if (longitude != null) 'longitude': longitude,
-        };
+        final salaryMin = salaryMinController.text.trim().isNotEmpty
+            ? int.tryParse(salaryMinController.text.trim())
+            : null;
+        final salaryMax = salaryMaxController.text.trim().isNotEmpty
+            ? int.tryParse(salaryMaxController.text.trim())
+            : null;
 
-        await ref.read(companyPortalRepositoryProvider).createJob(jobData);
-
-        // 求人一覧を再取得
-        ref.invalidate(companyJobsProvider);
-        ref.invalidate(dashboardStatsProvider);
+        final notifier = ref.read(companyJobNotifierProvider.notifier);
+        final job = await notifier.create(
+          title: titleController.text.trim(),
+          description: descriptionController.text.trim(),
+          salary: salaryController.text.trim().isNotEmpty
+              ? salaryController.text.trim()
+              : null,
+          location: address.isNotEmpty ? address : null,
+          jobType: jobType.value,
+          jobCategory: jobCategory.value,
+          workingHours: workingHoursController.text.trim().isNotEmpty
+              ? workingHoursController.text.trim()
+              : null,
+          salaryMin: salaryMin,
+          salaryMax: salaryMax,
+          status: status.value,
+          latitude: latitude,
+          longitude: longitude,
+        );
 
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '求人を投稿しました',
-                style: TextStylePalette.normalText.copyWith(
-                  color: ColorPalette.neutral0,
+          if (job != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '求人を投稿しました',
+                  style: TextStylePalette.normalText
+                      .copyWith(color: ColorPalette.neutral0),
                 ),
+                backgroundColor: ColorPalette.systemGreen,
               ),
-              backgroundColor: ColorPalette.systemGreen,
-            ),
-          );
-          context.go('/company-portal/jobs');
+            );
+            context.go('/company-portal/jobs');
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '投稿に失敗しました',
+                  style: TextStylePalette.normalText
+                      .copyWith(color: ColorPalette.neutral0),
+                ),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
       } catch (e) {
         if (context.mounted) {
@@ -93,9 +106,8 @@ class CompanyJobPostPage extends HookConsumerWidget {
             SnackBar(
               content: Text(
                 '投稿エラー: $e',
-                style: TextStylePalette.normalText.copyWith(
-                  color: ColorPalette.neutral0,
-                ),
+                style: TextStylePalette.normalText
+                    .copyWith(color: ColorPalette.neutral0),
               ),
               backgroundColor: ColorPalette.primaryColor,
             ),
@@ -104,7 +116,18 @@ class CompanyJobPostPage extends HookConsumerWidget {
       } finally {
         isLoading.value = false;
       }
-    }, [titleController, descriptionController, salaryController, locationController, status.value]);
+    }, [
+      titleController,
+      descriptionController,
+      salaryController,
+      locationController,
+      workingHoursController,
+      salaryMinController,
+      salaryMaxController,
+      status.value,
+      jobType.value,
+      jobCategory.value,
+    ]);
 
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
@@ -123,10 +146,7 @@ class CompanyJobPostPage extends HookConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // タイトル
-              Text(
-                'タイトル',
-                style: TextStylePalette.smTitle,
-              ),
+              Text('タイトル', style: TextStylePalette.smTitle),
               const SizedBox(height: SpacePalette.sm),
               TextFormField(
                 controller: titleController,
@@ -144,11 +164,57 @@ class CompanyJobPostPage extends HookConsumerWidget {
               ),
               const SizedBox(height: SpacePalette.base),
 
-              // 説明
-              Text(
-                '説明',
-                style: TextStylePalette.smTitle,
+              // 職種カテゴリ
+              Text('職種カテゴリ', style: TextStylePalette.smTitle),
+              const SizedBox(height: SpacePalette.sm),
+              DropdownButtonFormField<String>(
+                value: jobCategory.value,
+                style: TextStylePalette.normalText,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: '選択してください',
+                ),
+                items: JobCategory.all
+                    .map((cat) => DropdownMenuItem(
+                          value: cat,
+                          child:
+                              Text(cat, style: TextStylePalette.normalText),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  jobCategory.value = value;
+                },
               ),
+              const SizedBox(height: SpacePalette.base),
+
+              // 雇用形態
+              Text('雇用形態', style: TextStylePalette.smTitle),
+              const SizedBox(height: SpacePalette.sm),
+              DropdownButtonFormField<String>(
+                value: jobType.value,
+                style: TextStylePalette.normalText,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: '選択してください',
+                ),
+                items: const [
+                  DropdownMenuItem(
+                      value: 'full_time', child: Text('正社員')),
+                  DropdownMenuItem(
+                      value: 'part_time', child: Text('バイト')),
+                  DropdownMenuItem(
+                      value: 'new_grad', child: Text('新卒')),
+                  DropdownMenuItem(
+                      value: 'mid_career', child: Text('中途')),
+                ],
+                onChanged: (value) {
+                  jobType.value = value;
+                },
+              ),
+              const SizedBox(height: SpacePalette.base),
+
+              // 説明
+              Text('仕事内容', style: TextStylePalette.smTitle),
               const SizedBox(height: SpacePalette.sm),
               TextFormField(
                 controller: descriptionController,
@@ -160,40 +226,80 @@ class CompanyJobPostPage extends HookConsumerWidget {
                 maxLines: 5,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return '説明を入力してください';
+                    return '仕事内容を入力してください';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: SpacePalette.base),
 
-              // 給与
-              Text(
-                '給与',
-                style: TextStylePalette.smTitle,
+              // 月給範囲
+              Text('月給（万円）', style: TextStylePalette.smTitle),
+              const SizedBox(height: SpacePalette.sm),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: salaryMinController,
+                      style: TextStylePalette.normalText,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: '下限',
+                        hintStyle: TextStylePalette.hintText,
+                        suffixText: '万円',
+                        suffixStyle: TextStylePalette.smText,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SpacePalette.sm),
+                    child: Text('〜',
+                        style: TextStylePalette.normalText),
+                  ),
+                  Expanded(
+                    child: TextFormField(
+                      controller: salaryMaxController,
+                      style: TextStylePalette.normalText,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: '上限',
+                        hintStyle: TextStylePalette.hintText,
+                        suffixText: '万円',
+                        suffixStyle: TextStylePalette.smText,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: SpacePalette.sm),
+
+              // 給与（テキスト）
               TextFormField(
                 controller: salaryController,
                 style: TextStylePalette.normalText,
                 decoration: InputDecoration(
-                  hintText: '例: 月給30万円〜',
+                  hintText: '補足: 例: 賞与年2回、交通費支給',
                   hintStyle: TextStylePalette.hintText,
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '給与を入力してください';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: SpacePalette.base),
 
-              // 場所
-              Text(
-                '勤務地',
-                style: TextStylePalette.smTitle,
+              // 勤務時間
+              Text('勤務時間', style: TextStylePalette.smTitle),
+              const SizedBox(height: SpacePalette.sm),
+              TextFormField(
+                controller: workingHoursController,
+                style: TextStylePalette.normalText,
+                decoration: InputDecoration(
+                  hintText: '例: 9:00〜18:00（休憩1時間）',
+                  hintStyle: TextStylePalette.hintText,
+                ),
               ),
+              const SizedBox(height: SpacePalette.base),
+
+              // 勤務地
+              Text('勤務地', style: TextStylePalette.smTitle),
               const SizedBox(height: SpacePalette.sm),
               TextFormField(
                 controller: locationController,
@@ -212,10 +318,7 @@ class CompanyJobPostPage extends HookConsumerWidget {
               const SizedBox(height: SpacePalette.base),
 
               // ステータス
-              Text(
-                'ステータス',
-                style: TextStylePalette.smTitle,
-              ),
+              Text('ステータス', style: TextStylePalette.smTitle),
               const SizedBox(height: SpacePalette.sm),
               DropdownButtonFormField<String>(
                 value: status.value,
@@ -226,11 +329,13 @@ class CompanyJobPostPage extends HookConsumerWidget {
                 items: [
                   DropdownMenuItem(
                     value: 'open',
-                    child: Text('募集中', style: TextStylePalette.normalText),
+                    child:
+                        Text('募集中', style: TextStylePalette.normalText),
                   ),
                   DropdownMenuItem(
                     value: 'closed',
-                    child: Text('募集終了', style: TextStylePalette.normalText),
+                    child:
+                        Text('募集終了', style: TextStylePalette.normalText),
                   ),
                 ],
                 onChanged: (value) {

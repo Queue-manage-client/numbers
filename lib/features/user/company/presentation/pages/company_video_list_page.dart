@@ -115,7 +115,7 @@ class _CompanyVideoListPageState extends ConsumerState<CompanyVideoListPage> {
               final supabase = Supabase.instance.client;
               if (videoPath != null) {
                 try {
-                  videoUrl = supabase.storage.from('videos').getPublicUrl(videoPath);
+                  videoUrl = supabase.storage.from('company-videos').getPublicUrl(videoPath);
                 } catch (e) {
                   // ストレージバケット名が異なる場合はvideo_pathをそのまま使用
                   videoUrl = videoPath.startsWith('http') ? videoPath : null;
@@ -123,7 +123,7 @@ class _CompanyVideoListPageState extends ConsumerState<CompanyVideoListPage> {
               }
               if (thumbnailPath != null) {
                 try {
-                  thumbnailUrl = supabase.storage.from('thumbnails').getPublicUrl(thumbnailPath);
+                  thumbnailUrl = supabase.storage.from('company-thumbnails').getPublicUrl(thumbnailPath);
                 } catch (e) {
                   // ストレージバケット名が異なる場合はthumbnail_pathをそのまま使用
                   thumbnailUrl = thumbnailPath.startsWith('http') ? thumbnailPath : null;

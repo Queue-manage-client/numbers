@@ -123,7 +123,7 @@ class FeedRepository {
   /// 動画URLを取得（Supabase Storage）
   String getVideoUrl(String videoPath) {
     try {
-      return _supabase.storage.from('videos').getPublicUrl(videoPath);
+      return _supabase.storage.from('company-videos').getPublicUrl(videoPath);
     } catch (e) {
       print('Error getting video URL: $e');
       return '';
@@ -133,7 +133,7 @@ class FeedRepository {
   /// サムネイルURLを取得（Supabase Storage）
   String getThumbnailUrl(String thumbnailPath) {
     try {
-      return _supabase.storage.from('thumbnails').getPublicUrl(thumbnailPath);
+      return _supabase.storage.from('company-thumbnails').getPublicUrl(thumbnailPath);
     } catch (e) {
       print('Error getting thumbnail URL: $e');
       return '';

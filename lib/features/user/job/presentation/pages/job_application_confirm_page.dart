@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/job/presentation/providers/job_provider.dart';
-import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
 class JobApplicationConfirmPage extends ConsumerStatefulWidget {
@@ -17,22 +16,35 @@ class JobApplicationConfirmPage extends ConsumerStatefulWidget {
 class _JobApplicationConfirmPageState
     extends ConsumerState<JobApplicationConfirmPage> {
   bool _isApplying = false;
+  final _messageController = TextEditingController();
 
-  Future<void> _apply() async {
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _apply(String jobId) async {
     setState(() => _isApplying = true);
 
     try {
-      final user = ref.read(currentUserProvider);
-      if (user == null) throw Exception('ログインが必要です');
-
-      // TODO: 実際にはroute parameterからjobIdを取得
-      const jobId = 'dummy-job-id';
-
-      final repository = ref.read(jobRepositoryProvider);
-      await repository.applyJob(jobId: jobId, userId: user.id);
+      final notifier = ref.read(jobApplicationNotifierProvider.notifier);
+      final success = await notifier.apply(
+        jobId,
+        message: _messageController.text.isNotEmpty ? _messageController.text : null,
+      );
 
       if (mounted) {
-        context.go('/jobs/$jobId/apply/complete');
+        if (success) {
+          context.go('/jobs/$jobId/apply/complete');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('応募に失敗しました', style: TextStylePalette.normalText.copyWith(color: ColorPalette.neutral0)),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -49,6 +61,9 @@ class _JobApplicationConfirmPageState
 
   @override
   Widget build(BuildContext context) {
+    final jobId = GoRouterState.of(context).pathParameters['id'] ?? '';
+    final jobAsync = ref.watch(jobProvider(jobId));
+
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
@@ -56,68 +71,96 @@ class _JobApplicationConfirmPageState
         backgroundColor: ColorPalette.neutral900,
         foregroundColor: ColorPalette.neutral0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              '以下の求人に応募しますか？',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF323232),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '求人タイトル',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text('企業名: サンプル企業'),
-                    const SizedBox(height: 16),
-                    const Text(
-                      '応募後、企業からメッセージが届く場合があります。',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF666666),
-                      ),
-                    ),
-                  ],
+      body: jobAsync.when(
+        data: (job) {
+          if (job == null) {
+            return Center(
+              child: Text('求人が見つかりません', style: TextStylePalette.subText),
+            );
+          }
+
+          return Padding(
+            padding: const EdgeInsets.all(SpacePalette.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  '以下の求人に応募しますか？',
+                  style: TextStylePalette.smTitle,
                 ),
-              ),
+                const SizedBox(height: SpacePalette.lg),
+                Container(
+                  padding: const EdgeInsets.all(SpacePalette.base),
+                  decoration: BoxDecoration(
+                    color: ColorPalette.neutral800,
+                    borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                    border: Border.all(color: ColorPalette.neutral600),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(job.title, style: TextStylePalette.smListTitle),
+                      const SizedBox(height: SpacePalette.sm),
+                      Text('企業名: ${job.company?.name ?? "未設定"}', style: TextStylePalette.subText),
+                      if (job.salaryRangeDisplay.isNotEmpty) ...[
+                        const SizedBox(height: SpacePalette.sm),
+                        Text('給与: ${job.salaryRangeDisplay}', style: TextStylePalette.subText),
+                      ],
+                      if (job.location != null) ...[
+                        const SizedBox(height: SpacePalette.sm),
+                        Text('勤務地: ${job.location}', style: TextStylePalette.subText),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: SpacePalette.lg),
+                Text('メッセージ（任意）', style: TextStylePalette.smTitle),
+                const SizedBox(height: SpacePalette.sm),
+                TextField(
+                  controller: _messageController,
+                  maxLines: 3,
+                  style: TextStylePalette.normalText,
+                  decoration: InputDecoration(
+                    hintText: '自己PRや質問など',
+                    hintStyle: TextStylePalette.hintText,
+                    filled: true,
+                    fillColor: ColorPalette.neutral800,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(RadiusPalette.base),
+                      borderSide: BorderSide(color: ColorPalette.neutral600),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(RadiusPalette.base),
+                      borderSide: BorderSide(color: ColorPalette.neutral600),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: SpacePalette.sm),
+                Text(
+                  '応募後、企業が承認するとチャットでやり取りできるようになります。',
+                  style: TextStylePalette.smText.copyWith(color: ColorPalette.neutral400),
+                ),
+                const Spacer(),
+                GradientButton(
+                  text: '応募する',
+                  onPressed: _isApplying ? null : () => _apply(jobId),
+                  icon: _isApplying
+                      ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: ColorPalette.neutral0,
+                          ),
+                        )
+                      : const Icon(Icons.north_east, color: ColorPalette.neutral0, size: 20),
+                ),
+              ],
             ),
-            const Spacer(),
-            ElevatedButton(
-              onPressed: _isApplying ? null : _apply,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF323232),
-                foregroundColor: const Color(0xFFFFFFFF),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: _isApplying
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Color(0xFFFFFFFF),
-                      ),
-                    )
-                  : const Text('応募する'),
-            ),
-          ],
-        ),
+          );
+        },
+        loading: () => Center(child: CircularProgressIndicator(color: ColorPalette.primaryColor)),
+        error: (error, _) => Center(child: Text('エラー: $error', style: TextStylePalette.subText)),
       ),
     );
   }

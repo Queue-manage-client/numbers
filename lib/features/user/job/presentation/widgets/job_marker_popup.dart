@@ -8,12 +8,14 @@ class JobMarkerPopup extends StatelessWidget {
   final JobLocation job;
   final VoidCallback onClose;
   final VoidCallback onDetailTap;
+  final VoidCallback? onApplyTap;
 
   const JobMarkerPopup({
     super.key,
     required this.job,
     required this.onClose,
     required this.onDetailTap,
+    this.onApplyTap,
   });
 
   @override
@@ -74,7 +76,7 @@ class JobMarkerPopup extends StatelessWidget {
             ),
           ),
 
-          // Content
+          // Content area (text-focused, no thumbnail)
           Padding(
             padding: const EdgeInsets.fromLTRB(
               SpacePalette.base,
@@ -82,108 +84,180 @@ class JobMarkerPopup extends StatelessWidget {
               SpacePalette.base,
               SpacePalette.base,
             ),
-            child: Row(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Thumbnail or logo
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(RadiusPalette.base),
-                  child: Container(
-                    width: 80,
-                    height: 60,
-                    color: ColorPalette.neutral600,
-                    child: job.thumbnailUrl != null
-                        ? Image.network(
-                            job.thumbnailUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _buildPlaceholder(),
-                          )
-                        : job.companyLogoUrl != null
-                            ? Image.network(
-                                job.companyLogoUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
-                                    _buildPlaceholder(),
-                              )
-                            : _buildPlaceholder(),
-                  ),
+                // Title
+                Text(
+                  job.title,
+                  style: TextStylePalette.smListTitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(width: SpacePalette.base),
+                const SizedBox(height: SpacePalette.xs),
 
-                // Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                // Company name
+                Text(
+                  job.companyName,
+                  style: TextStylePalette.smSubText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                // Job category badge
+                if (job.jobCategory != null && job.jobCategory!.isNotEmpty) ...[
+                  const SizedBox(height: SpacePalette.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: SpacePalette.sm,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: ColorPalette.neutral600,
+                      borderRadius: BorderRadius.circular(RadiusPalette.mini),
+                      border: Border.all(color: ColorPalette.neutral600),
+                    ),
+                    child: Text(
+                      job.jobCategory!,
+                      style: TextStylePalette.smSubText,
+                    ),
+                  ),
+                ],
+
+                // Salary range display
+                if (job.salaryRangeDisplay.isNotEmpty) ...[
+                  const SizedBox(height: SpacePalette.sm),
+                  Text(
+                    job.salaryRangeDisplay,
+                    style: TextStylePalette.smSubText.copyWith(
+                      color: ColorPalette.primaryColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+
+                // Working hours
+                if (job.workingHours != null &&
+                    job.workingHours!.isNotEmpty) ...[
+                  const SizedBox(height: SpacePalette.xs),
+                  Row(
                     children: [
-                      Text(
-                        job.companyName,
-                        style: TextStylePalette.smSubText,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Icon(
+                        Icons.access_time,
+                        size: 14,
+                        color: ColorPalette.neutral400,
                       ),
-                      const SizedBox(height: SpacePalette.xs),
-                      Text(
-                        job.title,
-                        style: TextStylePalette.smListTitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (job.salary != null && job.salary!.isNotEmpty) ...[
-                        const SizedBox(height: SpacePalette.xs),
-                        Text(
-                          job.salary!,
-                          style: TextStylePalette.smSubText.copyWith(
-                            color: ColorPalette.primaryColor,
-                          ),
+                      const SizedBox(width: SpacePalette.xs),
+                      Expanded(
+                        child: Text(
+                          job.workingHours!,
+                          style: TextStylePalette.smSubText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                      ],
+                      ),
                     ],
                   ),
-                ),
+                ],
+
+                // Location
+                if (job.location != null && job.location!.isNotEmpty) ...[
+                  const SizedBox(height: SpacePalette.xs),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.place,
+                        size: 14,
+                        color: ColorPalette.neutral400,
+                      ),
+                      const SizedBox(width: SpacePalette.xs),
+                      Expanded(
+                        child: Text(
+                          job.location!,
+                          style: TextStylePalette.smSubText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
 
-          // Detail button
-          GestureDetector(
-            onTap: onDetailTap,
-            child: Container(
-              padding: const EdgeInsets.all(SpacePalette.base),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: ColorPalette.neutral600),
-                ),
+          // Bottom buttons
+          Container(
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: ColorPalette.neutral600),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '詳細を見る',
-                    style: TextStylePalette.guide,
+            ),
+            child: Row(
+              children: [
+                // "詳細を見る" outline button
+                Expanded(
+                  child: GestureDetector(
+                    onTap: onDetailTap,
+                    child: Container(
+                      padding: const EdgeInsets.all(SpacePalette.base),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '詳細を見る',
+                            style: TextStylePalette.guide,
+                          ),
+                          const SizedBox(width: SpacePalette.xs),
+                          const Icon(
+                            Icons.arrow_forward_ios,
+                            color: ColorPalette.primaryColor,
+                            size: 12,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: SpacePalette.xs),
-                  const Icon(
-                    Icons.arrow_forward_ios,
-                    color: ColorPalette.primaryColor,
-                    size: 12,
+                ),
+
+                // "応募する" filled button (only if onApplyTap is provided)
+                if (onApplyTap != null) ...[
+                  Container(
+                    width: 1,
+                    height: 40,
+                    color: ColorPalette.neutral600,
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: onApplyTap,
+                      child: Container(
+                        padding: const EdgeInsets.all(SpacePalette.base),
+                        decoration: BoxDecoration(
+                          color: ColorPalette.primaryColor,
+                          borderRadius: const BorderRadius.only(
+                            bottomRight: Radius.circular(RadiusPalette.lg),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '応募する',
+                              style: TextStylePalette.guide.copyWith(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ],
-              ),
+              ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return Center(
-      child: Icon(
-        Icons.business,
-        size: 30,
-        color: ColorPalette.neutral400,
       ),
     );
   }
