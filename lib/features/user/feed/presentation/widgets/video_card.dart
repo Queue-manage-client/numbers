@@ -69,7 +69,7 @@ class VideoCard extends StatelessWidget {
     String? thumbnailUrl;
     if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
       try {
-        thumbnailUrl = supabase.storage.from('thumbnails').getPublicUrl(thumbnailPath);
+        thumbnailUrl = supabase.storage.from('company-thumbnails').getPublicUrl(thumbnailPath);
       } catch (e) {
         // エラー時はthumbnailPathがURLかチェック
         thumbnailUrl = thumbnailPath.startsWith('http') ? thumbnailPath : null;

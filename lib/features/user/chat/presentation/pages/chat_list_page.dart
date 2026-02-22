@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/chat/presentation/providers/chat_provider.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
 class ChatListPage extends HookConsumerWidget {
@@ -13,8 +12,6 @@ class ChatListPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final allGroupChatsAsync = ref.watch(allGroupChatsProvider);
     final myChatRoomsAsync = ref.watch(chatRoomsProvider);
-    final currentRoute = GoRouterState.of(context).uri.path;
-
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -42,7 +39,6 @@ class ChatListPage extends HookConsumerWidget {
             _buildDMTab(context, ref, myChatRoomsAsync),
           ],
         ),
-        bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       ),
     );
   }

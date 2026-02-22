@@ -204,13 +204,13 @@ class _StatCard extends StatelessWidget {
             Icon(
               icon,
               size: 24,
-              color: isHighlighted ? ColorPalette.primaryColor : ColorPalette.neutral500,
+              color: isHighlighted ? ColorPalette.primaryColor : ColorPalette.neutral0,
             ),
             const SizedBox(height: SpacePalette.xs),
             Text(
               count,
               style: TextStylePalette.smHeader.copyWith(
-                color: isHighlighted ? ColorPalette.primaryColor : ColorPalette.neutral800,
+                color: isHighlighted ? ColorPalette.primaryColor : ColorPalette.neutral0,
               ),
             ),
             const SizedBox(height: SpacePalette.xs),

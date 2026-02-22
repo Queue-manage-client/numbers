@@ -27,7 +27,7 @@ class AdminInquiryManagementPage extends HookConsumerWidget {
           // フィルターバー
           Container(
             padding: const EdgeInsets.all(SpacePalette.base),
-            color: ColorPalette.neutral0,
+            color: ColorPalette.neutral800,
             child: Row(
               children: [
                 Text('ステータス:', style: TextStylePalette.normalText),
@@ -159,13 +159,13 @@ class _FilterChip extends StatelessWidget {
           vertical: SpacePalette.xs,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? chipColor : ColorPalette.neutral200,
+          color: isSelected ? chipColor : ColorPalette.neutral600,
           borderRadius: BorderRadius.circular(RadiusPalette.base),
         ),
         child: Text(
           label,
           style: TextStylePalette.normalText.copyWith(
-            color: isSelected ? ColorPalette.neutral0 : ColorPalette.neutral800,
+            color: ColorPalette.neutral0,
           ),
         ),
       ),

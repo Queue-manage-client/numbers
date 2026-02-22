@@ -60,6 +60,8 @@ import 'package:numbers/features/admin/presentation/pages/admin_intern_managemen
 import 'package:numbers/features/admin/presentation/pages/admin_inquiry_management_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_inquiry_detail_page.dart';
 import 'package:numbers/features/company_portal/job/presentation/pages/company_job_applications_page.dart';
+import 'package:flutter/material.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -94,10 +96,56 @@ final appRouter = GoRouter(
       builder: (context, state) => const PasswordResetPage(),
     ),
 
-    // User - Home & Feed
-    GoRoute(
-      path: '/feed',
-      builder: (context, state) => const FeedPage(),
+    // User - Main Tabs (persistent footer)
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) {
+        return Scaffold(
+          body: navigationShell,
+          bottomNavigationBar: ShellFooter(navigationShell: navigationShell),
+        );
+      },
+      branches: [
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/feed',
+              builder: (context, state) => const FeedPage(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/jobs/map',
+              builder: (context, state) => const JobMapPage(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/ai-chat',
+              builder: (context, state) => const AiChatPage(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/chats',
+              builder: (context, state) => const ChatListPage(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/interns',
+              builder: (context, state) => const InternListPage(),
+            ),
+          ],
+        ),
+      ],
     ),
 
     // User - Company
@@ -134,11 +182,6 @@ final appRouter = GoRouter(
       builder: (context, state) => const VideoSearchPage(),
     ),
 
-    // User - Job
-    GoRoute(
-      path: '/jobs/map',
-      builder: (context, state) => const JobMapPage(),
-    ),
     GoRoute(
       path: '/jobs/:id',
       builder: (context, state) => const JobDetailPage(),
@@ -152,21 +195,11 @@ final appRouter = GoRouter(
       builder: (context, state) => const JobApplicationCompletePage(),
     ),
 
-    // User - Intern
-    GoRoute(
-      path: '/interns',
-      builder: (context, state) => const InternListPage(),
-    ),
     GoRoute(
       path: '/interns/:id',
       builder: (context, state) => const InternDetailPage(),
     ),
 
-    // User - Chat
-    GoRoute(
-      path: '/chats',
-      builder: (context, state) => const ChatListPage(),
-    ),
     GoRoute(
       path: '/chats/:roomId',
       builder: (context, state) {
@@ -175,11 +208,6 @@ final appRouter = GoRouter(
       },
     ),
 
-    // User - AI Chat
-    GoRoute(
-      path: '/ai-chat',
-      builder: (context, state) => const AiChatPage(),
-    ),
 
     // User - Profile
     GoRoute(

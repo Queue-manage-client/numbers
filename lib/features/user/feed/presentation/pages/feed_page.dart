@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/user/feed/presentation/providers/feed_provider.dart';
 import 'package:numbers/features/user/profile/presentation/providers/profile_provider.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import '../widgets/vertical_video_feed.dart';
 
@@ -42,8 +41,6 @@ class FeedPage extends ConsumerWidget {
       );
     }
 
-    final currentRoute = GoRouterState.of(context).uri.path;
-
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
@@ -56,7 +53,6 @@ class FeedPage extends ConsumerWidget {
           ),
         ],
       ),
-      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: SafeArea(
         child: Column(
           children: [

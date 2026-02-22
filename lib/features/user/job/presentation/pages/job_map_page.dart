@@ -10,7 +10,6 @@ import 'package:numbers/features/user/job/presentation/widgets/job_marker_popup.
 import 'package:numbers/features/user/job/presentation/widgets/map_filter_sheet.dart';
 import 'package:numbers/features/user/job/presentation/widgets/location_selector.dart';
 import 'package:numbers/features/user/job/presentation/widgets/radius_slider.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
 class JobMapPage extends ConsumerStatefulWidget {
@@ -50,7 +49,6 @@ class _JobMapPageState extends ConsumerState<JobMapPage> {
 
   @override
   Widget build(BuildContext context) {
-    final currentRoute = GoRouterState.of(context).uri.path;
     final baseLocation = ref.watch(selectedBaseLocationProvider);
     final selectedJob = ref.watch(selectedMapJobProvider);
     final filter = ref.watch(mapFilterProvider);
@@ -190,7 +188,6 @@ class _JobMapPageState extends ConsumerState<JobMapPage> {
                 ),
               ],
             ),
-      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
     );
   }
 

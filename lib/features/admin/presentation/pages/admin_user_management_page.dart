@@ -29,15 +29,23 @@ class AdminUserManagementPage extends HookConsumerWidget {
           // フィルターバー
           Container(
             padding: const EdgeInsets.all(SpacePalette.base),
-            color: ColorPalette.neutral0,
+            color: ColorPalette.neutral800,
             child: Column(
               children: [
                 // 検索フィールド
                 TextField(
                   controller: searchController,
+                  style: TextStylePalette.normalText,
                   decoration: InputDecoration(
                     hintText: 'ニックネームで検索',
-                    prefixIcon: const Icon(Icons.search),
+                    hintStyle: TextStylePalette.subText,
+                    filled: true,
+                    fillColor: ColorPalette.neutral600,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(RadiusPalette.base),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.search, color: ColorPalette.neutral400),
                     suffixIcon: searchController.text.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear),
@@ -272,13 +280,13 @@ class _FilterChip extends StatelessWidget {
           vertical: SpacePalette.xs,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? ColorPalette.primaryColor : ColorPalette.neutral200,
+          color: isSelected ? ColorPalette.primaryColor : ColorPalette.neutral600,
           borderRadius: BorderRadius.circular(RadiusPalette.base),
         ),
         child: Text(
           label,
           style: TextStylePalette.normalText.copyWith(
-            color: isSelected ? ColorPalette.neutral0 : ColorPalette.neutral800,
+            color: ColorPalette.neutral0,
           ),
         ),
       ),

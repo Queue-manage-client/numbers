@@ -46,36 +46,40 @@ class AdminRepository {
 
   /// ダッシュボード用の統計情報を取得
   Future<Map<String, int>> getDashboardStats() async {
-    try {
-      // 全クエリを並列実行（N+1問題を回避）
-      final results = await Future.wait([
-        _supabase.from('profiles').select().count(),
-        _supabase.from('companies').select().count(),
-        _supabase.from('company_videos').select().count(),
-        _supabase.from('jobs').select().eq('status', 'open').count(),
-        _supabase.from('internships').select().eq('is_public', true).count(),
-        _supabase.from('inquiries').select().eq('status', 'open').count(),
-      ]);
-
-      return {
-        'users': results[0].count,
-        'companies': results[1].count,
-        'videos': results[2].count,
-        'jobs': results[3].count,
-        'internships': results[4].count,
-        'openInquiries': results[5].count,
-      };
-    } catch (e) {
-      print('Error getting dashboard stats: $e');
-      return {
-        'users': 0,
-        'companies': 0,
-        'videos': 0,
-        'jobs': 0,
-        'internships': 0,
-        'openInquiries': 0,
-      };
+    // 各クエリを独立して実行（1つの失敗が他に影響しない）
+    Future<int> countTable(String table, {Map<String, dynamic>? filter}) async {
+      try {
+        var query = _supabase.from(table).select('id');
+        if (filter != null) {
+          for (final entry in filter.entries) {
+            query = query.eq(entry.key, entry.value);
+          }
+        }
+        final response = await query;
+        return (response as List).length;
+      } catch (e) {
+        print('Error counting $table: $e');
+        return 0;
+      }
     }
+
+    final results = await Future.wait([
+      countTable('profiles'),
+      countTable('companies'),
+      countTable('company_videos'),
+      countTable('jobs', filter: {'status': 'open'}),
+      countTable('internships', filter: {'is_public': true}),
+      countTable('inquiries', filter: {'status': 'open'}),
+    ]);
+
+    return {
+      'users': results[0],
+      'companies': results[1],
+      'videos': results[2],
+      'jobs': results[3],
+      'internships': results[4],
+      'openInquiries': results[5],
+    };
   }
 
   // ==========================================

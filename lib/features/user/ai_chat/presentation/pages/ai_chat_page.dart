@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import '../providers/ai_chat_provider.dart';
 import '../widgets/ai_conversation_drawer.dart';
@@ -74,7 +73,6 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final currentRoute = GoRouterState.of(context).uri.path;
     final currentConversation = ref.watch(currentConversationProvider);
     final messages = currentConversation?.messages ?? [];
 
@@ -102,7 +100,6 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
         ],
       ),
       drawer: const AiConversationDrawer(),
-      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: Column(
         children: [
           Expanded(

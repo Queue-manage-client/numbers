@@ -28,16 +28,25 @@ class AdminInternManagementPage extends HookConsumerWidget {
           // フィルターバー
           Container(
             padding: const EdgeInsets.all(SpacePalette.base),
-            color: ColorPalette.neutral0,
+            color: ColorPalette.neutral800,
             child: Column(
               children: [
                 // 企業フィルター
                 companiesAsync.when(
                   data: (companies) => DropdownButtonFormField<String?>(
                     value: filter.companyId,
-                    decoration: const InputDecoration(
+                    dropdownColor: ColorPalette.neutral600,
+                    style: TextStylePalette.normalText,
+                    decoration: InputDecoration(
                       labelText: '企業でフィルター',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                      labelStyle: TextStylePalette.subText,
+                      filled: true,
+                      fillColor: ColorPalette.neutral600,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(RadiusPalette.base),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
                     items: [
                       const DropdownMenuItem(value: null, child: Text('全ての企業')),
@@ -233,13 +242,13 @@ class _FilterChip extends StatelessWidget {
           vertical: SpacePalette.xs,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? ColorPalette.primaryColor : ColorPalette.neutral200,
+          color: isSelected ? ColorPalette.primaryColor : ColorPalette.neutral600,
           borderRadius: BorderRadius.circular(RadiusPalette.base),
         ),
         child: Text(
           label,
           style: TextStylePalette.normalText.copyWith(
-            color: isSelected ? ColorPalette.neutral0 : ColorPalette.neutral800,
+            color: ColorPalette.neutral0,
           ),
         ),
       ),
