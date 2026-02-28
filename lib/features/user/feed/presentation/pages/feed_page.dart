@@ -145,7 +145,6 @@ class _FeaturedTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final groupedAsync = ref.watch(groupedVideosByCompanyProvider);
-    final supabase = Supabase.instance.client;
 
     return groupedAsync.when(
       data: (grouped) {
@@ -169,7 +168,6 @@ class _FeaturedTab extends ConsumerWidget {
               companyId: companyId,
               companyName: companyName,
               videos: videos,
-              supabase: supabase,
             );
           },
         );
@@ -262,13 +260,11 @@ class _CompanyVideoSection extends StatelessWidget {
   final String companyId;
   final String companyName;
   final List<Map<String, dynamic>> videos;
-  final SupabaseClient supabase;
 
   const _CompanyVideoSection({
     required this.companyId,
     required this.companyName,
     required this.videos,
-    required this.supabase,
   });
 
   @override
@@ -326,7 +322,6 @@ class _CompanyVideoSection extends StatelessWidget {
                 ),
                 child: _FeaturedVideoCard(
                   video: video,
-                  supabase: supabase,
                 ),
               );
             },
@@ -342,11 +337,9 @@ class _CompanyVideoSection extends StatelessWidget {
 // 特集タブの動画カード
 class _FeaturedVideoCard extends StatelessWidget {
   final Map<String, dynamic> video;
-  final SupabaseClient supabase;
 
   const _FeaturedVideoCard({
     required this.video,
-    required this.supabase,
   });
 
   @override
@@ -356,12 +349,8 @@ class _FeaturedVideoCard extends StatelessWidget {
     final companyId = video['company_id'] as String?;
     final videoId = video['id'] as String?;
 
-    String? thumbnailUrl;
-    if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
-      thumbnailUrl = supabase.storage
-          .from('company-thumbnails')
-          .getPublicUrl(thumbnailPath);
-    }
+    // Use pre-resolved signed URL from provider
+    final thumbnailUrl = video['thumbnail_url'] as String?;
 
     return GestureDetector(
       onTap: () {

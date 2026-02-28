@@ -23,7 +23,41 @@ final feedVideosProvider = FutureProvider<List<Map<String, dynamic>>>((ref) asyn
       return [];
     }
 
-    return List<Map<String, dynamic>>.from(response as List);
+    final videos = (response as List)
+        .map((v) => Map<String, dynamic>.from(v as Map))
+        .toList();
+
+    // Generate signed URLs for private storage buckets
+    await Future.wait(videos.map((video) async {
+      final videoPath = video['video_path'] as String?;
+      final thumbnailPath = video['thumbnail_path'] as String?;
+
+      if (videoPath != null && videoPath.isNotEmpty) {
+        try {
+          video['video_url'] = videoPath.startsWith('http')
+              ? videoPath
+              : await supabase.storage
+                  .from('company-videos')
+                  .createSignedUrl(videoPath, 3600);
+        } catch (e) {
+          video['video_url'] = '';
+        }
+      }
+
+      if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+        try {
+          video['thumbnail_url'] = thumbnailPath.startsWith('http')
+              ? thumbnailPath
+              : await supabase.storage
+                  .from('company-thumbnails')
+                  .createSignedUrl(thumbnailPath, 3600);
+        } catch (e) {
+          video['thumbnail_url'] = '';
+        }
+      }
+    }));
+
+    return videos;
   } catch (e) {
     print('Error fetching feed videos: $e');
     rethrow;
@@ -122,7 +156,37 @@ final videoByIdProvider = FutureProvider.family<Map<String, dynamic>?, String>((
         .eq('id', videoId)
         .single();
 
-    return response as Map<String, dynamic>;
+    final video = Map<String, dynamic>.from(response as Map);
+
+    // Generate signed URLs for private storage buckets
+    final videoPath = video['video_path'] as String?;
+    final thumbnailPath = video['thumbnail_path'] as String?;
+
+    if (videoPath != null && videoPath.isNotEmpty) {
+      try {
+        video['video_url'] = videoPath.startsWith('http')
+            ? videoPath
+            : await supabase.storage
+                .from('company-videos')
+                .createSignedUrl(videoPath, 3600);
+      } catch (e) {
+        video['video_url'] = '';
+      }
+    }
+
+    if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+      try {
+        video['thumbnail_url'] = thumbnailPath.startsWith('http')
+            ? thumbnailPath
+            : await supabase.storage
+                .from('company-thumbnails')
+                .createSignedUrl(thumbnailPath, 3600);
+      } catch (e) {
+        video['thumbnail_url'] = '';
+      }
+    }
+
+    return video;
   } catch (e) {
     print('Error fetching video by id: $e');
     return null;

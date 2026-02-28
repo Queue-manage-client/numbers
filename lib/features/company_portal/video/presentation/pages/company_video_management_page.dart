@@ -129,7 +129,7 @@ class CompanyVideoManagementPage extends ConsumerWidget {
                           trailing: PopupMenuButton(
                             icon: Icon(
                               Icons.more_vert,
-                              color: ColorPalette.neutral800,
+                              color: ColorPalette.neutral400,
                             ),
                             itemBuilder: (context) => [
                               PopupMenuItem(

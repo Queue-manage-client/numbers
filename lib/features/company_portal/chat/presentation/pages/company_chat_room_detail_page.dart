@@ -149,7 +149,7 @@ class CompanyChatRoomDetailPage extends HookConsumerWidget {
                         decoration: BoxDecoration(
                           color: isMe
                               ? ColorPalette.primaryColor
-                              : ColorPalette.neutral0,
+                              : ColorPalette.neutral800,
                           borderRadius: BorderRadius.circular(RadiusPalette.lg),
                         ),
                         child: Column(
@@ -167,7 +167,7 @@ class CompanyChatRoomDetailPage extends HookConsumerWidget {
                               style: TextStylePalette.normalText.copyWith(
                                 color: isMe
                                     ? ColorPalette.neutral0
-                                    : ColorPalette.neutral800,
+                                    : ColorPalette.neutral0,
                               ),
                             ),
                             const SizedBox(height: SpacePalette.xs),
@@ -221,9 +221,9 @@ class CompanyChatRoomDetailPage extends HookConsumerWidget {
           Container(
             padding: const EdgeInsets.all(SpacePalette.base),
             decoration: BoxDecoration(
-              color: ColorPalette.neutral0,
+              color: ColorPalette.neutral800,
               border: Border(
-                top: BorderSide(color: ColorPalette.neutral200),
+                top: BorderSide(color: ColorPalette.neutral600),
               ),
             ),
             child: Row(

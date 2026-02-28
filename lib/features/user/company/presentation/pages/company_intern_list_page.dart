@@ -18,21 +18,27 @@ class CompanyInternListPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
-        title: const Text('インターン一覧'),
-        backgroundColor: const Color(0xFF323232),
-        foregroundColor: const Color(0xFFFFFFFF),
+        title: Text(
+          'インターン一覧',
+          style: TextStylePalette.title,
+        ),
+        backgroundColor: ColorPalette.neutral900,
+        foregroundColor: ColorPalette.neutral0,
       ),
       bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: internshipsAsync.when(
         data: (internships) {
           if (internships.isEmpty) {
-            return const Center(
-              child: Text('インターンがありません'),
+            return Center(
+              child: Text(
+                'インターンがありません',
+                style: TextStylePalette.subText,
+              ),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(SpacePalette.base),
             itemCount: internships.length,
             itemBuilder: (context, index) {
               final internship = internships[index];
@@ -50,60 +56,52 @@ class CompanyInternListPage extends ConsumerWidget {
               }
 
               return Card(
-                margin: const EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: SpacePalette.base),
+                color: ColorPalette.neutral800,
                 child: InkWell(
                   onTap: () {
                     context.push('/interns/$internshipId');
                   },
+                  borderRadius: BorderRadius.circular(RadiusPalette.lg),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(SpacePalette.base),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF323232),
-                          ),
+                          style: TextStylePalette.smListTitle,
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: SpacePalette.sm),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.calendar_today,
                               size: 16,
-                              color: Color(0xFF666666),
+                              color: ColorPalette.neutral400,
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: SpacePalette.xs),
                             Text(
                               dateRange,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF666666),
-                              ),
+                              style: TextStylePalette.subText,
                             ),
                           ],
                         ),
                         if (description.isNotEmpty) ...[
-                          const SizedBox(height: 8),
+                          const SizedBox(height: SpacePalette.sm),
                           Text(
                             description,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF666666),
-                            ),
+                            style: TextStylePalette.smListLeading,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
-                        const SizedBox(height: 8),
-                        const Align(
+                        const SizedBox(height: SpacePalette.sm),
+                        Align(
                           alignment: Alignment.centerRight,
                           child: Icon(
                             Icons.chevron_right,
-                            color: Color(0xFF666666),
+                            color: ColorPalette.neutral400,
                           ),
                         ),
                       ],
@@ -114,17 +112,31 @@ class CompanyInternListPage extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: ColorPalette.primaryColor,
+          ),
+        ),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('エラー: $error'),
-              const SizedBox(height: 16),
-              ElevatedButton(
+              Text(
+                'エラー: $error',
+                style: TextStylePalette.subText,
+              ),
+              const SizedBox(height: SpacePalette.base),
+              OutlinedButton(
                 onPressed: () {
                   ref.invalidate(companyInternshipsProvider(companyId));
                 },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: ColorPalette.primaryColor,
+                  side: const BorderSide(
+                    color: ColorPalette.primaryColor,
+                    width: 2,
+                  ),
+                ),
                 child: const Text('再試行'),
               ),
             ],

@@ -372,12 +372,12 @@ class CompanyVideoPostPage extends HookConsumerWidget {
               Container(
                 height: 220,  // 高さを増やした
                 decoration: BoxDecoration(
-                  color: ColorPalette.neutral0,
+                  color: ColorPalette.neutral800,
                   borderRadius: BorderRadius.circular(RadiusPalette.lg),
                   border: Border.all(
-                    color: videoFile.value != null 
-                        ? ColorPalette.systemGreen 
-                        : ColorPalette.neutral200,
+                    color: videoFile.value != null
+                        ? ColorPalette.systemGreen
+                        : ColorPalette.neutral600,
                     width: 2,
                   ),
                 ),
@@ -441,12 +441,12 @@ class CompanyVideoPostPage extends HookConsumerWidget {
               Container(
                 height: 150,
                 decoration: BoxDecoration(
-                  color: ColorPalette.neutral0,
+                  color: ColorPalette.neutral800,
                   borderRadius: BorderRadius.circular(RadiusPalette.lg),
                   border: Border.all(
                     color: thumbnailFile.value != null
                         ? ColorPalette.systemGreen
-                        : ColorPalette.neutral200,
+                        : ColorPalette.neutral600,
                     width: 2,
                   ),
                 ),

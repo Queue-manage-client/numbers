@@ -369,12 +369,12 @@ class CompanyVideoEditPage extends HookConsumerWidget {
                   Container(
                     height: 150,
                     decoration: BoxDecoration(
-                      color: ColorPalette.neutral0,
+                      color: ColorPalette.neutral800,
                       borderRadius: BorderRadius.circular(RadiusPalette.lg),
                       border: Border.all(
                         color: newThumbnailFile.value != null
                             ? ColorPalette.systemGreen
-                            : ColorPalette.neutral200,
+                            : ColorPalette.neutral600,
                         width: 2,
                       ),
                     ),

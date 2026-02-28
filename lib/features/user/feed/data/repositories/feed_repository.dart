@@ -120,20 +120,26 @@ class FeedRepository {
     }
   }
 
-  /// 動画URLを取得（Supabase Storage）
-  String getVideoUrl(String videoPath) {
+  /// 動画URLを取得（Supabase Storage - 署名付きURL）
+  Future<String> getVideoUrl(String videoPath) async {
     try {
-      return _supabase.storage.from('company-videos').getPublicUrl(videoPath);
+      if (videoPath.startsWith('http')) return videoPath;
+      return await _supabase.storage
+          .from('company-videos')
+          .createSignedUrl(videoPath, 3600);
     } catch (e) {
       print('Error getting video URL: $e');
       return '';
     }
   }
 
-  /// サムネイルURLを取得（Supabase Storage）
-  String getThumbnailUrl(String thumbnailPath) {
+  /// サムネイルURLを取得（Supabase Storage - 署名付きURL）
+  Future<String> getThumbnailUrl(String thumbnailPath) async {
     try {
-      return _supabase.storage.from('company-thumbnails').getPublicUrl(thumbnailPath);
+      if (thumbnailPath.startsWith('http')) return thumbnailPath;
+      return await _supabase.storage
+          .from('company-thumbnails')
+          .createSignedUrl(thumbnailPath, 3600);
     } catch (e) {
       print('Error getting thumbnail URL: $e');
       return '';

@@ -42,9 +42,10 @@ class _CompanyInternEditPageState extends State<CompanyInternEditPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF323232),
-              onPrimary: Color(0xFFFFFFFF),
+            colorScheme: ColorScheme.dark(
+              primary: ColorPalette.primaryColor,
+              onPrimary: ColorPalette.neutral0,
+              surface: ColorPalette.neutral800,
             ),
           ),
           child: child!,
@@ -211,7 +212,7 @@ class _CompanyInternEditPageState extends State<CompanyInternEditPage> {
                         ? '${_startDate!.year}/${_startDate!.month}/${_startDate!.day}'
                         : '日付を選択してください',
                     style: TextStyle(
-                      color: _startDate != null ? Colors.black : Colors.grey,
+                      color: _startDate != null ? ColorPalette.neutral0 : ColorPalette.neutral400,
                     ),
                   ),
                 ),
@@ -232,7 +233,7 @@ class _CompanyInternEditPageState extends State<CompanyInternEditPage> {
                         ? '${_endDate!.year}/${_endDate!.month}/${_endDate!.day}'
                         : '日付を選択してください',
                     style: TextStyle(
-                      color: _endDate != null ? Colors.black : Colors.grey,
+                      color: _endDate != null ? ColorPalette.neutral0 : ColorPalette.neutral400,
                     ),
                   ),
                 ),
@@ -251,23 +252,10 @@ class _CompanyInternEditPageState extends State<CompanyInternEditPage> {
               const SizedBox(height: 24),
 
               // 更新ボタン
-              ElevatedButton(
+              GradientButton(
+                text: '更新',
                 onPressed: _isLoading ? null : _updateIntern,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF323232),
-                  foregroundColor: const Color(0xFFFFFFFF),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0xFFFFFFFF),
-                        ),
-                      )
-                    : const Text('更新'),
+                isLoading: _isLoading,
               ),
               const SizedBox(height: 16),
 

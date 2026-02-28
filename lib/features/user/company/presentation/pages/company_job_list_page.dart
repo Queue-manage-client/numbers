@@ -18,21 +18,27 @@ class CompanyJobListPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
-        title: const Text('求人一覧'),
-        backgroundColor: const Color(0xFF323232),
-        foregroundColor: const Color(0xFFFFFFFF),
+        title: Text(
+          '求人一覧',
+          style: TextStylePalette.title,
+        ),
+        backgroundColor: ColorPalette.neutral900,
+        foregroundColor: ColorPalette.neutral0,
       ),
       bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: jobsAsync.when(
         data: (jobs) {
           if (jobs.isEmpty) {
-            return const Center(
-              child: Text('求人がありません'),
+            return Center(
+              child: Text(
+                '求人がありません',
+                style: TextStylePalette.subText,
+              ),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(SpacePalette.base),
             itemCount: jobs.length,
             itemBuilder: (context, index) {
               final job = jobs[index];
@@ -43,77 +49,66 @@ class CompanyJobListPage extends ConsumerWidget {
               final description = job['description'] as String? ?? '';
 
               return Card(
-                margin: const EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: SpacePalette.base),
+                color: ColorPalette.neutral800,
                 child: InkWell(
                   onTap: () {
                     context.push('/jobs/$jobId');
                   },
+                  borderRadius: BorderRadius.circular(RadiusPalette.lg),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(SpacePalette.base),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF323232),
-                          ),
+                          style: TextStylePalette.smListTitle,
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: SpacePalette.sm),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.attach_money,
                               size: 16,
-                              color: Color(0xFF666666),
+                              color: ColorPalette.neutral400,
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: SpacePalette.xs),
                             Text(
                               salary,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF666666),
-                              ),
+                              style: TextStylePalette.subText,
                             ),
-                            const SizedBox(width: 16),
-                            const Icon(
+                            const SizedBox(width: SpacePalette.base),
+                            Icon(
                               Icons.location_on,
                               size: 16,
-                              color: Color(0xFF666666),
+                              color: ColorPalette.neutral400,
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: SpacePalette.xs),
                             Expanded(
                               child: Text(
                                 location,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF666666),
-                                ),
+                                style: TextStylePalette.subText,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
                         if (description.isNotEmpty) ...[
-                          const SizedBox(height: 8),
+                          const SizedBox(height: SpacePalette.sm),
                           Text(
                             description,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF666666),
-                            ),
+                            style: TextStylePalette.smListLeading,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
-                        const SizedBox(height: 8),
-                        const Align(
+                        const SizedBox(height: SpacePalette.sm),
+                        Align(
                           alignment: Alignment.centerRight,
                           child: Icon(
                             Icons.chevron_right,
-                            color: Color(0xFF666666),
+                            color: ColorPalette.neutral400,
                           ),
                         ),
                       ],
@@ -124,17 +119,31 @@ class CompanyJobListPage extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: ColorPalette.primaryColor,
+          ),
+        ),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('エラー: $error'),
-              const SizedBox(height: 16),
-              ElevatedButton(
+              Text(
+                'エラー: $error',
+                style: TextStylePalette.subText,
+              ),
+              const SizedBox(height: SpacePalette.base),
+              OutlinedButton(
                 onPressed: () {
                   ref.invalidate(companyJobsProvider(companyId));
                 },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: ColorPalette.primaryColor,
+                  side: const BorderSide(
+                    color: ColorPalette.primaryColor,
+                    width: 2,
+                  ),
+                ),
                 child: const Text('再試行'),
               ),
             ],

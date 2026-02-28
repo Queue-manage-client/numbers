@@ -49,9 +49,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
               alignment: Alignment.topRight,
               child: TextButton(
                 onPressed: () => context.go('/login'),
-                child: const Text(
+                child: Text(
                   'スキップ',
-                  style: TextStyle(color: Color(0xFF323232)),
+                  style: TextStyle(color: ColorPalette.neutral400),
                 ),
               ),
             ),
@@ -72,24 +72,24 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         Icon(
                           _getIcon(page['icon']!),
                           size: 120,
-                          color: const Color(0xFF323232),
+                          color: ColorPalette.primaryColor,
                         ),
                         const SizedBox(height: 48),
                         Text(
                           page['title']!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF323232),
+                            color: ColorPalette.neutral0,
                           ),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           page['description']!,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
-                            color: Color(0xFF666666),
+                            color: ColorPalette.neutral400,
                           ),
                         ),
                       ],
@@ -109,8 +109,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _currentPage == index
-                        ? const Color(0xFF323232)
-                        : const Color(0xFFCCCCCC),
+                        ? ColorPalette.primaryColor
+                        : ColorPalette.neutral600,
                   ),
                 ),
               ),
@@ -120,7 +120,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
               padding: const EdgeInsets.all(24),
               child: SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: GradientButton(
+                  text: _currentPage == _pages.length - 1 ? '始める' : '次へ',
                   onPressed: () {
                     if (_currentPage == _pages.length - 1) {
                       context.go('/login');
@@ -131,14 +132,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       );
                     }
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF323232),
-                    foregroundColor: const Color(0xFFFFFFFF),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: Text(
-                    _currentPage == _pages.length - 1 ? '始める' : '次へ',
-                  ),
                 ),
               ),
             ),

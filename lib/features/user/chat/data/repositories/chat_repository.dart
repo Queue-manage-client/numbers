@@ -1,4 +1,5 @@
 // features/user/chat/data/repositories/chat_repository.dart
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatRepository {
@@ -80,5 +81,68 @@ class ChatRepository {
       print('Error sending message: $e');
       rethrow;
     }
+  }
+
+  /// ユーザーがグループチャットを作成
+  Future<String> createUserGroupChat({
+    required String userId,
+    required String name,
+    required String description,
+    String? iconUrl,
+  }) async {
+    try {
+      final roomData = {
+        'name': name,
+        'description': description,
+        'room_type': 'group',
+        'company_id': null,
+        'created_by': userId,
+        'icon_url': iconUrl,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      final roomResponse = await _supabase
+          .from('chat_rooms')
+          .insert(roomData)
+          .select()
+          .single();
+
+      final roomId = roomResponse['id'] as String;
+
+      // 作成者を自動的にメンバーとして追加
+      await _supabase.from('chat_room_members').insert({
+        'room_id': roomId,
+        'profile_id': userId,
+      });
+
+      return roomId;
+    } catch (e) {
+      print('Error creating user group chat: $e');
+      rethrow;
+    }
+  }
+
+  /// チャットアイコンをSupabase Storageにアップロード
+  Future<String> uploadChatIcon({
+    required String userId,
+    required Uint8List imageBytes,
+    required String fileName,
+  }) async {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final sanitizedName = fileName.replaceAll(RegExp(r'[^\w.]'), '_');
+    final path = '$userId/${timestamp}_$sanitizedName';
+
+    await _supabase.storage.from('chat-icons').uploadBinary(
+      path,
+      imageBytes,
+      fileOptions: const FileOptions(
+        contentType: 'image/jpeg',
+        upsert: false,
+      ),
+    );
+
+    final publicUrl = _supabase.storage.from('chat-icons').getPublicUrl(path);
+    return publicUrl;
   }
 }

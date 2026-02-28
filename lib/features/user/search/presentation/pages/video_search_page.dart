@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/user/feed/presentation/providers/feed_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
@@ -13,7 +12,7 @@ Widget _buildPlaceholder() {
     width: 120,
     height: 80,
     decoration: BoxDecoration(
-      color: ColorPalette.neutral200,
+      color: ColorPalette.neutral800,
       borderRadius: BorderRadius.circular(RadiusPalette.base),
     ),
     child: Icon(
@@ -87,7 +86,7 @@ class VideoSearchPage extends HookConsumerWidget {
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
         backgroundColor: ColorPalette.neutral900,
-        foregroundColor: ColorPalette.neutral800,
+        foregroundColor: ColorPalette.neutral0,
         title: Text(
           '動画検索',
           style: TextStylePalette.title,
@@ -251,16 +250,10 @@ class VideoSearchPage extends HookConsumerWidget {
                         final companyId = video['company_id'] as String?;
                         final title = video['title'] as String? ?? 'タイトルなし';
                         final description = video['description'] as String? ?? '';
-                        final thumbnailPath = video['thumbnail_path'] as String?;
                         final tags = (video['tags'] as List<dynamic>?)?.cast<String>() ?? [];
 
-                        String? thumbnailUrl;
-                        if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
-                          final supabase = Supabase.instance.client;
-                          thumbnailUrl = supabase.storage
-                              .from('company-thumbnails')
-                              .getPublicUrl(thumbnailPath);
-                        }
+                        // Use pre-resolved signed URL from provider
+                        final thumbnailUrl = video['thumbnail_url'] as String?;
 
                         return Card(
                           margin: const EdgeInsets.only(bottom: SpacePalette.sm),

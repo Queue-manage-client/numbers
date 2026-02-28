@@ -24,7 +24,7 @@ class CompanyVideoListManagementPage extends ConsumerWidget {
           IconButton(
             icon: Icon(
               Icons.add,
-              color: ColorPalette.neutral800,
+              color: ColorPalette.neutral0,
             ),
             onPressed: () => context.go('/company-portal/videos/post'),
           ),
@@ -102,7 +102,7 @@ class CompanyVideoListManagementPage extends ConsumerWidget {
                   trailing: PopupMenuButton(
                     icon: Icon(
                       Icons.more_vert,
-                      color: ColorPalette.neutral800,
+                      color: ColorPalette.neutral400,
                     ),
                     itemBuilder: (context) => [
                       PopupMenuItem(

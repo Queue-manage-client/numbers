@@ -137,8 +137,24 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
     final videoPath = widget.video['video_path'] as String?;
     if (videoPath == null || videoPath.isEmpty) return;
 
-    final supabase = Supabase.instance.client;
-    final videoUrl = supabase.storage.from('company-videos').getPublicUrl(videoPath);
+    // Use pre-resolved signed URL if available, otherwise generate one
+    String videoUrl;
+    final preResolved = widget.video['video_url'] as String?;
+    if (preResolved != null && preResolved.isNotEmpty) {
+      videoUrl = preResolved;
+    } else {
+      final supabase = Supabase.instance.client;
+      try {
+        videoUrl = videoPath.startsWith('http')
+            ? videoPath
+            : await supabase.storage
+                .from('company-videos')
+                .createSignedUrl(videoPath, 3600);
+      } catch (e) {
+        debugPrint('Error creating signed URL: $e');
+        return;
+      }
+    }
 
     try {
       _controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));

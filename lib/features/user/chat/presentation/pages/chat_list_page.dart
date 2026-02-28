@@ -1,8 +1,10 @@
 // features/user/chat/presentation/pages/chat_list_page.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/chat/presentation/providers/chat_provider.dart';
+import 'package:numbers/features/user/chat/presentation/pages/group_chat_create_page.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
 class ChatListPage extends HookConsumerWidget {
@@ -12,34 +14,50 @@ class ChatListPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final allGroupChatsAsync = ref.watch(allGroupChatsProvider);
     final myChatRoomsAsync = ref.watch(chatRoomsProvider);
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: ColorPalette.neutral900,
-        appBar: AppBar(
-          title: const Text('チャット'),
-          bottom: TabBar(
-            indicatorColor: ColorPalette.primaryColor,
-            labelColor: ColorPalette.primaryColor,
-            unselectedLabelColor: ColorPalette.neutral500,
-            dividerColor: ColorPalette.neutral600,
-            dividerHeight: 0.5,
-            tabs: const [
-              Tab(text: 'グループ'),
-              Tab(text: 'DM'),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            // グループチャットタブ（全公開）
-            _buildGroupChatTab(context, ref, allGroupChatsAsync),
-            
-            // DMタブ（参加中のみ）
-            _buildDMTab(context, ref, myChatRoomsAsync),
+    final tabController = useTabController(initialLength: 2);
+    final currentTabIndex = useState(0);
+
+    useEffect(() {
+      void listener() {
+        currentTabIndex.value = tabController.index;
+      }
+      tabController.addListener(listener);
+      return () => tabController.removeListener(listener);
+    }, [tabController]);
+
+    return Scaffold(
+      backgroundColor: ColorPalette.neutral900,
+      appBar: AppBar(
+        title: const Text('チャット'),
+        bottom: TabBar(
+          controller: tabController,
+          indicatorColor: ColorPalette.primaryColor,
+          labelColor: ColorPalette.primaryColor,
+          unselectedLabelColor: ColorPalette.neutral500,
+          dividerColor: ColorPalette.neutral600,
+          dividerHeight: 0.5,
+          tabs: const [
+            Tab(text: 'グループ'),
+            Tab(text: 'DM'),
           ],
         ),
       ),
+      body: TabBarView(
+        controller: tabController,
+        children: [
+          // グループチャットタブ（全公開）
+          _buildGroupChatTab(context, ref, allGroupChatsAsync),
+
+          // DMタブ（参加中のみ）
+          _buildDMTab(context, ref, myChatRoomsAsync),
+        ],
+      ),
+      floatingActionButton: currentTabIndex.value == 0
+          ? FloatingActionButton(
+              onPressed: () => context.push('/chats/create'),
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 
@@ -70,7 +88,7 @@ class ChatListPage extends HookConsumerWidget {
                   ),
                   const SizedBox(height: SpacePalette.sm),
                   Text(
-                    '企業が作成するのをお待ちください',
+                    '右下の「+」ボタンからグループを作成できます',
                     style: TextStylePalette.subText,
                     textAlign: TextAlign.center,
                   ),
@@ -88,8 +106,12 @@ class ChatListPage extends HookConsumerWidget {
             final roomId = room['id'] as String;
             final roomName = room['name'] as String? ?? 'グループチャット';
             final description = room['description'] as String? ?? '';
+            final iconUrl = room['icon_url'] as String?;
+            final companyId = room['company_id'];
             final company = room['companies'] as Map<String, dynamic>?;
-            final companyName = company?['name'] as String? ?? '企業';
+            final subtitle = companyId != null
+                ? (company?['name'] as String? ?? '企業')
+                : 'ユーザー作成グループ';
 
             return Card(
               margin: const EdgeInsets.only(bottom: SpacePalette.sm),
@@ -114,13 +136,7 @@ class ChatListPage extends HookConsumerWidget {
                                 width: 1.8,
                               ),
                             ),
-                            child: CircleAvatar(
-                              backgroundColor: ColorPalette.primaryColor,
-                              child: Icon(
-                                Icons.group,
-                                color: ColorPalette.neutral0,
-                              ),
-                            ),
+                            child: buildChatIconWidget(iconUrl),
                           ),
                           const SizedBox(width: SpacePalette.base),
                           Expanded(
@@ -133,7 +149,7 @@ class ChatListPage extends HookConsumerWidget {
                                 ),
                                 const SizedBox(height: SpacePalette.xs),
                                 Text(
-                                  companyName,
+                                  subtitle,
                                   style: TextStylePalette.smListLeading,
                                 ),
                               ],
@@ -276,7 +292,7 @@ class ChatListPage extends HookConsumerWidget {
           itemBuilder: (context, index) {
             final roomData = dmRooms[index];
             final room = roomData['chat_rooms'] as Map<String, dynamic>?;
-            
+
             if (room == null) return const SizedBox.shrink();
 
             final roomId = room['id'] as String;

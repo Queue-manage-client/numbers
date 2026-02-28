@@ -66,15 +66,8 @@ class VideoCard extends StatelessWidget {
     final description = video['description'] as String? ?? '';
     final thumbnailPath = video['thumbnail_path'] as String?;
 
-    String? thumbnailUrl;
-    if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
-      try {
-        thumbnailUrl = supabase.storage.from('company-thumbnails').getPublicUrl(thumbnailPath);
-      } catch (e) {
-        // エラー時はthumbnailPathがURLかチェック
-        thumbnailUrl = thumbnailPath.startsWith('http') ? thumbnailPath : null;
-      }
-    }
+    // Use pre-resolved signed URL from provider
+    final thumbnailUrl = video['thumbnail_url'] as String?;
 
     return Card(
       elevation: 2,

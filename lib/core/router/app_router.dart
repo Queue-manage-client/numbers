@@ -23,6 +23,7 @@ import 'package:numbers/features/user/intern/presentation/pages/intern_list_page
 import 'package:numbers/features/user/intern/presentation/pages/intern_detail_page.dart';
 import 'package:numbers/features/user/chat/presentation/pages/chat_list_page.dart';
 import 'package:numbers/features/user/chat/presentation/pages/chat_room_page.dart';
+import 'package:numbers/features/user/chat/presentation/pages/group_chat_create_page.dart';
 import 'package:numbers/features/user/ai_chat/presentation/pages/ai_chat_page.dart';
 import 'package:numbers/features/user/profile/presentation/pages/my_page.dart';
 import 'package:numbers/features/user/profile/presentation/pages/profile_edit_page.dart';
@@ -200,6 +201,10 @@ final appRouter = GoRouter(
       builder: (context, state) => const InternDetailPage(),
     ),
 
+    GoRoute(
+      path: '/chats/create',
+      builder: (context, state) => const GroupChatCreatePage(),
+    ),
     GoRoute(
       path: '/chats/:roomId',
       builder: (context, state) {

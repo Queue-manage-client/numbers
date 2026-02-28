@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
 import 'package:numbers/features/user/company/presentation/providers/company_provider.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
@@ -32,7 +31,6 @@ class _CompanyVideoListPageState extends ConsumerState<CompanyVideoListPage> {
       return;
     }
 
-    // URLの検証
     if (videoUrl.isEmpty || !(Uri.tryParse(videoUrl)?.hasAbsolutePath ?? false)) {
       print('無効なビデオURL (videoId: $videoId): $videoUrl');
       return;
@@ -41,11 +39,10 @@ class _CompanyVideoListPageState extends ConsumerState<CompanyVideoListPage> {
     try {
       final controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
       _controllers[videoId] = controller;
-      
+
       controller.initialize().then((_) {
         if (!mounted) return;
-        
-        // 初期化成功後の状態確認
+
         if (controller.value.hasError) {
           print('ビデオ初期化エラー (videoId: $videoId): ${controller.value.errorDescription}');
           _controllers[videoId]?.dispose();
@@ -60,10 +57,8 @@ class _CompanyVideoListPageState extends ConsumerState<CompanyVideoListPage> {
           setState(() {});
         }
       }).catchError((error, stackTrace) {
-        // ビデオの初期化に失敗した場合（フォーマットエラーなど）
         print('ビデオ初期化エラー (videoId: $videoId, URL: $videoUrl): $error');
         print('スタックトレース: $stackTrace');
-        // エラーが発生したコントローラーを削除
         if (_controllers.containsKey(videoId)) {
           _controllers[videoId]?.dispose();
           _controllers.remove(videoId);
@@ -86,52 +81,39 @@ class _CompanyVideoListPageState extends ConsumerState<CompanyVideoListPage> {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
-        title: const Text('企業動画'),
-        backgroundColor: const Color(0xFF323232),
-        foregroundColor: const Color(0xFFFFFFFF),
+        title: Text(
+          '企業動画',
+          style: TextStylePalette.title,
+        ),
+        backgroundColor: ColorPalette.neutral900,
+        foregroundColor: ColorPalette.neutral0,
       ),
       bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: videosAsync.when(
         data: (videos) {
           if (videos.isEmpty) {
-            return const Center(
-              child: Text('動画がありません'),
+            return Center(
+              child: Text(
+                '動画がありません',
+                style: TextStylePalette.subText,
+              ),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(SpacePalette.base),
             itemCount: videos.length,
             itemBuilder: (context, index) {
               final video = videos[index];
               final videoId = video['id'] as String? ?? '';
               final title = video['title'] as String? ?? 'タイトルなし';
               final description = video['description'] as String? ?? '';
-              final videoPath = video['video_path'] as String?;
-              final thumbnailPath = video['thumbnail_path'] as String?;
 
-              String? videoUrl;
-              String? thumbnailUrl;
-              final supabase = Supabase.instance.client;
-              if (videoPath != null) {
-                try {
-                  videoUrl = supabase.storage.from('company-videos').getPublicUrl(videoPath);
-                } catch (e) {
-                  // ストレージバケット名が異なる場合はvideo_pathをそのまま使用
-                  videoUrl = videoPath.startsWith('http') ? videoPath : null;
-                }
-              }
-              if (thumbnailPath != null) {
-                try {
-                  thumbnailUrl = supabase.storage.from('company-thumbnails').getPublicUrl(thumbnailPath);
-                } catch (e) {
-                  // ストレージバケット名が異なる場合はthumbnail_pathをそのまま使用
-                  thumbnailUrl = thumbnailPath.startsWith('http') ? thumbnailPath : null;
-                }
-              }
+              // Use pre-resolved signed URLs from provider
+              final videoUrl = video['video_url'] as String?;
+              final thumbnailUrl = video['thumbnail_url'] as String?;
 
               if (videoUrl != null && videoUrl.isNotEmpty) {
-                // URLの検証を追加
                 final uri = Uri.tryParse(videoUrl);
                 if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
                   _initializeVideo(videoId, videoUrl);
@@ -143,89 +125,70 @@ class _CompanyVideoListPageState extends ConsumerState<CompanyVideoListPage> {
               final controller = _controllers[videoId];
 
               return Card(
-                margin: const EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: SpacePalette.base),
+                color: ColorPalette.neutral800,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 動画プレイヤーまたはサムネイル
                     AspectRatio(
                       aspectRatio: 16 / 9,
-                      child: controller != null && controller.value.isInitialized
-                          ? GestureDetector(
-                              onTap: () {
-                                if (controller.value.isPlaying) {
-                                  controller.pause();
-                                } else {
-                                  controller.play();
-                                }
-                                setState(() {});
-                              },
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  VideoPlayer(controller),
-                                  Center(
-                                    child: Icon(
-                                      controller.value.isPlaying
-                                          ? Icons.pause
-                                          : Icons.play_arrow,
-                                      color: Colors.white,
-                                      size: 48,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : thumbnailUrl != null
-                              ? Image.network(
-                                  thumbnailUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      color: Colors.grey[300],
-                                      child: const Center(
-                                        child: Icon(
-                                          Icons.video_library,
-                                          color: Colors.grey,
-                                          size: 48,
-                                        ),
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(RadiusPalette.lg),
+                        ),
+                        child: controller != null && controller.value.isInitialized
+                            ? GestureDetector(
+                                onTap: () {
+                                  if (controller.value.isPlaying) {
+                                    controller.pause();
+                                  } else {
+                                    controller.play();
+                                  }
+                                  setState(() {});
+                                },
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    VideoPlayer(controller),
+                                    Center(
+                                      child: Icon(
+                                        controller.value.isPlaying
+                                            ? Icons.pause
+                                            : Icons.play_arrow,
+                                        color: Colors.white,
+                                        size: 48,
                                       ),
-                                    );
-                                  },
-                                )
-                              : Container(
-                                  color: Colors.grey[300],
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.video_library,
-                                      color: Colors.grey,
-                                      size: 48,
                                     ),
-                                  ),
+                                  ],
                                 ),
+                              )
+                            : thumbnailUrl != null
+                                ? Image.network(
+                                    thumbnailUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return _buildPlaceholder();
+                                    },
+                                  )
+                                : _buildPlaceholder(),
+                      ),
                     ),
                     // タイトルと説明
                     Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(SpacePalette.base),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             title,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF323232),
-                            ),
+                            style: TextStylePalette.smListTitle,
                           ),
                           if (description.isNotEmpty) ...[
-                            const SizedBox(height: 8),
+                            const SizedBox(height: SpacePalette.sm),
                             Text(
                               description,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF666666),
-                              ),
+                              style: TextStylePalette.smListLeading,
                               maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -239,21 +202,48 @@ class _CompanyVideoListPageState extends ConsumerState<CompanyVideoListPage> {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: ColorPalette.primaryColor,
+          ),
+        ),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('エラー: $error'),
-              const SizedBox(height: 16),
-              ElevatedButton(
+              Text(
+                'エラー: $error',
+                style: TextStylePalette.subText,
+              ),
+              const SizedBox(height: SpacePalette.base),
+              OutlinedButton(
                 onPressed: () {
                   ref.invalidate(companyVideosProvider(companyId));
                 },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: ColorPalette.primaryColor,
+                  side: const BorderSide(
+                    color: ColorPalette.primaryColor,
+                    width: 2,
+                  ),
+                ),
                 child: const Text('再試行'),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      color: ColorPalette.neutral800,
+      child: Center(
+        child: Icon(
+          Icons.video_library,
+          color: ColorPalette.neutral400,
+          size: 48,
         ),
       ),
     );

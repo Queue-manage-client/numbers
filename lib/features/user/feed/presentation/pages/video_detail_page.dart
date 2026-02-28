@@ -73,12 +73,14 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
         return;
       }
 
-      // 動画URLを取得
+      // 動画URLを取得（署名付きURL）
       String videoUrl;
       if (videoPath.startsWith('http')) {
         videoUrl = videoPath;
       } else {
-        videoUrl = supabase.storage.from('company-videos').getPublicUrl(videoPath);
+        videoUrl = await supabase.storage
+            .from('company-videos')
+            .createSignedUrl(videoPath, 3600);
       }
 
       // デバッグ用: 動画URLをログ出力
