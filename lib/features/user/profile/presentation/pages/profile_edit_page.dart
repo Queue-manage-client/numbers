@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/user/profile/presentation/providers/profile_provider.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
@@ -17,15 +18,18 @@ class ProfileEditPage extends ConsumerStatefulWidget {
 class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   final _formKey = GlobalKey<FormState>();
   final _nicknameController = TextEditingController();
-  final _universityController = TextEditingController();
+  final _educationController = TextEditingController();
   final _locationController = TextEditingController();
   String? _gender;
   bool _isLoading = false;
+  bool _isUploadingResume = false;
+  String? _resumeFileName;
+  String? _resumeUrl;
 
   @override
   void dispose() {
     _nicknameController.dispose();
-    _universityController.dispose();
+    _educationController.dispose();
     _locationController.dispose();
     super.dispose();
   }
@@ -43,7 +47,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       await repository.updateProfile(
         userId: user.id,
         nickname: _nicknameController.text.trim(),
-        university: _universityController.text.trim(),
+        education: _educationController.text.trim(),
         location: _locationController.text.trim(),
         gender: _gender,
       );
@@ -52,6 +56,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('プロフィールを更新しました')),
         );
+        ref.invalidate(profileProvider);
         context.pop();
       }
     } catch (e) {
@@ -63,6 +68,80 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _pickAndUploadResume() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx'],
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final file = result.files.first;
+      if (file.path == null) return;
+
+      setState(() => _isUploadingResume = true);
+
+      final user = ref.read(currentUserProvider);
+      if (user == null) throw Exception('ユーザーが見つかりません');
+
+      final repository = ref.read(profileRepositoryProvider);
+      final url = await repository.uploadResume(
+        userId: user.id,
+        filePath: file.path!,
+        fileName: file.name,
+      );
+
+      if (mounted) {
+        setState(() {
+          _resumeFileName = file.name;
+          _resumeUrl = url;
+        });
+        ref.invalidate(profileProvider);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('職務経歴書をアップロードしました')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('アップロードエラー: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingResume = false);
+      }
+    }
+  }
+
+  Future<void> _deleteResume() async {
+    try {
+      final user = ref.read(currentUserProvider);
+      if (user == null) return;
+
+      final repository = ref.read(profileRepositoryProvider);
+      await repository.deleteResume(user.id);
+
+      if (mounted) {
+        setState(() {
+          _resumeFileName = null;
+          _resumeUrl = null;
+        });
+        ref.invalidate(profileProvider);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('職務経歴書を削除しました')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('削除エラー: $e')),
+        );
       }
     }
   }
@@ -87,9 +166,11 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         data: (profile) {
           if (profile != null && _nicknameController.text.isEmpty) {
             _nicknameController.text = profile['nickname'] ?? '';
-            _universityController.text = profile['university'] ?? '';
+            _educationController.text = profile['education'] ?? profile['university'] ?? '';
             _locationController.text = profile['location'] ?? '';
             _gender = profile['gender'];
+            _resumeFileName ??= profile['resume_file_name'];
+            _resumeUrl ??= profile['resume_url'];
           }
 
           return SingleChildScrollView(
@@ -151,19 +232,19 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                   ),
                   const SizedBox(height: SpacePalette.base),
 
-                  // 大学
+                  // 学歴
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      '大学',
+                      '学歴',
                       style: TextStylePalette.smTitle,
                     ),
                   ),
                   const SizedBox(height: SpacePalette.sm),
                   TextFormField(
-                    controller: _universityController,
+                    controller: _educationController,
                     decoration: const InputDecoration(
-                      hintText: '大学名を入力',
+                      hintText: '学歴を入力（例: ○○大学、○○高校卒業）',
                     ),
                   ),
                   const SizedBox(height: SpacePalette.base),
@@ -181,6 +262,70 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                     controller: _locationController,
                     decoration: const InputDecoration(
                       hintText: '所在地を入力',
+                    ),
+                  ),
+                  const SizedBox(height: SpacePalette.lg),
+
+                  // 職務経歴書セクション
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '職務経歴書',
+                      style: TextStylePalette.smTitle,
+                    ),
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  Container(
+                    padding: const EdgeInsets.all(SpacePalette.base),
+                    decoration: BoxDecoration(
+                      color: ColorPalette.neutral800,
+                      borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                      border: Border.all(color: ColorPalette.neutral600),
+                    ),
+                    child: Column(
+                      children: [
+                        if (_resumeFileName != null && _resumeFileName!.isNotEmpty) ...[
+                          Row(
+                            children: [
+                              const Icon(Icons.description, color: ColorPalette.primaryColor, size: 20),
+                              const SizedBox(width: SpacePalette.sm),
+                              Expanded(
+                                child: Text(
+                                  _resumeFileName!,
+                                  style: TextStylePalette.normalText,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: _deleteResume,
+                                icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: SpacePalette.sm),
+                        ],
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _isUploadingResume ? null : _pickAndUploadResume,
+                            icon: _isUploadingResume
+                                ? const SizedBox(
+                                    height: 16,
+                                    width: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: ColorPalette.primaryColor),
+                                  )
+                                : const Icon(Icons.upload_file),
+                            label: Text(
+                              _resumeFileName != null ? 'ファイルを変更' : '職務経歴書をアップロード',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: SpacePalette.xs),
+                        Text(
+                          'PDF, DOC, DOCX形式に対応',
+                          style: TextStylePalette.smSubText,
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: SpacePalette.lg),

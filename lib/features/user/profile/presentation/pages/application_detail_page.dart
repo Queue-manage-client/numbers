@@ -14,6 +14,16 @@ class ApplicationDetailPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: ColorPalette.neutral0),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              context.pop();
+            } else {
+              context.go('/applications');
+            }
+          },
+        ),
         title: Text(
           '応募詳細',
           style: TextStylePalette.title,

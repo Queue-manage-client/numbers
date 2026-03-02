@@ -67,11 +67,26 @@ class InternDetailPage extends ConsumerWidget {
                         child: Padding(
                           padding: const EdgeInsets.all(SpacePalette.base),
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                '1日インターン',
-                                style: TextStylePalette.header,
+                              GestureDetector(
+                                onTap: () {
+                                  if (Navigator.of(context).canPop()) {
+                                    context.pop();
+                                  } else {
+                                    context.go('/interns');
+                                  }
+                                },
+                                child: const Icon(
+                                  Icons.arrow_back,
+                                  color: ColorPalette.neutral0,
+                                ),
+                              ),
+                              const SizedBox(width: SpacePalette.sm),
+                              Expanded(
+                                child: Text(
+                                  '1日インターン',
+                                  style: TextStylePalette.header,
+                                ),
                               ),
                               Text(
                                 'One Day Intern',
@@ -84,48 +99,6 @@ class InternDetailPage extends ConsumerWidget {
                             ],
                           ),
                         ),
-                      ),
-                    ),
-
-                    // 検索バー
-                    Container(
-                      color: ColorPalette.neutral800,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: SpacePalette.base,
-                        vertical: SpacePalette.sm,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              style: TextStylePalette.normalText,
-                              decoration: InputDecoration(
-                                hintText: '企業名・キーワードで検索',
-                                hintStyle: TextStylePalette.hintText,
-                                filled: true,
-                                fillColor: ColorPalette.neutral900,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(RadiusPalette.base),
-                                  borderSide: BorderSide.none,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: SpacePalette.base,
-                                  vertical: SpacePalette.inner,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: SpacePalette.sm),
-                          TextButton(
-                            onPressed: () {},
-                            child: Text(
-                              '絞り込み',
-                              style: TextStyle(
-                                color: ColorPalette.neutral0,
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
                     ),
 
@@ -366,10 +339,7 @@ class InternDetailPage extends ConsumerWidget {
             Icons.check_circle,
             ColorPalette.primaryColor,
             onPressed: () {
-              // チャットへ遷移
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('チャット機能へ移動します')),
-              );
+              context.go('/chats');
             },
           );
         case ApplicationStatus.rejected:

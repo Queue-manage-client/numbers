@@ -60,13 +60,13 @@ class CompanyDashboardPage extends HookConsumerWidget {
           IconButton(
             icon: Icon(
               Icons.logout,
-              color: ColorPalette.neutral800,
+              color: ColorPalette.neutral0,
             ),
             onPressed: () async {
               final repository = ref.read(authRepositoryProvider);
               await repository.signOut();
               if (context.mounted) {
-                context.go('/company-portal/login');
+                context.go('/login');
               }
             },
           ),

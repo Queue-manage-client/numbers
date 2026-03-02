@@ -60,6 +60,7 @@ import 'package:numbers/features/admin/presentation/pages/admin_job_management_p
 import 'package:numbers/features/admin/presentation/pages/admin_intern_management_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_inquiry_management_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_inquiry_detail_page.dart';
+import 'package:numbers/features/admin/presentation/pages/admin_feed_management_page.dart';
 import 'package:numbers/features/company_portal/job/presentation/pages/company_job_applications_page.dart';
 import 'package:flutter/material.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
@@ -377,6 +378,10 @@ final appRouter = GoRouter(
         final id = state.pathParameters['id'] ?? '';
         return AdminInquiryDetailPage(inquiryId: id);
       },
+    ),
+    GoRoute(
+      path: '/admin/feed',
+      builder: (context, state) => const AdminFeedManagementPage(),
     ),
   ],
 );

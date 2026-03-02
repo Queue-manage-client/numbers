@@ -18,6 +18,16 @@ class ApplicationHistoryPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: ColorPalette.neutral0),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              context.pop();
+            } else {
+              context.go('/my-page');
+            }
+          },
+        ),
         title: Text(
           '応募履歴',
           style: TextStylePalette.title,

@@ -67,6 +67,16 @@ class _JobApplicationConfirmPageState
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: ColorPalette.neutral0),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              context.pop();
+            } else {
+              context.go('/jobs/map');
+            }
+          },
+        ),
         title: const Text('応募確認'),
         backgroundColor: ColorPalette.neutral900,
         foregroundColor: ColorPalette.neutral0,

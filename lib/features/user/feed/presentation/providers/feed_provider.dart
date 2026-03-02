@@ -145,6 +145,72 @@ final groupedVideosByCompanyProvider =
   );
 });
 
+// ========== バナー・特集セクション ==========
+
+// バナー画像取得プロバイダー
+final feedBannersProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final supabase = ref.watch(supabaseClientProvider);
+  try {
+    final response = await supabase
+        .from('feed_banners')
+        .select()
+        .eq('is_active', true)
+        .order('sort_order', ascending: true)
+        .limit(10);
+    return List<Map<String, dynamic>>.from(response as List);
+  } catch (e) {
+    return [];
+  }
+});
+
+// 特集セクション取得プロバイダー（セクション + 動画）
+final feedSectionsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final supabase = ref.watch(supabaseClientProvider);
+  try {
+    final sections = await supabase
+        .from('feed_sections')
+        .select()
+        .eq('is_active', true)
+        .order('sort_order', ascending: true);
+
+    final result = <Map<String, dynamic>>[];
+    for (final section in sections) {
+      final sectionId = section['id'] as String;
+      final videosResponse = await supabase
+          .from('feed_section_videos')
+          .select('*, company_videos(*, companies(*))')
+          .eq('section_id', sectionId)
+          .order('sort_order', ascending: true);
+
+      final videos = <Map<String, dynamic>>[];
+      for (final sv in videosResponse) {
+        final video = Map<String, dynamic>.from(sv['company_videos'] as Map);
+        final thumbnailPath = video['thumbnail_path'] as String?;
+        if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+          try {
+            video['thumbnail_url'] = thumbnailPath.startsWith('http')
+                ? thumbnailPath
+                : await supabase.storage
+                    .from('company-thumbnails')
+                    .createSignedUrl(thumbnailPath, 3600);
+          } catch (_) {
+            video['thumbnail_url'] = '';
+          }
+        }
+        videos.add(video);
+      }
+
+      result.add({
+        ...section,
+        'videos': videos,
+      });
+    }
+    return result;
+  } catch (e) {
+    return [];
+  }
+});
+
 // 特定の動画取得プロバイダー
 final videoByIdProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, videoId) async {
   final supabase = ref.watch(supabaseClientProvider);

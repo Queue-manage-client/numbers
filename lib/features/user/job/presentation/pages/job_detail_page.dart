@@ -42,6 +42,16 @@ class JobDetailPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: ColorPalette.neutral0),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              context.pop();
+            } else {
+              context.go('/jobs/map');
+            }
+          },
+        ),
         title: Text(
           '求人詳細',
           style: TextStylePalette.title,
@@ -202,9 +212,7 @@ class JobDetailPage extends ConsumerWidget {
             Icons.check_circle,
             ColorPalette.primaryColor,
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('チャット機能へ移動します')),
-              );
+              context.go('/chats');
             },
           );
         case ApplicationStatus.rejected:

@@ -64,8 +64,48 @@ class MyPage extends ConsumerWidget {
                     _buildInfoRow('メール', user?.email ?? '未設定'),
                     _buildInfoRow('ニックネーム', profile?['nickname'] ?? '未設定'),
                     _buildInfoRow('性別', _getGenderText(profile?['gender'])),
-                    _buildInfoRow('大学', profile?['university'] ?? '未設定'),
+                    _buildInfoRow('学歴', profile?['education'] ?? profile?['university'] ?? '未設定'),
                     _buildInfoRow('所在地', profile?['location'] ?? '未設定'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: SpacePalette.base),
+
+              // 職務経歴書カード
+              Container(
+                padding: const EdgeInsets.all(SpacePalette.base),
+                decoration: BoxDecoration(
+                  color: ColorPalette.neutral800,
+                  borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                  border: Border.all(color: ColorPalette.neutral600),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '職務経歴書',
+                      style: TextStylePalette.smHeader,
+                    ),
+                    const SizedBox(height: SpacePalette.sm),
+                    if (profile?['resume_url'] != null && profile!['resume_url'].toString().isNotEmpty)
+                      Row(
+                        children: [
+                          const Icon(Icons.description, color: ColorPalette.primaryColor, size: 20),
+                          const SizedBox(width: SpacePalette.sm),
+                          Expanded(
+                            child: Text(
+                              profile['resume_file_name'] ?? '職務経歴書',
+                              style: TextStylePalette.normalText,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      Text(
+                        'プロフィール編集から職務経歴書をアップロードできます',
+                        style: TextStylePalette.subText,
+                      ),
                   ],
                 ),
               ),

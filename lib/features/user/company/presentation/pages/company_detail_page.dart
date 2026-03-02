@@ -18,6 +18,16 @@ class CompanyDetailPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: ColorPalette.neutral0),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              context.pop();
+            } else {
+              context.go('/feed');
+            }
+          },
+        ),
         title: const Text('企業詳細'),
       ),
       bottomNavigationBar: AppFooter(currentRoute: currentRoute),

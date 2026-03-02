@@ -172,6 +172,14 @@ class AdminDashboardPage extends HookConsumerWidget {
                 description: 'ユーザーからの問い合わせ対応',
                 onTap: () => context.go('/admin/inquiries'),
               ),
+              const SizedBox(height: SpacePalette.sm),
+
+              _MenuCard(
+                icon: Icons.featured_play_list,
+                title: 'フィード管理',
+                description: 'バナー・特集セクションの管理',
+                onTap: () => context.go('/admin/feed'),
+              ),
             ],
           ),
         ),
