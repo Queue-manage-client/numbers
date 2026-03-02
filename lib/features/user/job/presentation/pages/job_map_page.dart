@@ -242,6 +242,10 @@ class _JobMapPageState extends ConsumerState<JobMapPage> {
           _buildLegendItem(Colors.orange, 'インターン'),
           const SizedBox(height: SpacePalette.xs),
           _buildLegendItem(Colors.green, '正社員'),
+          const SizedBox(height: SpacePalette.xs),
+          _buildLegendItem(Colors.purple, '新卒'),
+          const SizedBox(height: SpacePalette.xs),
+          _buildLegendItem(Colors.cyan, '中途'),
         ],
       ),
     );
