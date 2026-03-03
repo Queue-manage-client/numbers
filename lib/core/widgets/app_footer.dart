@@ -43,11 +43,9 @@ class ShellFooter extends StatelessWidget {
             index: 1,
             isActive: currentIndex == 1,
           ),
-          _buildNavItem(
+          _buildImageNavItem(
             context,
-            icon: Icons.auto_awesome_outlined,
-            activeIcon: Icons.auto_awesome,
-            label: 'AI',
+            imagePath: 'assets/images/nbs_button_logo.png',
             index: 2,
             isActive: currentIndex == 2,
           ),
@@ -128,6 +126,47 @@ class ShellFooter extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildImageNavItem(
+    BuildContext context, {
+    required String imagePath,
+    required int index,
+    required bool isActive,
+  }) {
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            if (!isActive) {
+              navigationShell.goBranch(
+                index,
+                initialLocation: index == navigationShell.currentIndex,
+              );
+            }
+          },
+          borderRadius: BorderRadius.circular(RadiusPalette.base),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: SpacePalette.xs),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Opacity(
+                  opacity: isActive ? 1.0 : 0.5,
+                  child: Image.asset(
+                    imagePath,
+                    width: 38,
+                    height: 38,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// 個別ページ用フッター（Shell外のページで使用）
@@ -169,11 +208,9 @@ class AppFooter extends StatelessWidget {
             route: '/jobs/map',
             isActive: currentRoute == '/jobs/map' || currentRoute.startsWith('/jobs/'),
           ),
-          _buildNavItem(
+          _buildImageNavItem(
             context,
-            icon: Icons.auto_awesome_outlined,
-            activeIcon: Icons.auto_awesome,
-            label: 'AI',
+            imagePath: 'assets/images/nbs_button_logo.png',
             route: '/ai-chat',
             isActive: currentRoute == '/ai-chat',
           ),
@@ -243,6 +280,44 @@ class AppFooter extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageNavItem(
+    BuildContext context, {
+    required String imagePath,
+    required String route,
+    required bool isActive,
+  }) {
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            if (currentRoute != route) {
+              context.go(route);
+            }
+          },
+          borderRadius: BorderRadius.circular(RadiusPalette.base),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: SpacePalette.xs),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Opacity(
+                  opacity: isActive ? 1.0 : 0.5,
+                  child: Image.asset(
+                    imagePath,
+                    width: 38,
+                    height: 38,
+                  ),
                 ),
               ],
             ),

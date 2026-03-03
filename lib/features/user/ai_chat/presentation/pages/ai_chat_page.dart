@@ -118,10 +118,13 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.auto_awesome,
-            size: 64,
-            color: ColorPalette.neutral600,
+          Opacity(
+            opacity: 0.4,
+            child: Image.asset(
+              'assets/images/nbs_button_logo.png',
+              width: 64,
+              height: 64,
+            ),
           ),
           const SizedBox(height: SpacePalette.base),
           Text(
@@ -273,14 +276,14 @@ class _MessageBubble extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.auto_awesome,
-                      size: 14,
-                      color: ColorPalette.primaryColor,
+                    Image.asset(
+                      'assets/images/nbs_button_logo.png',
+                      width: 14,
+                      height: 14,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'AI',
+                      'NBS',
                       style: TextStylePalette.subText.copyWith(
                         color: ColorPalette.neutral0,
                         fontWeight: FontWeight.w600,
@@ -292,7 +295,7 @@ class _MessageBubble extends StatelessWidget {
             Text(
               message.content,
               style: TextStylePalette.normalText.copyWith(
-                color: isUser ? ColorPalette.neutral0 : ColorPalette.neutral100,
+                color: ColorPalette.neutral0,
               ),
             ),
           ],
