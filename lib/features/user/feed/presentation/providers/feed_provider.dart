@@ -111,6 +111,42 @@ final groupedVideosByCompanyProvider =
   );
 });
 
+// トピックセクションモデル
+class TopicSection {
+  final String title;
+  final List<Map<String, dynamic>> videos;
+  const TopicSection({required this.title, required this.videos});
+}
+
+// トピック別動画セクションプロバイダー（特集タブ用）
+final topicSectionsProvider = Provider<AsyncValue<List<TopicSection>>>((ref) {
+  final videosAsync = ref.watch(feedVideosProvider);
+
+  return videosAsync.when(
+    data: (videos) {
+      if (videos.isEmpty) return const AsyncValue.data([]);
+
+      final sections = <TopicSection>[];
+      const topicNames = ['注目企業', '激アツ企業', '急上昇', '新着動画', '話題の企業'];
+      final sectionSize = (videos.length / topicNames.length).ceil().clamp(2, 10);
+
+      for (int i = 0; i < topicNames.length; i++) {
+        final start = i * sectionSize;
+        if (start >= videos.length) break;
+        final end = (start + sectionSize).clamp(0, videos.length);
+        sections.add(TopicSection(
+          title: topicNames[i],
+          videos: videos.sublist(start, end),
+        ));
+      }
+
+      return AsyncValue.data(sections);
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (e, s) => AsyncValue.error(e, s),
+  );
+});
+
 // 特定の動画取得プロバイダー
 final videoByIdProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, videoId) async {
   final supabase = ref.watch(supabaseClientProvider);

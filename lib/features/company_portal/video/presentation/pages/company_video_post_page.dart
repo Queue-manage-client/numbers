@@ -56,7 +56,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
                   color: ColorPalette.neutral0,
                 ),
               ),
-              backgroundColor: ColorPalette.systemGreen,
+              backgroundColor: ColorPalette.systemGold,
             ),
           );
         }
@@ -108,7 +108,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
                     color: ColorPalette.neutral0,
                   ),
                 ),
-                backgroundColor: ColorPalette.systemGreen,
+                backgroundColor: ColorPalette.systemGold,
               ),
             );
           }
@@ -133,7 +133,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
                     color: ColorPalette.neutral0,
                   ),
                 ),
-                backgroundColor: ColorPalette.systemGreen,
+                backgroundColor: ColorPalette.systemGold,
               ),
             );
           }
@@ -306,7 +306,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
                   color: ColorPalette.neutral0,
                 ),
               ),
-              backgroundColor: ColorPalette.systemGreen,
+              backgroundColor: ColorPalette.systemGold,
             ),
           );
           context.go('/company-portal/videos');
@@ -376,7 +376,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
                   borderRadius: BorderRadius.circular(RadiusPalette.lg),
                   border: Border.all(
                     color: videoFile.value != null 
-                        ? ColorPalette.systemGreen 
+                        ? ColorPalette.systemGold 
                         : ColorPalette.neutral200,
                     width: 2,
                   ),
@@ -392,7 +392,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
                             : Icons.video_file_outlined,
                         size: 64,
                         color: videoFile.value != null
-                            ? ColorPalette.systemGreen
+                            ? ColorPalette.systemGold
                             : ColorPalette.neutral400,
                       ),
                       const SizedBox(height: SpacePalette.base),
@@ -402,7 +402,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
                           child: Text(
                             videoFile.value!.name,
                             style: TextStylePalette.normalText.copyWith(
-                              color: ColorPalette.systemGreen,
+                              color: ColorPalette.systemGold,
                               fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
@@ -445,7 +445,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
                   borderRadius: BorderRadius.circular(RadiusPalette.lg),
                   border: Border.all(
                     color: thumbnailFile.value != null
-                        ? ColorPalette.systemGreen
+                        ? ColorPalette.systemGold
                         : ColorPalette.neutral200,
                     width: 2,
                   ),
@@ -461,7 +461,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
                             : Icons.image_outlined,
                         size: 48,
                         color: thumbnailFile.value != null
-                            ? ColorPalette.systemGreen
+                            ? ColorPalette.systemGold
                             : ColorPalette.neutral400,
                       ),
                       const SizedBox(height: SpacePalette.sm),
@@ -471,7 +471,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
                           child: Text(
                             thumbnailFile.value!.name,
                             style: TextStylePalette.smSubText.copyWith(
-                              color: ColorPalette.systemGreen,
+                              color: ColorPalette.systemGold,
                             ),
                             textAlign: TextAlign.center,
                             maxLines: 1,  // 1行まで表示

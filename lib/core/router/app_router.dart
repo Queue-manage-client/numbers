@@ -62,6 +62,8 @@ import 'package:numbers/features/admin/presentation/pages/admin_inquiry_detail_p
 import 'package:numbers/features/company_portal/job/presentation/pages/company_job_applications_page.dart';
 import 'package:flutter/material.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
+import 'package:numbers/features/user/feed/presentation/pages/feature_detail_page.dart';
+import 'package:numbers/features/user/feed/presentation/pages/watch_history_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -174,6 +176,21 @@ final appRouter = GoRouter(
         final videoId = state.pathParameters['videoId'] ?? '';
         return VideoDetailPage(companyId: companyId, videoId: videoId);
       },
+    ),
+
+    // User - Feature Detail
+    GoRoute(
+      path: '/feature/:id',
+      builder: (context, state) {
+        final slide = state.extra as SlideData;
+        return FeatureDetailPage(slide: slide);
+      },
+    ),
+
+    // User - Watch History
+    GoRoute(
+      path: '/watch-history',
+      builder: (context, state) => const WatchHistoryPage(),
     ),
 
     // User - Search

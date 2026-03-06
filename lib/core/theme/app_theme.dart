@@ -25,17 +25,17 @@ class ColorPalette {
   static const Color neutral900 = Color(0xFF000000);
 
   // システムカラー
-  static const Color primaryColor = Color(0xFF2EBD27); // メイングリーン
-  static const Color primaryDark = Color(0xFF239A1E); // ダークグリーン
-  static const Color primaryLight = Color(0xFF4ED847); // ライトグリーン
-  static const Color systemGreen = Color(0xFF2EBD27);
+  static const Color primaryColor = Color(0xFFDAA520); // メインゴールド
+  static const Color primaryDark = Color(0xFFB8860B); // ダークゴールド
+  static const Color primaryLight = Color(0xFFFFD700); // ライトゴールド
+  static const Color primaryPale = Color(0xFFFFFBED); // ほぼ白のゴールド
+  static const Color systemGold = Color(0xFFDAA520);
 
   // グラデーション
   static const LinearGradient primaryGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [primaryLight, primaryColor, primaryDark],
-    stops: [0.0, 0.5, 1.0],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [primaryPale, primaryColor],
   );
 }
 

@@ -114,7 +114,7 @@ class _CompanyJobEditPageState extends ConsumerState<CompanyJobEditPage> {
                   .copyWith(color: ColorPalette.neutral0),
             ),
             backgroundColor:
-                success ? ColorPalette.systemGreen : Colors.red,
+                success ? ColorPalette.systemGold : Colors.red,
           ),
         );
         if (success) {
@@ -171,7 +171,7 @@ class _CompanyJobEditPageState extends ConsumerState<CompanyJobEditPage> {
             SnackBar(
               content: Text(success ? '求人を削除しました' : '削除に失敗しました'),
               backgroundColor:
-                  success ? ColorPalette.systemGreen : Colors.red,
+                  success ? ColorPalette.systemGold : Colors.red,
             ),
           );
           if (success) {

@@ -237,27 +237,25 @@ class _JobMapPageState extends ConsumerState<JobMapPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildLegendItem(Colors.blue, 'バイト'),
+          _buildImageLegendItem('assets/images/map2.png', 'バイト'),
           const SizedBox(height: SpacePalette.xs),
-          _buildLegendItem(Colors.orange, 'インターン'),
+          _buildImageLegendItem('assets/images/map100.png', 'インターン'),
           const SizedBox(height: SpacePalette.xs),
-          _buildLegendItem(Colors.green, '正社員'),
+          _buildImageLegendItem('assets/images/map6.png', '正社員'),
         ],
       ),
     );
   }
 
-  Widget _buildLegendItem(Color color, String label) {
+  Widget _buildImageLegendItem(String imagePath, String label) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+        Image.asset(
+          imagePath,
+          width: 16,
+          height: 16,
+          fit: BoxFit.contain,
         ),
         const SizedBox(width: SpacePalette.sm),
         Text(

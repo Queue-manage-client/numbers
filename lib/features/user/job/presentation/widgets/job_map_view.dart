@@ -28,6 +28,31 @@ class _JobMapViewState extends ConsumerState<JobMapView> {
   GoogleMapController? _mapController;
   Set<Marker> _markers = {};
   Set<Circle> _circles = {};
+  BitmapDescriptor? _partTimeIcon;
+  BitmapDescriptor? _fullTimeIcon;
+  BitmapDescriptor? _internIcon;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCustomMarkerIcons();
+  }
+
+  Future<void> _loadCustomMarkerIcons() async {
+    _partTimeIcon = await BitmapDescriptor.asset(
+      const ImageConfiguration(size: Size(40, 40)),
+      'assets/images/map2.png',
+    );
+    _fullTimeIcon = await BitmapDescriptor.asset(
+      const ImageConfiguration(size: Size(40, 40)),
+      'assets/images/map6.png',
+    );
+    _internIcon = await BitmapDescriptor.asset(
+      const ImageConfiguration(size: Size(40, 40)),
+      'assets/images/map100.png',
+    );
+    if (mounted) setState(() {});
+  }
 
   @override
   void didUpdateWidget(covariant JobMapView oldWidget) {
@@ -64,9 +89,7 @@ class _JobMapViewState extends ConsumerState<JobMapView> {
         return Marker(
           markerId: MarkerId(job.id),
           position: LatLng(job.latitude, job.longitude),
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            _getMarkerHue(job.jobType),
-          ),
+          icon: _getMarkerIcon(job.jobType),
           onTap: () => widget.onMarkerTapped(job),
         );
       }).toSet();
@@ -193,20 +216,20 @@ class _JobMapViewState extends ConsumerState<JobMapView> {
     return 10;
   }
 
-  double _getMarkerHue(String jobType) {
+  BitmapDescriptor _getMarkerIcon(String jobType) {
     switch (jobType) {
       case 'part_time':
-        return BitmapDescriptor.hueBlue;
-      case 'intern':
-        return BitmapDescriptor.hueOrange;
+        return _partTimeIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
       case 'full_time':
-        return BitmapDescriptor.hueGreen;
+        return _fullTimeIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
+      case 'intern':
+        return _internIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
       case 'new_grad':
-        return BitmapDescriptor.hueViolet;
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet);
       case 'mid_career':
-        return BitmapDescriptor.hueCyan;
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan);
       default:
-        return BitmapDescriptor.hueRed;
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
     }
   }
 

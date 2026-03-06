@@ -26,8 +26,11 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
   String? _errorMessage;
   Map<String, dynamic>? _videoData;
   Map<String, dynamic>? _companyData;
+  List<Map<String, dynamic>> _relatedVideos = [];
+  List<Map<String, dynamic>> _recommendedVideos = [];
   bool _isPlaying = false;
   bool _showControls = true;
+  String? _dummyThumbnail;
 
   @override
   void initState() {
@@ -43,6 +46,48 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
 
   Future<void> _loadVideoData() async {
     try {
+      // ダミーIDの場合はモックデータを表示
+      if (widget.companyId.startsWith('dummy-') || widget.videoId.startsWith('dummy-')) {
+        _videoData = {
+          'id': widget.videoId,
+          'company_id': widget.companyId,
+          'title': '企業紹介動画',
+          'description': '私たちは、テクノロジーの力で社会課題を解決することを目指しています。若手社員が活躍できる環境づくりに力を入れており、入社1年目から大きなプロジェクトに携わるチャンスがあります。',
+          'tags': ['企業紹介', '新卒採用', 'テクノロジー'],
+        };
+        const companyNames = {
+          'dummy-company-1': 'ナンバーズテック',
+          'dummy-company-2': 'クラウドビジョン',
+          'dummy-company-3': 'アクセルデザイン',
+          'dummy-company-4': 'ブリッジワーク',
+          'dummy-company-5': 'ゼロイチラボ',
+        };
+        _companyData = {
+          'name': companyNames[widget.companyId] ?? '企業名',
+        };
+        // ダミーIDの番号からサムネを決定
+        final idNum = int.tryParse(widget.videoId.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
+        const thumbnails = ['assets/images/11.png', 'assets/images/12.png', 'assets/images/13.png', 'assets/images/14.png'];
+        _dummyThumbnail = thumbnails[(idNum - 1) % thumbnails.length];
+
+        // 他の注目企業をおすすめ動画として表示
+        const allCompanies = [
+          {'id': 'dummy-company-1', 'videoId': 'dummy-video-1', 'name': 'ナンバーズテック', 'title': 'エンジニアの1日に密着', 'thumbnail': 'assets/images/11.png'},
+          {'id': 'dummy-company-2', 'videoId': 'dummy-video-2', 'name': 'クラウドビジョン', 'title': '新卒社員インタビュー', 'thumbnail': 'assets/images/12.png'},
+          {'id': 'dummy-company-3', 'videoId': 'dummy-video-3', 'name': 'アクセルデザイン', 'title': 'オフィスツアー＆社風紹介', 'thumbnail': 'assets/images/13.png'},
+          {'id': 'dummy-company-4', 'videoId': 'dummy-video-4', 'name': 'ブリッジワーク', 'title': 'プロジェクト事例紹介', 'thumbnail': 'assets/images/14.png'},
+          {'id': 'dummy-company-5', 'videoId': 'dummy-video-5', 'name': 'ゼロイチラボ', 'title': '代表メッセージ＆ビジョン', 'thumbnail': 'assets/images/11.png'},
+        ];
+        _recommendedVideos = allCompanies
+            .where((c) => c['id'] != widget.companyId)
+            .toList();
+
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
       final supabase = Supabase.instance.client;
 
       // 動画データを取得
@@ -108,6 +153,9 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
         }
       });
 
+      // 関連動画を取得（同じ企業の他の動画）
+      await _loadRelatedVideos();
+
       setState(() {
         _isLoading = false;
       });
@@ -116,6 +164,24 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
         _isLoading = false;
         _errorMessage = '動画の読み込みに失敗しました: $e';
       });
+    }
+  }
+
+  Future<void> _loadRelatedVideos() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('company_videos')
+          .select('*, companies(*)')
+          .eq('company_id', widget.companyId)
+          .neq('id', widget.videoId)
+          .limit(10);
+
+      setState(() {
+        _relatedVideos = List<Map<String, dynamic>>.from(response);
+      });
+    } catch (e) {
+      debugPrint('Related videos load error: $e');
     }
   }
 
@@ -133,6 +199,197 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
     setState(() {
       _showControls = !_showControls;
     });
+  }
+
+  Widget _buildRelatedVideoCard(Map<String, dynamic> video) {
+    final title = video['title'] as String? ?? '無題';
+    final thumbnailPath = video['thumbnail_path'] as String?;
+    final videoId = video['id'] as String? ?? '';
+    final companyId = video['company_id'] as String? ?? '';
+    final company = video['companies'] as Map<String, dynamic>?;
+    final companyName = company?['name'] as String? ?? '';
+
+    String? thumbnailUrl;
+    if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+      thumbnailUrl = Supabase.instance.client.storage
+          .from('company-thumbnails')
+          .getPublicUrl(thumbnailPath);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SpacePalette.sm),
+      child: GestureDetector(
+        onTap: () {
+          context.push('/companies/$companyId/videos/$videoId');
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: ColorPalette.neutral800,
+            borderRadius: BorderRadius.circular(RadiusPalette.base),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Row(
+            children: [
+              // サムネイル
+              SizedBox(
+                width: 140,
+                height: 80,
+                child: thumbnailUrl != null
+                    ? Image.network(
+                        thumbnailUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: ColorPalette.neutral600,
+                            child: const Center(
+                              child: Icon(
+                                Icons.play_circle_outline,
+                                color: ColorPalette.neutral400,
+                                size: 32,
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        color: ColorPalette.neutral600,
+                        child: const Center(
+                          child: Icon(
+                            Icons.play_circle_outline,
+                            color: ColorPalette.neutral400,
+                            size: 32,
+                          ),
+                        ),
+                      ),
+              ),
+              const SizedBox(width: SpacePalette.sm),
+              // テキスト情報
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: SpacePalette.sm),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontFamily: 'NotoSansJP',
+                          fontSize: FontSizePalette.size14,
+                          fontVariations: [FontVariation('wght', 700)],
+                          color: Colors.white,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (companyName.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          companyName,
+                          style: TextStyle(
+                            fontFamily: 'NotoSansJP',
+                            fontSize: FontSizePalette.size12,
+                            fontVariations: const [FontVariation('wght', 500)],
+                            color: ColorPalette.neutral400,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: SpacePalette.sm),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecommendedVideoCard(Map<String, dynamic> video) {
+    final title = video['title'] as String? ?? '';
+    final companyName = video['name'] as String? ?? '';
+    final companyId = video['id'] as String? ?? '';
+    final videoId = video['videoId'] as String? ?? '';
+    final thumbnail = video['thumbnail'] as String? ?? '';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SpacePalette.sm),
+      child: GestureDetector(
+        onTap: () {
+          context.push('/companies/$companyId/videos/$videoId');
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: ColorPalette.neutral800,
+            borderRadius: BorderRadius.circular(RadiusPalette.base),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Row(
+            children: [
+              // サムネイル
+              SizedBox(
+                width: 140,
+                height: 80,
+                child: Image.asset(
+                  thumbnail,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: ColorPalette.neutral600,
+                      child: const Center(
+                        child: Icon(
+                          Icons.play_circle_outline,
+                          color: ColorPalette.neutral400,
+                          size: 32,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: SpacePalette.sm),
+              // テキスト情報
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: SpacePalette.sm),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontFamily: 'NotoSansJP',
+                          fontSize: FontSizePalette.size14,
+                          fontVariations: [FontVariation('wght', 700)],
+                          color: Colors.white,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        companyName,
+                        style: const TextStyle(
+                          fontFamily: 'NotoSansJP',
+                          fontSize: FontSizePalette.size12,
+                          fontVariations: [FontVariation('wght', 500)],
+                          color: ColorPalette.neutral400,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: SpacePalette.sm),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   String _formatDuration(Duration duration) {
@@ -252,7 +509,12 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
               fit: StackFit.expand,
               children: [
                 // 動画
-                if (_controller != null && _controller!.value.isInitialized)
+                if (_dummyThumbnail != null)
+                  Image.asset(
+                    _dummyThumbnail!,
+                    fit: BoxFit.cover,
+                  )
+                else if (_controller != null && _controller!.value.isInitialized)
                   VideoPlayer(_controller!)
                 else if (_errorMessage != null)
                   // 動画が読み込めない場合のプレースホルダー
@@ -491,7 +753,7 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
                         fontFamily: 'NotoSansJP',
                         fontSize: FontSizePalette.size14,
                         fontWeight: FontWeight.w400,
-                        color: ColorPalette.neutral200,
+                        color: ColorPalette.neutral400,
                         height: 1.6,
                       ),
                     ),
@@ -543,6 +805,44 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
                     ),
                   ),
                 ),
+
+                // おすすめ動画セクション
+                if (_recommendedVideos.isNotEmpty) ...[
+                  const SizedBox(height: SpacePalette.lg * 2),
+                  const Text(
+                    'おすすめの動画',
+                    style: TextStyle(
+                      fontFamily: 'NotoSansJP',
+                      fontSize: FontSizePalette.size16,
+                      fontVariations: [FontVariation('wght', 800)],
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  ...List.generate(_recommendedVideos.length, (index) {
+                    final rec = _recommendedVideos[index];
+                    return _buildRecommendedVideoCard(rec);
+                  }),
+                ],
+
+                // 関連動画セクション
+                if (_relatedVideos.isNotEmpty) ...[
+                  const SizedBox(height: SpacePalette.lg * 2),
+                  const Text(
+                    '関連動画',
+                    style: TextStyle(
+                      fontFamily: 'NotoSansJP',
+                      fontSize: FontSizePalette.size16,
+                      fontVariations: [FontVariation('wght', 800)],
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  ...List.generate(_relatedVideos.length, (index) {
+                    final related = _relatedVideos[index];
+                    return _buildRelatedVideoCard(related);
+                  }),
+                ],
               ],
             ),
           ),

@@ -1,6 +1,7 @@
 // ai_chat/presentation/pages/ai_chat_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/core/theme/app_theme.dart';
@@ -118,10 +119,14 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.auto_awesome,
-            size: 64,
-            color: ColorPalette.neutral600,
+          Opacity(
+            opacity: 0.15,
+            child: Image.asset(
+              'assets/images/ai_button.png',
+              width: 64,
+              height: 64,
+              fit: BoxFit.contain,
+            ),
           ),
           const SizedBox(height: SpacePalette.base),
           Text(
@@ -261,8 +266,9 @@ class _MessageBubble extends StatelessWidget {
           maxWidth: MediaQuery.of(context).size.width * 0.8,
         ),
         decoration: BoxDecoration(
-          color: isUser ? ColorPalette.primaryColor : ColorPalette.neutral800,
+          color: isUser ? ColorPalette.primaryColor : const Color(0xFF262626),
           borderRadius: BorderRadius.circular(RadiusPalette.base),
+          border: isUser ? null : Border.all(color: ColorPalette.neutral600, width: 0.5),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,12 +295,53 @@ class _MessageBubble extends StatelessWidget {
                   ],
                 ),
               ),
-            Text(
-              message.content,
-              style: TextStylePalette.normalText.copyWith(
-                color: isUser ? ColorPalette.neutral0 : ColorPalette.neutral100,
+            if (isUser)
+              Text(
+                message.content,
+                style: TextStylePalette.normalText.copyWith(
+                  color: ColorPalette.neutral0,
+                ),
+              )
+            else
+              MarkdownBody(
+                data: message.content,
+                selectable: true,
+                shrinkWrap: true,
+                softLineBreak: true,
+                styleSheet: MarkdownStyleSheet(
+                  p: TextStylePalette.normalText.copyWith(
+                    color: ColorPalette.neutral0,
+                  ),
+                  strong: TextStylePalette.normalText.copyWith(
+                    color: ColorPalette.primaryColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  listBullet: TextStylePalette.normalText.copyWith(
+                    color: ColorPalette.neutral0,
+                  ),
+                  h1: TextStylePalette.normalText.copyWith(
+                    color: ColorPalette.neutral0,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  h2: TextStylePalette.normalText.copyWith(
+                    color: ColorPalette.neutral0,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  code: TextStylePalette.normalText.copyWith(
+                    color: ColorPalette.primaryLight,
+                    backgroundColor: ColorPalette.neutral600,
+                    fontSize: 13,
+                  ),
+                  codeblockDecoration: BoxDecoration(
+                    color: ColorPalette.neutral800,
+                    borderRadius: BorderRadius.circular(RadiusPalette.mini),
+                  ),
+                  pPadding: const EdgeInsets.only(bottom: 4),
+                  listBulletPadding: const EdgeInsets.only(right: 8),
+                ),
               ),
-            ),
           ],
         ),
       ),

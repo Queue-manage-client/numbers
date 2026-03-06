@@ -423,7 +423,7 @@ class _ChatRoomCard extends ConsumerWidget {
                             color: ColorPalette.neutral0,
                           ),
                         ),
-                        backgroundColor: ColorPalette.systemGreen,
+                        backgroundColor: ColorPalette.systemGold,
                       ),
                     );
                   }

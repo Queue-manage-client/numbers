@@ -1,4 +1,5 @@
 // feed/presentation/pages/feed_page.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -44,8 +45,16 @@ class FeedPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
-        title: const Text('ホーム'),
-        centerTitle: false,
+        leadingWidth: 52,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 10.0, top: 6.0, bottom: 6.0),
+          child: Image.asset(
+            'assets/images/icon.png',
+            width: 36,
+            height: 36,
+            fit: BoxFit.contain,
+          ),
+        ),
         actions: [
           IconButton(
             onPressed: () => context.go('/search/videos'),
@@ -140,35 +149,60 @@ class FeedPage extends ConsumerWidget {
   }
 }
 
-// 特集タブ - 企業ごとに動画を横並び表示
+// 特集タブ - トピック別に動画を横並び表示
 class _FeaturedTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final groupedAsync = ref.watch(groupedVideosByCompanyProvider);
+    final sectionsAsync = ref.watch(topicSectionsProvider);
     final supabase = Supabase.instance.client;
 
-    return groupedAsync.when(
-      data: (grouped) {
-        if (grouped.isEmpty) {
+    return sectionsAsync.when(
+      data: (sections) {
+        if (sections.isEmpty) {
           return _buildEmptyState(context);
         }
 
-        final entries = grouped.entries.toList();
-
         return ListView.builder(
-          padding: const EdgeInsets.only(top: SpacePalette.base),
-          itemCount: entries.length,
+          padding: EdgeInsets.zero,
+          itemCount: sections.length + 5, // slideshow + 注目企業 + 急募 + 今週のおすすめ + 若手活躍 + あなたが見た企業 - sections[0]スキップ
           itemBuilder: (context, index) {
-            final entry = entries[index];
-            final parts = entry.key.split('|');
-            final companyId = parts[0];
-            final companyName = parts.length > 1 ? parts[1] : '不明な企業';
-            final videos = entry.value;
+            if (index == 0) {
+              return const _ImageSlideshow();
+            }
 
-            return _CompanyVideoSection(
-              companyId: companyId,
-              companyName: companyName,
-              videos: videos,
+            // 注目企業セクション
+            if (index == 1) {
+              return const _FeaturedCompaniesSection();
+            }
+
+            // 急募の企業セクション
+            if (index == 2) {
+              return const _PopularCompaniesSection();
+            }
+
+            // 今週のおすすめ企業セクション
+            if (index == 3) {
+              return const _RecommendedCompaniesSection();
+            }
+
+            // 若手が活躍できる企業セクション
+            if (index == 4) {
+              return const _YoungActiveCompaniesSection();
+            }
+
+            // あなたが見た企業セクション
+            if (index == 5) {
+              return const _WatchedVideosSection();
+            }
+
+            // 残りのセクション
+            final sectionIndex = index - 5;
+            if (sectionIndex >= sections.length) return const SizedBox.shrink();
+
+            final section = sections[sectionIndex];
+            return _TopicVideoSection(
+              title: section.title,
+              videos: section.videos,
               supabase: supabase,
             );
           },
@@ -257,63 +291,763 @@ class _FeaturedTab extends ConsumerWidget {
   }
 }
 
-// 企業ごとの動画セクション
-class _CompanyVideoSection extends StatelessWidget {
-  final String companyId;
+// 自動スクロールスライドショー（Huluスタイル：フル幅・グラデーションオーバーレイ）
+class _ImageSlideshow extends StatefulWidget {
+  const _ImageSlideshow();
+
+  @override
+  State<_ImageSlideshow> createState() => _ImageSlideshowState();
+}
+
+class _ImageSlideshowState extends State<_ImageSlideshow> {
+  final PageController _pageController = PageController();
+  Timer? _timer;
+  int _currentPage = 0;
+
+  static const List<SlideData> _slides = [
+    SlideData(
+      id: 'featured-companies',
+      title: '注目の企業特集',
+      subtitle: '今週のピックアップ',
+      icon: Icons.star,
+      backgroundImage: 'assets/images/3.png',
+      thumbnails: ['assets/images/11.png', 'assets/images/12.png', 'assets/images/13.png', 'assets/images/14.png'],
+    ),
+    SlideData(
+      id: 'new-internships',
+      title: '新着インターン情報',
+      subtitle: '最新の募集をチェック',
+      icon: Icons.work_outline,
+      backgroundImage: 'assets/images/3.png',
+      thumbnails: ['assets/images/12.png', 'assets/images/13.png', 'assets/images/14.png'],
+    ),
+    SlideData(
+      id: 'career-events',
+      title: 'キャリアイベント開催中',
+      subtitle: '参加者募集中',
+      icon: Icons.event,
+      backgroundImage: 'assets/images/3.png',
+      thumbnails: ['assets/images/13.png', 'assets/images/14.png', 'assets/images/11.png'],
+    ),
+    SlideData(
+      id: 'growing-companies',
+      title: '急成長企業ランキング',
+      subtitle: '今最も注目の企業',
+      icon: Icons.trending_up,
+      backgroundImage: 'assets/images/3.png',
+      thumbnails: ['assets/images/14.png', 'assets/images/11.png', 'assets/images/12.png'],
+    ),
+    SlideData(
+      id: 'job-seekers',
+      title: '就活生必見',
+      subtitle: '内定者インタビュー公開中',
+      icon: Icons.people,
+      backgroundImage: 'assets/images/3.png',
+      thumbnails: ['assets/images/11.png', 'assets/images/12.png'],
+    ),
+    SlideData(
+      id: 'it-industry',
+      title: 'IT業界特集',
+      subtitle: 'エンジニア志望のあなたへ',
+      icon: Icons.code,
+      backgroundImage: 'assets/images/3.png',
+      thumbnails: ['assets/images/12.png', 'assets/images/13.png', 'assets/images/14.png'],
+    ),
+    SlideData(
+      id: 'summer-internships',
+      title: '夏インターン特集',
+      subtitle: 'エントリー受付中',
+      icon: Icons.sunny,
+      backgroundImage: 'assets/images/3.png',
+      thumbnails: ['assets/images/13.png', 'assets/images/14.png', 'assets/images/11.png'],
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoScroll();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _startAutoScroll() {
+    _timer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted) return;
+      _currentPage = (_currentPage + 1) % _slides.length;
+      _pageController.animateToPage(
+        _currentPage,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Column(
+      children: [
+        // フル幅バナー
+        SizedBox(
+          height: screenWidth * 9 / 16,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: _slides.length,
+            onPageChanged: (index) {
+              setState(() => _currentPage = index);
+            },
+            itemBuilder: (context, index) {
+              final slide = _slides[index];
+              return GestureDetector(
+                onTap: () {
+                  context.push('/feature/${slide.id}', extra: slide);
+                },
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // 背景画像
+                    Image.asset(
+                      slide.backgroundImage,
+                      fit: BoxFit.cover,
+                    ),
+                    // 下部グラデーションオーバーレイ
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: 120,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.7),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // テキスト（下部配置）
+                    Positioned(
+                      bottom: 20,
+                      left: SpacePalette.base,
+                      right: SpacePalette.base,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            slide.subtitle,
+                            style: TextStyle(
+                              fontFamily: 'NotoSansJP',
+                              fontSize: FontSizePalette.size12,
+                              fontVariations: const [
+                                FontVariation('wght', 600),
+                              ],
+                              color: Colors.white.withValues(alpha: 0.8),
+                            ),
+                          ),
+                          const SizedBox(height: SpacePalette.xs),
+                          Text(
+                            slide.title,
+                            style: const TextStyle(
+                              fontFamily: 'NotoSansJP',
+                              fontSize: FontSizePalette.size20,
+                              fontVariations: [FontVariation('wght', 900)],
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: SpacePalette.sm),
+        // ダッシュスタイルインジケーター
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            _slides.length,
+            (index) => AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              width: 20,
+              height: 3,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(1.5),
+                color: _currentPage == index
+                    ? ColorPalette.primaryColor
+                    : ColorPalette.neutral600,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: SpacePalette.base),
+      ],
+    );
+  }
+}
+
+class SlideData {
+  final String id;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final String backgroundImage;
+  final List<String> thumbnails;
+
+  const SlideData({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.backgroundImage,
+    required this.thumbnails,
+  });
+}
+
+// 注目企業セクション（ダミー5社）
+class _FeaturedCompaniesSection extends StatelessWidget {
+  const _FeaturedCompaniesSection();
+
+  static const List<_PopularCompanyData> _companies = [
+    _PopularCompanyData(
+      name: 'ナンバーズテック',
+      companyName: 'Numbers Tech Inc.',
+      thumbnail: 'assets/images/tate1.png',
+      companyId: 'dummy-company-1',
+      videoId: 'dummy-video-1',
+    ),
+    _PopularCompanyData(
+      name: 'クラウドビジョン',
+      companyName: 'Cloud Vision Japan',
+      thumbnail: 'assets/images/tate2.png',
+      companyId: 'dummy-company-2',
+      videoId: 'dummy-video-2',
+    ),
+    _PopularCompanyData(
+      name: 'アクセルデザイン',
+      companyName: 'Accel Design Co.',
+      thumbnail: 'assets/images/tate3.png',
+      companyId: 'dummy-company-3',
+      videoId: 'dummy-video-3',
+    ),
+    _PopularCompanyData(
+      name: 'ブリッジワーク',
+      companyName: 'Bridge Work Ltd.',
+      thumbnail: 'assets/images/tate1.png',
+      companyId: 'dummy-company-4',
+      videoId: 'dummy-video-4',
+    ),
+    _PopularCompanyData(
+      name: 'ゼロイチラボ',
+      companyName: 'ZeroOne Lab Inc.',
+      thumbnail: 'assets/images/tate2.png',
+      companyId: 'dummy-company-5',
+      videoId: 'dummy-video-5',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final cardWidth = 120.0;
+    final cardHeight = cardWidth * 1.6;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpacePalette.base,
+            vertical: SpacePalette.sm,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '注目企業',
+                  style: TextStylePalette.smHeader,
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: ColorPalette.neutral400,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: cardHeight,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
+            itemCount: _companies.length,
+            itemBuilder: (context, index) {
+              final company = _companies[index];
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index < _companies.length - 1 ? SpacePalette.sm : 0,
+                ),
+                child: GestureDetector(
+                  onTap: () {
+                    if (company.companyId != null && company.videoId != null) {
+                      context.push('/companies/${company.companyId}/videos/${company.videoId}');
+                    }
+                  },
+                  child: Container(
+                    width: cardWidth,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(RadiusPalette.base),
+                      color: ColorPalette.neutral800,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.asset(
+                          company.thumbnail,
+                          fit: BoxFit.cover,
+                        ),
+                        Positioned(
+                          left: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.7),
+                                  Colors.transparent,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: const BorderRadius.only(
+                                bottomRight: Radius.circular(RadiusPalette.base),
+                              ),
+                            ),
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                fontFamily: 'NotoSansJP',
+                                fontSize: 32,
+                                fontVariations: const [FontVariation('wght', 900)],
+                                color: ColorPalette.primaryColor,
+                                height: 1.0,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        // 下部に企業名
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.8),
+                                ],
+                              ),
+                            ),
+                            child: Text(
+                              company.name,
+                              style: const TextStyle(
+                                fontFamily: 'NotoSansJP',
+                                fontSize: FontSizePalette.size12,
+                                fontVariations: [FontVariation('wght', 700)],
+                                color: Colors.white,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: SpacePalette.base),
+      ],
+    );
+  }
+}
+
+// 人気企業セクション（ダミーデータ・注目企業と同じカードスタイル）
+class _PopularCompaniesSection extends StatelessWidget {
+  const _PopularCompaniesSection();
+
+  static const List<_PopularCompanyData> _companies = [
+    _PopularCompanyData(
+      name: 'テックソリューションズ',
+      companyName: 'Tech Solutions Inc.',
+      thumbnail: 'assets/images/11.png',
+    ),
+    _PopularCompanyData(
+      name: 'グローバルコネクト',
+      companyName: 'Global Connect Japan',
+      thumbnail: 'assets/images/12.png',
+    ),
+    _PopularCompanyData(
+      name: 'イノベートR&D',
+      companyName: 'Innovate R&D Holdings',
+      thumbnail: 'assets/images/13.png',
+    ),
+    _PopularCompanyData(
+      name: 'サステナ未来ラボ',
+      companyName: 'Sustain Future Lab',
+      thumbnail: 'assets/images/14.png',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.42;
+    final thumbnailHeight = cardWidth * 0.65;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ヘッダー
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpacePalette.base,
+            vertical: SpacePalette.sm,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '急募の企業',
+                  style: TextStylePalette.smHeader,
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: ColorPalette.neutral400,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+
+        // カード横スクロール（サムネのみ）
+        SizedBox(
+          height: thumbnailHeight,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
+            itemCount: _companies.length,
+            itemBuilder: (context, index) {
+              final company = _companies[index];
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index < _companies.length - 1 ? SpacePalette.sm : 0,
+                ),
+                child: Container(
+                  width: cardWidth,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(RadiusPalette.base),
+                    color: ColorPalette.neutral800,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    company.thumbnail,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: SpacePalette.base),
+      ],
+    );
+  }
+}
+
+class _PopularCompanyData {
+  final String name;
   final String companyName;
+  final String thumbnail;
+  final String? companyId;
+  final String? videoId;
+
+  const _PopularCompanyData({
+    required this.name,
+    required this.companyName,
+    required this.thumbnail,
+    this.companyId,
+    this.videoId,
+  });
+}
+
+// イチオシ企業セクション
+class _RecommendedCompaniesSection extends StatelessWidget {
+  const _RecommendedCompaniesSection();
+
+  static const List<_PopularCompanyData> _companies = [
+    _PopularCompanyData(
+      name: 'フューチャーテック',
+      companyName: 'Future Tech Inc.',
+      thumbnail: 'assets/images/13.png',
+    ),
+    _PopularCompanyData(
+      name: 'スマートワークス',
+      companyName: 'Smart Works Japan',
+      thumbnail: 'assets/images/11.png',
+    ),
+    _PopularCompanyData(
+      name: 'ネクストイノベーション',
+      companyName: 'Next Innovation Co.',
+      thumbnail: 'assets/images/14.png',
+    ),
+    _PopularCompanyData(
+      name: 'デジタルクリエイト',
+      companyName: 'Digital Create Ltd.',
+      thumbnail: 'assets/images/12.png',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.42;
+    final thumbnailHeight = cardWidth * 0.65;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ヘッダー
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpacePalette.base,
+            vertical: SpacePalette.sm,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '今週のおすすめ企業',
+                  style: TextStylePalette.smHeader,
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: ColorPalette.neutral400,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+
+        // カード横スクロール（サムネのみ）
+        SizedBox(
+          height: thumbnailHeight,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
+            itemCount: _companies.length,
+            itemBuilder: (context, index) {
+              final company = _companies[index];
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index < _companies.length - 1 ? SpacePalette.sm : 0,
+                ),
+                child: Container(
+                  width: cardWidth,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(RadiusPalette.base),
+                    color: ColorPalette.neutral800,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    company.thumbnail,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: SpacePalette.base),
+      ],
+    );
+  }
+}
+
+// 若手が活躍できる企業セクション
+class _YoungActiveCompaniesSection extends StatelessWidget {
+  const _YoungActiveCompaniesSection();
+
+  static const List<_PopularCompanyData> _companies = [
+    _PopularCompanyData(
+      name: 'スタートアップラボ',
+      companyName: 'Startup Lab Inc.',
+      thumbnail: 'assets/images/14.png',
+    ),
+    _PopularCompanyData(
+      name: 'チャレンジワークス',
+      companyName: 'Challenge Works Co.',
+      thumbnail: 'assets/images/11.png',
+    ),
+    _PopularCompanyData(
+      name: 'ユースイノベーション',
+      companyName: 'Youth Innovation Inc.',
+      thumbnail: 'assets/images/12.png',
+    ),
+    _PopularCompanyData(
+      name: 'グロースパートナーズ',
+      companyName: 'Growth Partners Ltd.',
+      thumbnail: 'assets/images/13.png',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.42;
+    final thumbnailHeight = cardWidth * 0.65;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpacePalette.base,
+            vertical: SpacePalette.sm,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '若手が活躍できる企業',
+                  style: TextStylePalette.smHeader,
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: ColorPalette.neutral400,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: thumbnailHeight,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
+            itemCount: _companies.length,
+            itemBuilder: (context, index) {
+              final company = _companies[index];
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index < _companies.length - 1 ? SpacePalette.sm : 0,
+                ),
+                child: Container(
+                  width: cardWidth,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(RadiusPalette.base),
+                    color: ColorPalette.neutral800,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    company.thumbnail,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: SpacePalette.base),
+      ],
+    );
+  }
+}
+
+// トピック別動画セクション（Huluスタイル）
+class _TopicVideoSection extends StatelessWidget {
+  final String title;
   final List<Map<String, dynamic>> videos;
   final SupabaseClient supabase;
 
-  const _CompanyVideoSection({
-    required this.companyId,
-    required this.companyName,
+  const _TopicVideoSection({
+    required this.title,
     required this.videos,
     required this.supabase,
   });
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.42;
+    final thumbnailHeight = cardWidth * 0.65;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 企業名ヘッダー
+        // トピックヘッダー
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: SpacePalette.base,
             vertical: SpacePalette.sm,
           ),
-          child: GestureDetector(
-            onTap: () {
-              if (companyId != 'unknown') {
-                context.push('/company/$companyId');
-              }
-            },
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.business,
-                  color: ColorPalette.primaryColor,
-                  size: 20,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStylePalette.smHeader,
                 ),
-                const SizedBox(width: SpacePalette.sm),
-                Expanded(
-                  child: Text(
-                    companyName,
-                    style: TextStylePalette.smHeader,
-                  ),
-                ),
-                const Icon(
-                  Icons.chevron_right,
-                  color: ColorPalette.neutral400,
-                ),
-              ],
-            ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: ColorPalette.neutral400,
+                size: 24,
+              ),
+            ],
           ),
         ),
 
-        // 動画横スクロールリスト
+        // 動画横スクロールリスト（サムネのみ）
         SizedBox(
-          height: 200,
+          height: thumbnailHeight,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
@@ -327,6 +1061,7 @@ class _CompanyVideoSection extends StatelessWidget {
                 child: _FeaturedVideoCard(
                   video: video,
                   supabase: supabase,
+                  cardWidth: cardWidth,
                 ),
               );
             },
@@ -339,19 +1074,20 @@ class _CompanyVideoSection extends StatelessWidget {
   }
 }
 
-// 特集タブの動画カード
+// 特集タブの動画カード（サムネのみ）
 class _FeaturedVideoCard extends StatelessWidget {
   final Map<String, dynamic> video;
   final SupabaseClient supabase;
+  final double cardWidth;
 
   const _FeaturedVideoCard({
     required this.video,
     required this.supabase,
+    required this.cardWidth,
   });
 
   @override
   Widget build(BuildContext context) {
-    final title = video['title'] as String? ?? '無題';
     final thumbnailPath = video['thumbnail_path'] as String?;
     final companyId = video['company_id'] as String?;
     final videoId = video['id'] as String?;
@@ -363,6 +1099,24 @@ class _FeaturedVideoCard extends StatelessWidget {
           .getPublicUrl(thumbnailPath);
     }
 
+    Widget thumbnailWidget = Container(
+      color: ColorPalette.neutral600,
+      child: thumbnailUrl != null
+          ? Image.network(
+              thumbnailUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return _placeholder;
+              },
+              frameBuilder:
+                  (context, child, frame, wasSynchronouslyLoaded) {
+                if (wasSynchronouslyLoaded) return child;
+                return frame != null ? child : _loadingPlaceholder;
+              },
+            )
+          : _placeholder,
+    );
+
     return GestureDetector(
       onTap: () {
         if (companyId != null && videoId != null) {
@@ -370,55 +1124,13 @@ class _FeaturedVideoCard extends StatelessWidget {
         }
       },
       child: Container(
-        width: 140,
+        width: cardWidth,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(RadiusPalette.mini),
+          borderRadius: BorderRadius.circular(RadiusPalette.base),
           color: ColorPalette.neutral800,
         ),
         clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // サムネイル
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                color: ColorPalette.neutral600,
-                child: thumbnailUrl != null
-                    ? Image.network(
-                        thumbnailUrl,
-                        fit: BoxFit.cover,
-                        cacheHeight: 200,
-                        cacheWidth: 140,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _placeholder;
-                        },
-                        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                          if (wasSynchronouslyLoaded) return child;
-                          return frame != null ? child : _loadingPlaceholder;
-                        },
-                      )
-                    : _placeholder,
-              ),
-            ),
-
-            // タイトル
-            Padding(
-              padding: const EdgeInsets.all(SpacePalette.sm),
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontFamily: 'NotoSansJP',
-                  fontSize: FontSizePalette.size12,
-                  fontVariations: [FontVariation('wght', 700)],
-                  color: ColorPalette.neutral0,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
+        child: thumbnailWidget,
       ),
     );
   }
@@ -441,6 +1153,159 @@ class _FeaturedVideoCard extends StatelessWidget {
       ),
     ),
   );
+}
+
+// 視聴済み動画セクション
+class _WatchedVideosSection extends StatelessWidget {
+  const _WatchedVideosSection();
+
+  static const List<_WatchedVideoData> _videos = [
+    _WatchedVideoData(
+      title: '会社紹介ムービー',
+      companyName: 'テックソリューションズ',
+      thumbnail: 'assets/images/11.png',
+    ),
+    _WatchedVideoData(
+      title: 'エンジニア座談会',
+      companyName: 'グローバルコネクト',
+      thumbnail: 'assets/images/12.png',
+    ),
+    _WatchedVideoData(
+      title: 'オフィスツアー',
+      companyName: 'イノベートR&D',
+      thumbnail: 'assets/images/13.png',
+    ),
+    _WatchedVideoData(
+      title: 'インターン体験記',
+      companyName: 'サステナ未来ラボ',
+      thumbnail: 'assets/images/14.png',
+    ),
+    _WatchedVideoData(
+      title: '新卒1年目の1日',
+      companyName: 'フューチャーテック',
+      thumbnail: 'assets/images/11.png',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.42;
+    final thumbnailHeight = cardWidth * 0.65;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ヘッダー
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpacePalette.base,
+            vertical: SpacePalette.sm,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'あなたが見た企業',
+                  style: TextStylePalette.smHeader,
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: ColorPalette.neutral400,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+
+        // 動画横スクロール（サムネ + すべて見るカード）
+        SizedBox(
+          height: thumbnailHeight,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
+            itemCount: _videos.length + 1,
+            itemBuilder: (context, index) {
+              // 6番目: すべて見るカード
+              if (index == _videos.length) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 0),
+                  child: GestureDetector(
+                    onTap: () => context.push('/watch-history'),
+                    child: Container(
+                      width: cardWidth,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(RadiusPalette.base),
+                        color: ColorPalette.neutral800,
+                        border: Border.all(
+                          color: ColorPalette.neutral600,
+                          width: 1,
+                        ),
+                      ),
+                      child: const Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.arrow_forward,
+                              color: ColorPalette.neutral0,
+                              size: 28,
+                            ),
+                            SizedBox(height: SpacePalette.xs),
+                            Text(
+                              'すべて見る',
+                              style: TextStyle(
+                                fontFamily: 'NotoSansJP',
+                                fontSize: FontSizePalette.size14,
+                                fontVariations: [FontVariation('wght', 600)],
+                                color: ColorPalette.neutral0,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              final video = _videos[index];
+              return Padding(
+                padding: const EdgeInsets.only(right: SpacePalette.sm),
+                child: Container(
+                  width: cardWidth,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(RadiusPalette.base),
+                    color: ColorPalette.neutral800,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    video.thumbnail,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: SpacePalette.sm),
+      ],
+    );
+  }
+}
+
+class _WatchedVideoData {
+  final String title;
+  final String companyName;
+  final String thumbnail;
+
+  const _WatchedVideoData({
+    required this.title,
+    required this.companyName,
+    required this.thumbnail,
+  });
 }
 
 // その他タブ - マイページの内容を移動

@@ -9,7 +9,13 @@
       "mcp__supabase__list_tables",
       "mcp__supabase__execute_sql",
       "Bash(dir:*)",
-      "mcp__supabase__apply_migration"
+      "mcp__supabase__apply_migration",
+      "mcp__file-system__list_directory",
+      "mcp__file-system__directory_tree",
+      "Bash(xargs sed -i '' 's/ColorPalette\\\\.systemGreen/ColorPalette.systemGold/g')",
+      "Skill(sc:estimate)",
+      "Skill(sc:estimate:*)",
+      "Bash(find /Users/yunisuta/Developer/Queue_dev/numbers -type f -name \"*.dart\" -exec grep -l \"count\\(\\)\" {} ;)"
     ]
   },
   "enabledMcpjsonServers": [

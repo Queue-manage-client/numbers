@@ -82,7 +82,7 @@ class CompanyVideoEditPage extends HookConsumerWidget {
                     color: ColorPalette.neutral0,
                   ),
                 ),
-                backgroundColor: ColorPalette.systemGreen,
+                backgroundColor: ColorPalette.systemGold,
               ),
             );
           }
@@ -106,7 +106,7 @@ class CompanyVideoEditPage extends HookConsumerWidget {
                     color: ColorPalette.neutral0,
                   ),
                 ),
-                backgroundColor: ColorPalette.systemGreen,
+                backgroundColor: ColorPalette.systemGold,
               ),
             );
           }
@@ -203,7 +203,7 @@ class CompanyVideoEditPage extends HookConsumerWidget {
                   color: ColorPalette.neutral0,
                 ),
               ),
-              backgroundColor: ColorPalette.systemGreen,
+              backgroundColor: ColorPalette.systemGold,
             ),
           );
           context.go('/company-portal/videos/list');
@@ -287,7 +287,7 @@ class CompanyVideoEditPage extends HookConsumerWidget {
                     color: ColorPalette.neutral0,
                   ),
                 ),
-                backgroundColor: ColorPalette.systemGreen,
+                backgroundColor: ColorPalette.systemGold,
               ),
             );
             context.go('/company-portal/videos/list');
@@ -373,7 +373,7 @@ class CompanyVideoEditPage extends HookConsumerWidget {
                       borderRadius: BorderRadius.circular(RadiusPalette.lg),
                       border: Border.all(
                         color: newThumbnailFile.value != null
-                            ? ColorPalette.systemGreen
+                            ? ColorPalette.systemGold
                             : ColorPalette.neutral200,
                         width: 2,
                       ),
@@ -388,7 +388,7 @@ class CompanyVideoEditPage extends HookConsumerWidget {
                                 : Icons.image_outlined,
                             size: 48,
                             color: newThumbnailFile.value != null
-                                ? ColorPalette.systemGreen
+                                ? ColorPalette.systemGold
                                 : ColorPalette.neutral400,
                           ),
                           const SizedBox(height: SpacePalette.sm),
@@ -396,7 +396,7 @@ class CompanyVideoEditPage extends HookConsumerWidget {
                             Text(
                               '新しいサムネイル: ${newThumbnailFile.value!.name}',
                               style: TextStylePalette.smSubText.copyWith(
-                                color: ColorPalette.systemGreen,
+                                color: ColorPalette.systemGold,
                               ),
                               textAlign: TextAlign.center,
                             ),
