@@ -10,6 +10,24 @@ import 'package:numbers/features/user/profile/presentation/providers/profile_pro
 import 'package:numbers/core/theme/app_theme.dart';
 import '../widgets/vertical_video_feed.dart';
 
+// ロゴ画像がない企業用のプレースホルダー
+Widget _companyPlaceholder(String name) {
+  return Container(
+    color: ColorPalette.neutral600,
+    child: Center(
+      child: Text(
+        name.isNotEmpty ? name[0] : '?',
+        style: const TextStyle(
+          fontFamily: 'NotoSansJP',
+          fontSize: 28,
+          fontVariations: [FontVariation('wght', 800)],
+          color: ColorPalette.neutral400,
+        ),
+      ),
+    ),
+  );
+}
+
 // 選択中のホームタブインデックス
 final selectedHomeTabProvider = StateProvider<int>((ref) => 0);
 
@@ -24,7 +42,7 @@ class FeedPage extends ConsumerWidget {
     // 認証状態の変更を監視
     ref.listen<AsyncValue<AuthState>>(authStateProvider, (previous, next) {
       next.whenData((state) {
-        if (state.session == null || state.session!.user == null) {
+        if (state.session == null) {
           context.go('/login');
         }
       });
@@ -291,83 +309,28 @@ class _FeaturedTab extends ConsumerWidget {
   }
 }
 
-// 自動スクロールスライドショー（Huluスタイル：フル幅・グラデーションオーバーレイ）
-class _ImageSlideshow extends StatefulWidget {
+// 自動スクロールスライドショー（DB連携：feed_bannersテーブルから取得）
+class _ImageSlideshow extends ConsumerStatefulWidget {
   const _ImageSlideshow();
 
   @override
-  State<_ImageSlideshow> createState() => _ImageSlideshowState();
+  ConsumerState<_ImageSlideshow> createState() => _ImageSlideshowState();
 }
 
-class _ImageSlideshowState extends State<_ImageSlideshow> {
+class _ImageSlideshowState extends ConsumerState<_ImageSlideshow> {
   final PageController _pageController = PageController();
   Timer? _timer;
   int _currentPage = 0;
 
-  static const List<SlideData> _slides = [
-    SlideData(
-      id: 'featured-companies',
-      title: '注目の企業特集',
-      subtitle: '今週のピックアップ',
-      icon: Icons.star,
-      backgroundImage: 'assets/images/3.png',
-      thumbnails: ['assets/images/11.png', 'assets/images/12.png', 'assets/images/13.png', 'assets/images/14.png'],
-    ),
-    SlideData(
-      id: 'new-internships',
-      title: '新着インターン情報',
-      subtitle: '最新の募集をチェック',
-      icon: Icons.work_outline,
-      backgroundImage: 'assets/images/3.png',
-      thumbnails: ['assets/images/12.png', 'assets/images/13.png', 'assets/images/14.png'],
-    ),
-    SlideData(
-      id: 'career-events',
-      title: 'キャリアイベント開催中',
-      subtitle: '参加者募集中',
-      icon: Icons.event,
-      backgroundImage: 'assets/images/3.png',
-      thumbnails: ['assets/images/13.png', 'assets/images/14.png', 'assets/images/11.png'],
-    ),
-    SlideData(
-      id: 'growing-companies',
-      title: '急成長企業ランキング',
-      subtitle: '今最も注目の企業',
-      icon: Icons.trending_up,
-      backgroundImage: 'assets/images/3.png',
-      thumbnails: ['assets/images/14.png', 'assets/images/11.png', 'assets/images/12.png'],
-    ),
-    SlideData(
-      id: 'job-seekers',
-      title: '就活生必見',
-      subtitle: '内定者インタビュー公開中',
-      icon: Icons.people,
-      backgroundImage: 'assets/images/3.png',
-      thumbnails: ['assets/images/11.png', 'assets/images/12.png'],
-    ),
-    SlideData(
-      id: 'it-industry',
-      title: 'IT業界特集',
-      subtitle: 'エンジニア志望のあなたへ',
-      icon: Icons.code,
-      backgroundImage: 'assets/images/3.png',
-      thumbnails: ['assets/images/12.png', 'assets/images/13.png', 'assets/images/14.png'],
-    ),
-    SlideData(
-      id: 'summer-internships',
-      title: '夏インターン特集',
-      subtitle: 'エントリー受付中',
-      icon: Icons.sunny,
-      backgroundImage: 'assets/images/3.png',
-      thumbnails: ['assets/images/13.png', 'assets/images/14.png', 'assets/images/11.png'],
-    ),
+  static const _defaultGradients = [
+    [Color(0xFF1a237e), Color(0xFF0d47a1)],
+    [Color(0xFF004d40), Color(0xFF00695c)],
+    [Color(0xFF4a148c), Color(0xFF6a1b9a)],
+    [Color(0xFFbf360c), Color(0xFFd84315)],
+    [Color(0xFF1b5e20), Color(0xFF2e7d32)],
+    [Color(0xFF880e4f), Color(0xFFad1457)],
+    [Color(0xFF0d47a1), Color(0xFF1565c0)],
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    _startAutoScroll();
-  }
 
   @override
   void dispose() {
@@ -376,10 +339,12 @@ class _ImageSlideshowState extends State<_ImageSlideshow> {
     super.dispose();
   }
 
-  void _startAutoScroll() {
+  void _startAutoScroll(int slideCount) {
+    _timer?.cancel();
+    if (slideCount <= 1) return;
     _timer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (!mounted) return;
-      _currentPage = (_currentPage + 1) % _slides.length;
+      _currentPage = (_currentPage + 1) % slideCount;
       _pageController.animateToPage(
         _currentPage,
         duration: const Duration(milliseconds: 500),
@@ -390,33 +355,75 @@ class _ImageSlideshowState extends State<_ImageSlideshow> {
 
   @override
   Widget build(BuildContext context) {
+    final bannersAsync = ref.watch(feedBannersProvider);
+    final banners = bannersAsync.valueOrNull ?? [];
     final screenWidth = MediaQuery.of(context).size.width;
+
+    if (banners.isEmpty) {
+      return SizedBox(height: screenWidth * 9 / 16);
+    }
+
+    // 初回のみタイマー起動
+    if (_timer == null || !_timer!.isActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _startAutoScroll(banners.length);
+      });
+    }
 
     return Column(
       children: [
-        // フル幅バナー
         SizedBox(
           height: screenWidth * 9 / 16,
           child: PageView.builder(
             controller: _pageController,
-            itemCount: _slides.length,
+            itemCount: banners.length,
             onPageChanged: (index) {
               setState(() => _currentPage = index);
             },
             itemBuilder: (context, index) {
-              final slide = _slides[index];
+              final banner = banners[index];
+              final title = banner['title'] as String? ?? '';
+              final subtitle = banner['subtitle'] as String? ?? '';
+              final imageUrl = banner['image_url'] as String?;
+              final bannerId = banner['id'] as String? ?? 'banner-$index';
+              final gradient = _defaultGradients[index % _defaultGradients.length];
+
               return GestureDetector(
                 onTap: () {
-                  context.push('/feature/${slide.id}', extra: slide);
+                  context.push('/feature/$bannerId', extra: SlideData(
+                    id: bannerId,
+                    title: title,
+                    subtitle: subtitle,
+                  ));
                 },
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // 背景画像
-                    Image.asset(
-                      slide.backgroundImage,
-                      fit: BoxFit.cover,
-                    ),
+                    // 背景: DB画像 or グラデーション
+                    if (imageUrl != null && imageUrl.isNotEmpty)
+                      Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: gradient,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: gradient,
+                          ),
+                        ),
+                      ),
                     // 下部グラデーションオーバーレイ
                     Positioned(
                       bottom: 0,
@@ -445,7 +452,7 @@ class _ImageSlideshowState extends State<_ImageSlideshow> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            slide.subtitle,
+                            subtitle,
                             style: TextStyle(
                               fontFamily: 'NotoSansJP',
                               fontSize: FontSizePalette.size12,
@@ -457,7 +464,7 @@ class _ImageSlideshowState extends State<_ImageSlideshow> {
                           ),
                           const SizedBox(height: SpacePalette.xs),
                           Text(
-                            slide.title,
+                            title,
                             style: const TextStyle(
                               fontFamily: 'NotoSansJP',
                               fontSize: FontSizePalette.size20,
@@ -475,11 +482,10 @@ class _ImageSlideshowState extends State<_ImageSlideshow> {
           ),
         ),
         const SizedBox(height: SpacePalette.sm),
-        // ダッシュスタイルインジケーター
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
-            _slides.length,
+            banners.length,
             (index) => AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               margin: const EdgeInsets.symmetric(horizontal: 2),
@@ -504,64 +510,22 @@ class SlideData {
   final String id;
   final String title;
   final String subtitle;
-  final IconData icon;
-  final String backgroundImage;
-  final List<String> thumbnails;
 
   const SlideData({
     required this.id,
     required this.title,
     required this.subtitle,
-    required this.icon,
-    required this.backgroundImage,
-    required this.thumbnails,
   });
 }
 
-// 注目企業セクション（ダミー5社）
-class _FeaturedCompaniesSection extends StatelessWidget {
+// 注目企業セクション（DB連携）
+class _FeaturedCompaniesSection extends ConsumerWidget {
   const _FeaturedCompaniesSection();
 
-  static const List<_PopularCompanyData> _companies = [
-    _PopularCompanyData(
-      name: 'ナンバーズテック',
-      companyName: 'Numbers Tech Inc.',
-      thumbnail: 'assets/images/tate1.png',
-      companyId: 'dummy-company-1',
-      videoId: 'dummy-video-1',
-    ),
-    _PopularCompanyData(
-      name: 'クラウドビジョン',
-      companyName: 'Cloud Vision Japan',
-      thumbnail: 'assets/images/tate2.png',
-      companyId: 'dummy-company-2',
-      videoId: 'dummy-video-2',
-    ),
-    _PopularCompanyData(
-      name: 'アクセルデザイン',
-      companyName: 'Accel Design Co.',
-      thumbnail: 'assets/images/tate3.png',
-      companyId: 'dummy-company-3',
-      videoId: 'dummy-video-3',
-    ),
-    _PopularCompanyData(
-      name: 'ブリッジワーク',
-      companyName: 'Bridge Work Ltd.',
-      thumbnail: 'assets/images/tate1.png',
-      companyId: 'dummy-company-4',
-      videoId: 'dummy-video-4',
-    ),
-    _PopularCompanyData(
-      name: 'ゼロイチラボ',
-      companyName: 'ZeroOne Lab Inc.',
-      thumbnail: 'assets/images/tate2.png',
-      companyId: 'dummy-company-5',
-      videoId: 'dummy-video-5',
-    ),
-  ];
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final companiesAsync = ref.watch(feedCompaniesProvider);
+    final companies = companiesAsync.valueOrNull ?? [];
     final cardWidth = 120.0;
     final cardHeight = cardWidth * 1.6;
 
@@ -594,17 +558,20 @@ class _FeaturedCompaniesSection extends StatelessWidget {
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
-            itemCount: _companies.length,
+            itemCount: companies.length,
             itemBuilder: (context, index) {
-              final company = _companies[index];
+              final company = companies[index];
+              final name = company['name'] as String? ?? '';
+              final companyId = company['id'] as String?;
+              final logoUrl = company['logo_url'] as String?;
               return Padding(
                 padding: EdgeInsets.only(
-                  right: index < _companies.length - 1 ? SpacePalette.sm : 0,
+                  right: index < companies.length - 1 ? SpacePalette.sm : 0,
                 ),
                 child: GestureDetector(
                   onTap: () {
-                    if (company.companyId != null && company.videoId != null) {
-                      context.push('/companies/${company.companyId}/videos/${company.videoId}');
+                    if (companyId != null) {
+                      context.push('/companies/$companyId');
                     }
                   },
                   child: Container(
@@ -617,10 +584,13 @@ class _FeaturedCompaniesSection extends StatelessWidget {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Image.asset(
-                          company.thumbnail,
-                          fit: BoxFit.cover,
-                        ),
+                        (logoUrl != null && logoUrl.isNotEmpty)
+                            ? Image.network(
+                                logoUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => _companyPlaceholder(name),
+                              )
+                            : _companyPlaceholder(name),
                         Positioned(
                           left: 0,
                           top: 0,
@@ -678,7 +648,7 @@ class _FeaturedCompaniesSection extends StatelessWidget {
                               ),
                             ),
                             child: Text(
-                              company.name,
+                              name,
                               style: const TextStyle(
                                 fontFamily: 'NotoSansJP',
                                 fontSize: FontSizePalette.size12,
@@ -704,35 +674,16 @@ class _FeaturedCompaniesSection extends StatelessWidget {
   }
 }
 
-// 人気企業セクション（ダミーデータ・注目企業と同じカードスタイル）
-class _PopularCompaniesSection extends StatelessWidget {
+// 急募の企業セクション（DB連携）
+class _PopularCompaniesSection extends ConsumerWidget {
   const _PopularCompaniesSection();
 
-  static const List<_PopularCompanyData> _companies = [
-    _PopularCompanyData(
-      name: 'テックソリューションズ',
-      companyName: 'Tech Solutions Inc.',
-      thumbnail: 'assets/images/11.png',
-    ),
-    _PopularCompanyData(
-      name: 'グローバルコネクト',
-      companyName: 'Global Connect Japan',
-      thumbnail: 'assets/images/12.png',
-    ),
-    _PopularCompanyData(
-      name: 'イノベートR&D',
-      companyName: 'Innovate R&D Holdings',
-      thumbnail: 'assets/images/13.png',
-    ),
-    _PopularCompanyData(
-      name: 'サステナ未来ラボ',
-      companyName: 'Sustain Future Lab',
-      thumbnail: 'assets/images/14.png',
-    ),
-  ];
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final companiesAsync = ref.watch(feedCompaniesProvider);
+    final allCompanies = companiesAsync.valueOrNull ?? [];
+    // 急募用：後半の企業を表示
+    final companies = allCompanies.length > 4 ? allCompanies.sublist(4) : allCompanies;
     final screenWidth = MediaQuery.of(context).size.width;
     final cardWidth = screenWidth * 0.42;
     final thumbnailHeight = cardWidth * 0.65;
@@ -740,7 +691,6 @@ class _PopularCompaniesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ヘッダー
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: SpacePalette.base,
@@ -763,30 +713,22 @@ class _PopularCompaniesSection extends StatelessWidget {
           ),
         ),
 
-        // カード横スクロール（サムネのみ）
         SizedBox(
           height: thumbnailHeight,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
-            itemCount: _companies.length,
+            itemCount: companies.length,
             itemBuilder: (context, index) {
-              final company = _companies[index];
+              final company = companies[index];
               return Padding(
                 padding: EdgeInsets.only(
-                  right: index < _companies.length - 1 ? SpacePalette.sm : 0,
+                  right: index < companies.length - 1 ? SpacePalette.sm : 0,
                 ),
-                child: Container(
-                  width: cardWidth,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(RadiusPalette.base),
-                    color: ColorPalette.neutral800,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Image.asset(
-                    company.thumbnail,
-                    fit: BoxFit.cover,
-                  ),
+                child: _CompanyThumbnailCard(
+                  company: company,
+                  cardWidth: cardWidth,
+
                 ),
               );
             },
@@ -799,51 +741,59 @@ class _PopularCompaniesSection extends StatelessWidget {
   }
 }
 
-class _PopularCompanyData {
-  final String name;
-  final String companyName;
-  final String thumbnail;
-  final String? companyId;
-  final String? videoId;
+// 企業サムネイルカード（共通）
+class _CompanyThumbnailCard extends StatelessWidget {
+  final Map<String, dynamic> company;
+  final double cardWidth;
 
-  const _PopularCompanyData({
-    required this.name,
-    required this.companyName,
-    required this.thumbnail,
-    this.companyId,
-    this.videoId,
+  const _CompanyThumbnailCard({
+    required this.company,
+    required this.cardWidth,
   });
-}
-
-// イチオシ企業セクション
-class _RecommendedCompaniesSection extends StatelessWidget {
-  const _RecommendedCompaniesSection();
-
-  static const List<_PopularCompanyData> _companies = [
-    _PopularCompanyData(
-      name: 'フューチャーテック',
-      companyName: 'Future Tech Inc.',
-      thumbnail: 'assets/images/13.png',
-    ),
-    _PopularCompanyData(
-      name: 'スマートワークス',
-      companyName: 'Smart Works Japan',
-      thumbnail: 'assets/images/11.png',
-    ),
-    _PopularCompanyData(
-      name: 'ネクストイノベーション',
-      companyName: 'Next Innovation Co.',
-      thumbnail: 'assets/images/14.png',
-    ),
-    _PopularCompanyData(
-      name: 'デジタルクリエイト',
-      companyName: 'Digital Create Ltd.',
-      thumbnail: 'assets/images/12.png',
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
+    final logoUrl = company['logo_url'] as String?;
+    final companyId = company['id'] as String?;
+    final name = company['name'] as String? ?? '';
+
+    return GestureDetector(
+      onTap: () {
+        if (companyId != null) {
+          context.push('/companies/$companyId');
+        }
+      },
+      child: Container(
+        width: cardWidth,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(RadiusPalette.base),
+          color: ColorPalette.neutral800,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: (logoUrl != null && logoUrl.isNotEmpty)
+            ? Image.network(
+                logoUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _companyPlaceholder(name),
+              )
+            : _companyPlaceholder(name),
+      ),
+    );
+  }
+}
+
+// 今週のおすすめ企業セクション（DB連携）
+class _RecommendedCompaniesSection extends ConsumerWidget {
+  const _RecommendedCompaniesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final companiesAsync = ref.watch(feedCompaniesProvider);
+    final allCompanies = companiesAsync.valueOrNull ?? [];
+    // おすすめ用：中間の企業を表示
+    final start = (allCompanies.length * 0.3).round().clamp(0, allCompanies.length);
+    final end = (start + 5).clamp(0, allCompanies.length);
+    final companies = allCompanies.sublist(start, end);
     final screenWidth = MediaQuery.of(context).size.width;
     final cardWidth = screenWidth * 0.42;
     final thumbnailHeight = cardWidth * 0.65;
@@ -851,7 +801,6 @@ class _RecommendedCompaniesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ヘッダー
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: SpacePalette.base,
@@ -874,30 +823,22 @@ class _RecommendedCompaniesSection extends StatelessWidget {
           ),
         ),
 
-        // カード横スクロール（サムネのみ）
         SizedBox(
           height: thumbnailHeight,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
-            itemCount: _companies.length,
+            itemCount: companies.length,
             itemBuilder: (context, index) {
-              final company = _companies[index];
+              final company = companies[index];
               return Padding(
                 padding: EdgeInsets.only(
-                  right: index < _companies.length - 1 ? SpacePalette.sm : 0,
+                  right: index < companies.length - 1 ? SpacePalette.sm : 0,
                 ),
-                child: Container(
-                  width: cardWidth,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(RadiusPalette.base),
-                    color: ColorPalette.neutral800,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Image.asset(
-                    company.thumbnail,
-                    fit: BoxFit.cover,
-                  ),
+                child: _CompanyThumbnailCard(
+                  company: company,
+                  cardWidth: cardWidth,
+
                 ),
               );
             },
@@ -910,35 +851,16 @@ class _RecommendedCompaniesSection extends StatelessWidget {
   }
 }
 
-// 若手が活躍できる企業セクション
-class _YoungActiveCompaniesSection extends StatelessWidget {
+// 若手が活躍できる企業セクション（DB連携）
+class _YoungActiveCompaniesSection extends ConsumerWidget {
   const _YoungActiveCompaniesSection();
 
-  static const List<_PopularCompanyData> _companies = [
-    _PopularCompanyData(
-      name: 'スタートアップラボ',
-      companyName: 'Startup Lab Inc.',
-      thumbnail: 'assets/images/14.png',
-    ),
-    _PopularCompanyData(
-      name: 'チャレンジワークス',
-      companyName: 'Challenge Works Co.',
-      thumbnail: 'assets/images/11.png',
-    ),
-    _PopularCompanyData(
-      name: 'ユースイノベーション',
-      companyName: 'Youth Innovation Inc.',
-      thumbnail: 'assets/images/12.png',
-    ),
-    _PopularCompanyData(
-      name: 'グロースパートナーズ',
-      companyName: 'Growth Partners Ltd.',
-      thumbnail: 'assets/images/13.png',
-    ),
-  ];
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final companiesAsync = ref.watch(feedCompaniesProvider);
+    final allCompanies = companiesAsync.valueOrNull ?? [];
+    // 若手用：最新の企業を表示
+    final companies = allCompanies.take(5).toList();
     final screenWidth = MediaQuery.of(context).size.width;
     final cardWidth = screenWidth * 0.42;
     final thumbnailHeight = cardWidth * 0.65;
@@ -972,24 +894,17 @@ class _YoungActiveCompaniesSection extends StatelessWidget {
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
-            itemCount: _companies.length,
+            itemCount: companies.length,
             itemBuilder: (context, index) {
-              final company = _companies[index];
+              final company = companies[index];
               return Padding(
                 padding: EdgeInsets.only(
-                  right: index < _companies.length - 1 ? SpacePalette.sm : 0,
+                  right: index < companies.length - 1 ? SpacePalette.sm : 0,
                 ),
-                child: Container(
-                  width: cardWidth,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(RadiusPalette.base),
-                    color: ColorPalette.neutral800,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Image.asset(
-                    company.thumbnail,
-                    fit: BoxFit.cover,
-                  ),
+                child: _CompanyThumbnailCard(
+                  company: company,
+                  cardWidth: cardWidth,
+
                 ),
               );
             },
@@ -1155,40 +1070,20 @@ class _FeaturedVideoCard extends StatelessWidget {
   );
 }
 
-// 視聴済み動画セクション
-class _WatchedVideosSection extends StatelessWidget {
+// あなたが見た企業セクション（DB連携：video_viewsテーブルから取得）
+class _WatchedVideosSection extends ConsumerWidget {
   const _WatchedVideosSection();
 
-  static const List<_WatchedVideoData> _videos = [
-    _WatchedVideoData(
-      title: '会社紹介ムービー',
-      companyName: 'テックソリューションズ',
-      thumbnail: 'assets/images/11.png',
-    ),
-    _WatchedVideoData(
-      title: 'エンジニア座談会',
-      companyName: 'グローバルコネクト',
-      thumbnail: 'assets/images/12.png',
-    ),
-    _WatchedVideoData(
-      title: 'オフィスツアー',
-      companyName: 'イノベートR&D',
-      thumbnail: 'assets/images/13.png',
-    ),
-    _WatchedVideoData(
-      title: 'インターン体験記',
-      companyName: 'サステナ未来ラボ',
-      thumbnail: 'assets/images/14.png',
-    ),
-    _WatchedVideoData(
-      title: '新卒1年目の1日',
-      companyName: 'フューチャーテック',
-      thumbnail: 'assets/images/11.png',
-    ),
-  ];
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final historyAsync = ref.watch(watchHistoryProvider);
+    final history = historyAsync.valueOrNull ?? [];
+    // video_viewsテーブルから視聴済み動画を取得
+    final recentVideos = history
+        .where((v) => v['company_videos'] != null)
+        .map((v) => v['company_videos'] as Map<String, dynamic>)
+        .take(5)
+        .toList();
     final screenWidth = MediaQuery.of(context).size.width;
     final cardWidth = screenWidth * 0.42;
     final thumbnailHeight = cardWidth * 0.65;
@@ -1225,10 +1120,10 @@ class _WatchedVideosSection extends StatelessWidget {
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
-            itemCount: _videos.length + 1,
+            itemCount: recentVideos.length + 1,
             itemBuilder: (context, index) {
               // 6番目: すべて見るカード
-              if (index == _videos.length) {
+              if (index == recentVideos.length) {
                 return Padding(
                   padding: const EdgeInsets.only(right: 0),
                   child: GestureDetector(
@@ -1270,19 +1165,39 @@ class _WatchedVideosSection extends StatelessWidget {
                 );
               }
 
-              final video = _videos[index];
+              final video = recentVideos[index];
+              final thumbnailPath = video['thumbnail_path'] as String?;
+              final title = video['title'] as String? ?? '';
+              String? thumbnailUrl;
+              if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+                thumbnailUrl = Supabase.instance.client.storage
+                    .from('company-thumbnails')
+                    .getPublicUrl(thumbnailPath);
+              }
               return Padding(
                 padding: const EdgeInsets.only(right: SpacePalette.sm),
-                child: Container(
-                  width: cardWidth,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(RadiusPalette.base),
-                    color: ColorPalette.neutral800,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Image.asset(
-                    video.thumbnail,
-                    fit: BoxFit.cover,
+                child: GestureDetector(
+                  onTap: () {
+                    final videoId = video['id'] as String?;
+                    final companyId = video['company_id'] as String?;
+                    if (companyId != null && videoId != null) {
+                      context.push('/companies/$companyId/videos/$videoId');
+                    }
+                  },
+                  child: Container(
+                    width: cardWidth,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(RadiusPalette.base),
+                      color: ColorPalette.neutral800,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: thumbnailUrl != null
+                        ? Image.network(
+                            thumbnailUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _companyPlaceholder(title),
+                          )
+                        : _companyPlaceholder(title),
                   ),
                 ),
               );
@@ -1294,18 +1209,6 @@ class _WatchedVideosSection extends StatelessWidget {
       ],
     );
   }
-}
-
-class _WatchedVideoData {
-  final String title;
-  final String companyName;
-  final String thumbnail;
-
-  const _WatchedVideoData({
-    required this.title,
-    required this.companyName,
-    required this.thumbnail,
-  });
 }
 
 // その他タブ - マイページの内容を移動

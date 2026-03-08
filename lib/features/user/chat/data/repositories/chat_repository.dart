@@ -1,4 +1,5 @@
 // features/user/chat/data/repositories/chat_repository.dart
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatRepository {
@@ -16,7 +17,7 @@ class ChatRepository {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error getting chat rooms: $e');
+      debugPrint('Error getting chat rooms: $e');
       return [];
     }
   }
@@ -26,13 +27,13 @@ class ChatRepository {
     try {
       final response = await _supabase
           .from('chat_rooms')
-          .select('*, companies(*)')
+          .select('*, companies(*), chat_room_members(count)')
           .eq('room_type', 'group')
-          .order('created_at', ascending: false); // 最新のものが上
+          .order('created_at', ascending: false);
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error getting all group chats: $e');
+      debugPrint('Error getting all group chats: $e');
       return [];
     }
   }
@@ -48,7 +49,7 @@ class ChatRepository {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error getting messages: $e');
+      debugPrint('Error getting messages: $e');
       return [];
     }
   }
@@ -74,10 +75,10 @@ class ChatRepository {
         }).eq('id', roomId);
       } catch (e) {
         // updated_atカラムがない場合は無視
-        print('Note: updated_at column not found (this is OK): $e');
+        debugPrint('Note: updated_at column not found (this is OK): $e');
       }
     } catch (e) {
-      print('Error sending message: $e');
+      debugPrint('Error sending message: $e');
       rethrow;
     }
   }

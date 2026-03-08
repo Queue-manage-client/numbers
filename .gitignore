@@ -12,6 +12,10 @@
 .swiftpm/
 migrate_working_dir/
 
+# Claude Code / MCP
+.claude/
+.mcp.json
+
 # Environment variables
 .env
 ios/Flutter/Env.xcconfig

@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import '../providers/ai_chat_provider.dart';
 import '../widgets/ai_conversation_drawer.dart';
@@ -20,6 +19,15 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // DBから会話を読み込み
+    Future.microtask(() {
+      ref.read(aiConversationsProvider.notifier).loadConversations();
+    });
+  }
 
   @override
   void dispose() {
@@ -50,7 +58,8 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
     var conversationId = ref.read(selectedConversationIdProvider);
     if (conversationId == null) {
       final notifier = ref.read(aiConversationsProvider.notifier);
-      conversationId = notifier.createConversation();
+      conversationId = await notifier.createConversation();
+      if (conversationId == null) return;
       ref.read(selectedConversationIdProvider.notifier).state = conversationId;
     }
 

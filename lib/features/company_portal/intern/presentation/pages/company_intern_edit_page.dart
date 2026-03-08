@@ -1,16 +1,21 @@
 // company_portal/presentation/pages/company_intern_edit_page.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/features/company_portal/intern/presentation/providers/company_intern_provider.dart';
 
-class CompanyInternEditPage extends StatefulWidget {
-  const CompanyInternEditPage({super.key});
+class CompanyInternEditPage extends ConsumerStatefulWidget {
+  final String internshipId;
+
+  const CompanyInternEditPage({super.key, required this.internshipId});
 
   @override
-  State<CompanyInternEditPage> createState() => _CompanyInternEditPageState();
+  ConsumerState<CompanyInternEditPage> createState() =>
+      _CompanyInternEditPageState();
 }
 
-class _CompanyInternEditPageState extends State<CompanyInternEditPage> {
+class _CompanyInternEditPageState extends ConsumerState<CompanyInternEditPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -18,12 +23,7 @@ class _CompanyInternEditPageState extends State<CompanyInternEditPage> {
   DateTime? _startDate;
   DateTime? _endDate;
   bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // TODO: インターンデータを取得してコントローラーにセット
-  }
+  bool _isInitialized = false;
 
   @override
   void dispose() {
@@ -31,6 +31,17 @@ class _CompanyInternEditPageState extends State<CompanyInternEditPage> {
     _descriptionController.dispose();
     _tagsController.dispose();
     super.dispose();
+  }
+
+  void _initializeFromData(dynamic internship) {
+    if (_isInitialized || internship == null) return;
+    _isInitialized = true;
+
+    _titleController.text = internship.title;
+    _descriptionController.text = internship.description ?? '';
+    _tagsController.text = (internship.tags ?? []).join(', ');
+    _startDate = internship.startDate;
+    _endDate = internship.endDate;
   }
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
@@ -42,9 +53,9 @@ class _CompanyInternEditPageState extends State<CompanyInternEditPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF323232),
-              onPrimary: Color(0xFFFFFFFF),
+            colorScheme: ColorScheme.light(
+              primary: ColorPalette.neutral900,
+              onPrimary: ColorPalette.neutral0,
             ),
           ),
           child: child!,
@@ -76,14 +87,32 @@ class _CompanyInternEditPageState extends State<CompanyInternEditPage> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: インターン更新処理を実装
-      await Future.delayed(const Duration(seconds: 1));
+      final tags = _tagsController.text
+          .split(',')
+          .map((t) => t.trim())
+          .where((t) => t.isNotEmpty)
+          .toList();
+
+      final success = await ref.read(companyInternNotifierProvider.notifier).update(
+        internshipId: widget.internshipId,
+        title: _titleController.text,
+        description: _descriptionController.text,
+        startDate: _startDate,
+        endDate: _endDate,
+        tags: tags,
+      );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('インターンを更新しました')),
-        );
-        context.go('/company-portal/interns/list');
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('インターンを更新しました')),
+          );
+          context.go('/company-portal/interns/list');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('更新に失敗しました')),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -121,14 +150,21 @@ class _CompanyInternEditPageState extends State<CompanyInternEditPage> {
     if (confirmed == true && mounted) {
       setState(() => _isLoading = true);
       try {
-        // TODO: インターン削除処理を実装
-        await Future.delayed(const Duration(seconds: 1));
+        final success = await ref
+            .read(companyInternNotifierProvider.notifier)
+            .delete(widget.internshipId);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('インターンを削除しました')),
-          );
-          context.go('/company-portal/interns/list');
+          if (success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('インターンを削除しました')),
+            );
+            context.go('/company-portal/interns/list');
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('削除に失敗しました')),
+            );
+          }
         }
       } catch (e) {
         if (mounted) {
@@ -146,6 +182,9 @@ class _CompanyInternEditPageState extends State<CompanyInternEditPage> {
 
   @override
   Widget build(BuildContext context) {
+    final internshipAsync =
+        ref.watch(companyInternshipProvider(widget.internshipId));
+
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
@@ -157,131 +196,145 @@ class _CompanyInternEditPageState extends State<CompanyInternEditPage> {
         ),
         title: const Text('インターン編集'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // タイトル
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'タイトル',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'タイトルを入力してください';
-                  }
-                  return null;
-                },
+      body: internshipAsync.when(
+        data: (internship) {
+          if (internship == null) {
+            return Center(
+              child: Text(
+                'インターンが見つかりません',
+                style: TextStylePalette.subText,
               ),
-              const SizedBox(height: 16),
+            );
+          }
 
-              // 説明
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: '説明',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 5,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '説明を入力してください';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+          _initializeFromData(internship);
 
-              // 開始日
-              InkWell(
-                onTap: () => _selectDate(context, true),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: '開始日',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                  child: Text(
-                    _startDate != null
-                        ? '${_startDate!.year}/${_startDate!.month}/${_startDate!.day}'
-                        : '日付を選択してください',
-                    style: TextStyle(
-                      color: _startDate != null ? Colors.black : Colors.grey,
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    controller: _titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'タイトル',
+                      border: OutlineInputBorder(),
                     ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'タイトルを入力してください';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // 終了日
-              InkWell(
-                onTap: () => _selectDate(context, false),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: '終了日',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                  child: Text(
-                    _endDate != null
-                        ? '${_endDate!.year}/${_endDate!.month}/${_endDate!.day}'
-                        : '日付を選択してください',
-                    style: TextStyle(
-                      color: _endDate != null ? Colors.black : Colors.grey,
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: '説明',
+                      border: OutlineInputBorder(),
                     ),
+                    maxLines: 5,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return '説明を入力してください';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // タグ
-              TextFormField(
-                controller: _tagsController,
-                decoration: const InputDecoration(
-                  labelText: 'タグ（カンマ区切り）',
-                  border: OutlineInputBorder(),
-                  hintText: '例: IT, エンジニア, 夏季',
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 更新ボタン
-              ElevatedButton(
-                onPressed: _isLoading ? null : _updateIntern,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF323232),
-                  foregroundColor: const Color(0xFFFFFFFF),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0xFFFFFFFF),
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: () => _selectDate(context, true),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: '開始日',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.calendar_today),
+                      ),
+                      child: Text(
+                        _startDate != null
+                            ? '${_startDate!.year}/${_startDate!.month}/${_startDate!.day}'
+                            : '日付を選択してください',
+                        style: TextStyle(
+                          color:
+                              _startDate != null ? ColorPalette.neutral0 : ColorPalette.neutral400,
                         ),
-                      )
-                    : const Text('更新'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: () => _selectDate(context, false),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: '終了日',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.calendar_today),
+                      ),
+                      child: Text(
+                        _endDate != null
+                            ? '${_endDate!.year}/${_endDate!.month}/${_endDate!.day}'
+                            : '日付を選択してください',
+                        style: TextStyle(
+                          color: _endDate != null ? ColorPalette.neutral0 : ColorPalette.neutral400,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _tagsController,
+                    decoration: const InputDecoration(
+                      labelText: 'タグ（カンマ区切り）',
+                      border: OutlineInputBorder(),
+                      hintText: '例: IT, エンジニア, 夏季',
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _updateIntern,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ColorPalette.neutral900,
+                      foregroundColor: ColorPalette.neutral0,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: _isLoading
+                        ? SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: ColorPalette.neutral0,
+                            ),
+                          )
+                        : const Text('更新'),
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton(
+                    onPressed: _isLoading ? null : _deleteIntern,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text('削除'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-
-              // 削除ボタン
-              OutlinedButton(
-                onPressed: _isLoading ? null : _deleteIntern,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  side: const BorderSide(color: Colors.red),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text('削除'),
-              ),
-            ],
+            ),
+          );
+        },
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: ColorPalette.primaryColor,
+          ),
+        ),
+        error: (error, _) => Center(
+          child: Text(
+            'エラー: $error',
+            style: TextStylePalette.normalText,
           ),
         ),
       ),

@@ -34,7 +34,7 @@ class ChatListPage extends HookConsumerWidget {
           children: [
             // グループチャットタブ（全公開）
             _buildGroupChatTab(context, ref, allGroupChatsAsync),
-            
+
             // DMタブ（参加中のみ）
             _buildDMTab(context, ref, myChatRoomsAsync),
           ],
@@ -43,116 +43,122 @@ class ChatListPage extends HookConsumerWidget {
     );
   }
 
-  static const _demoRooms = [
-    {
-      'name': '就職で悩んでいる人集まれ！',
-      'description': '就活の悩みを共有して一緒に乗り越えよう',
-      'members': 128,
-    },
-    {
-      'name': '面接強い人いますか？',
-      'description': '面接のコツやよく聞かれる質問を共有',
-      'members': 85,
-    },
-    {
-      'name': '転職希望者の集い',
-      'description': '転職活動中の仲間と情報交換',
-      'members': 64,
-    },
-    {
-      'name': 'ES添削し合おう！',
-      'description': 'エントリーシートを見せ合って添削しよう',
-      'members': 203,
-    },
-    {
-      'name': 'エンジニア志望の情報交換',
-      'description': 'IT企業の選考情報や技術面接の対策',
-      'members': 156,
-    },
-    {
-      'name': '業界研究を語る部屋',
-      'description': '各業界の特徴や企業の雰囲気を共有',
-      'members': 97,
-    },
-  ];
-
   // グループチャットタブ
   Widget _buildGroupChatTab(
     BuildContext context,
     WidgetRef ref,
     AsyncValue<List<Map<String, dynamic>>> groupChatsAsync,
   ) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(SpacePalette.base),
-      itemCount: _demoRooms.length,
-      itemBuilder: (context, index) {
-        final room = _demoRooms[index];
-        final roomName = room['name'] as String;
-        final description = room['description'] as String;
-        final members = room['members'] as int;
-
-        return Card(
-          margin: const EdgeInsets.only(bottom: SpacePalette.sm),
-          child: InkWell(
-            onTap: () {
-              // デモ用：タップ時の遷移は無効化
-            },
-            borderRadius: BorderRadius.circular(RadiusPalette.lg),
-            child: Padding(
+    return groupChatsAsync.when(
+      data: (groupChats) {
+        if (groupChats.isEmpty) {
+          return Center(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(SpacePalette.base),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: ColorPalette.neutral500,
-                            width: 1.8,
-                          ),
-                        ),
-                        child: CircleAvatar(
-                          backgroundColor: ColorPalette.neutral800,
-                          backgroundImage: AssetImage(
-                            'assets/images/${17 + (index % 4)}.png',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: SpacePalette.base),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              roomName,
-                              style: TextStylePalette.smListTitle,
-                            ),
-                            const SizedBox(height: SpacePalette.xs),
-                            Text(
-                              '$members人が参加中',
-                              style: TextStylePalette.smListLeading,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  Icon(
+                    Icons.forum_outlined,
+                    size: 80,
+                    color: ColorPalette.neutral400,
+                  ),
+                  const SizedBox(height: SpacePalette.lg),
+                  Text(
+                    'グループチャットはありません',
+                    style: TextStylePalette.header,
                   ),
                   const SizedBox(height: SpacePalette.sm),
                   Text(
-                    description,
+                    'グループチャットが作成されると\nここに表示されます',
                     style: TextStylePalette.subText,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: SpacePalette.sm),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                ],
+              ),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(SpacePalette.base),
+          itemCount: groupChats.length,
+          itemBuilder: (context, index) {
+            final room = groupChats[index];
+            final roomName = room['name'] as String? ?? 'グループ';
+            final description = room['description'] as String? ?? '';
+            final roomId = room['id'] as String?;
+            final iconUrl = room['icon_url'] as String?;
+            final memberCountList = room['chat_room_members'] as List<dynamic>?;
+            final members = (memberCountList != null && memberCountList.isNotEmpty)
+                ? (memberCountList[0]['count'] as int? ?? 0)
+                : 0;
+
+            return Card(
+              margin: const EdgeInsets.only(bottom: SpacePalette.sm),
+              child: InkWell(
+                onTap: roomId != null
+                    ? () => context.push('/chats/$roomId')
+                    : null,
+                borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                child: Padding(
+                  padding: const EdgeInsets.all(SpacePalette.base),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: ColorPalette.neutral500,
+                                width: 1.8,
+                              ),
+                            ),
+                            child: CircleAvatar(
+                              backgroundColor: ColorPalette.neutral800,
+                              backgroundImage: iconUrl != null && iconUrl.isNotEmpty
+                                  ? NetworkImage(iconUrl)
+                                  : null,
+                              child: iconUrl == null || iconUrl.isEmpty
+                                  ? Icon(Icons.group, color: ColorPalette.neutral400)
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(width: SpacePalette.base),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  roomName,
+                                  style: TextStylePalette.smListTitle,
+                                ),
+                                const SizedBox(height: SpacePalette.xs),
+                                Text(
+                                  '$members人が参加中',
+                                  style: TextStylePalette.smListLeading,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: SpacePalette.sm),
                       Text(
-                        '参加する',
+                        description,
+                        style: TextStylePalette.subText,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: SpacePalette.sm),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            '参加する',
                             style: TextStyle(
                               fontFamily: 'NotoSansJP',
                               fontSize: FontSizePalette.size12,
@@ -175,6 +181,47 @@ class ChatListPage extends HookConsumerWidget {
             );
           },
         );
+      },
+      loading: () => Center(
+        child: CircularProgressIndicator(
+          color: ColorPalette.primaryColor,
+        ),
+      ),
+      error: (error, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(SpacePalette.base),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 80,
+                color: ColorPalette.primaryColor,
+              ),
+              const SizedBox(height: SpacePalette.lg),
+              Text(
+                'エラーが発生しました',
+                style: TextStylePalette.header,
+              ),
+              const SizedBox(height: SpacePalette.lg),
+              OutlinedButton(
+                onPressed: () {
+                  ref.invalidate(allGroupChatsProvider);
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: ColorPalette.primaryColor,
+                  side: const BorderSide(
+                    color: ColorPalette.primaryColor,
+                    width: 2,
+                  ),
+                ),
+                child: const Text('再試行'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   // DMタブ
@@ -226,7 +273,7 @@ class ChatListPage extends HookConsumerWidget {
           itemBuilder: (context, index) {
             final roomData = dmRooms[index];
             final room = roomData['chat_rooms'] as Map<String, dynamic>?;
-            
+
             if (room == null) return const SizedBox.shrink();
 
             final roomId = room['id'] as String;

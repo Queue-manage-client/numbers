@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/features/user/feed/presentation/providers/feed_provider.dart';
 import 'feed_page.dart';
 
-class FeatureDetailPage extends StatelessWidget {
+class FeatureDetailPage extends ConsumerWidget {
   final SlideData slide;
 
   const FeatureDetailPage({super.key, required this.slide});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final videosAsync = ref.watch(feedVideosProvider);
+    final videos = videosAsync.valueOrNull ?? [];
+
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       body: CustomScrollView(
         slivers: [
-          // ヘッダー画像 + タイトル
+          // ヘッダー + タイトル
           SliverAppBar(
             expandedHeight: 220,
             pinned: true,
@@ -31,11 +38,15 @@ class FeatureDetailPage extends StatelessWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset(
-                    'assets/images/3.png',
-                    fit: BoxFit.cover,
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF1a237e), Color(0xFF0d47a1)],
+                      ),
+                    ),
                   ),
-                  // グラデーションオーバーレイ
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -48,7 +59,6 @@ class FeatureDetailPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // サブタイトル
                   Positioned(
                     bottom: 56,
                     left: SpacePalette.base,
@@ -78,13 +88,13 @@ class FeatureDetailPage extends StatelessWidget {
                 SpacePalette.sm,
               ),
               child: Text(
-                '${slide.thumbnails.length}本の動画',
+                '${videos.length}本の動画',
                 style: TextStylePalette.subText,
               ),
             ),
           ),
 
-          // 動画グリッド
+          // 動画グリッド（DB連携）
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
             sliver: SliverGrid(
@@ -96,19 +106,47 @@ class FeatureDetailPage extends StatelessWidget {
               ),
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(RadiusPalette.base),
-                      color: ColorPalette.neutral800,
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Image.asset(
-                      slide.thumbnails[index],
-                      fit: BoxFit.cover,
+                  final video = videos[index];
+                  final thumbnailPath = video['thumbnail_path'] as String?;
+                  final companyId = video['company_id'] as String?;
+                  final videoId = video['id'] as String?;
+
+                  String? thumbnailUrl;
+                  if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+                    thumbnailUrl = Supabase.instance.client.storage
+                        .from('company-thumbnails')
+                        .getPublicUrl(thumbnailPath);
+                  }
+
+                  return GestureDetector(
+                    onTap: () {
+                      if (companyId != null && videoId != null) {
+                        context.push('/companies/$companyId/videos/$videoId');
+                      }
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(RadiusPalette.base),
+                        color: ColorPalette.neutral800,
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: thumbnailUrl != null
+                          ? Image.network(
+                              thumbnailUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Center(
+                                child: Icon(Icons.play_circle_outline,
+                                    size: 40, color: ColorPalette.neutral400),
+                              ),
+                            )
+                          : const Center(
+                              child: Icon(Icons.play_circle_outline,
+                                  size: 40, color: ColorPalette.neutral400),
+                            ),
                     ),
                   );
                 },
-                childCount: slide.thumbnails.length,
+                childCount: videos.length,
               ),
             ),
           ),

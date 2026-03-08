@@ -1,6 +1,12 @@
 // feed/presentation/providers/feed_provider.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+// 業種フォールバックリスト（DBから取得できない場合に使用）
+const List<String> defaultIndustries = [
+  'IT', '金融', '建築・土木', '製造', 'サービス', '小売', '医療・福祉', '教育',
+];
 
 // Supabaseクライアントプロバイダー
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
@@ -19,13 +25,9 @@ final feedVideosProvider = FutureProvider<List<Map<String, dynamic>>>((ref) asyn
         .order('created_at', ascending: false)
         .limit(50);
 
-    if (response == null) {
-      return [];
-    }
-
-    return List<Map<String, dynamic>>.from(response as List);
+    return List<Map<String, dynamic>>.from(response);
   } catch (e) {
-    print('Error fetching feed videos: $e');
+    debugPrint('Error fetching feed videos: $e');
     rethrow;
   }
 });
@@ -58,7 +60,7 @@ final videoCategoriesProvider = FutureProvider<List<String>>((ref) async {
 
     return sortedTags.take(7).map((e) => e.key).toList();
   } catch (e) {
-    print('Error fetching video categories: $e');
+    debugPrint('Error fetching video categories: $e');
     return [];
   }
 });
@@ -127,7 +129,10 @@ final topicSectionsProvider = Provider<AsyncValue<List<TopicSection>>>((ref) {
       if (videos.isEmpty) return const AsyncValue.data([]);
 
       final sections = <TopicSection>[];
-      const topicNames = ['注目企業', '激アツ企業', '急上昇', '新着動画', '話題の企業'];
+      final sectionNames = ref.watch(feedSectionNamesProvider).valueOrNull ?? [];
+      final topicNames = sectionNames.isNotEmpty
+          ? sectionNames
+          : ['注目企業', '急募の企業', '今週のおすすめ企業', '若手が活躍できる企業', 'あなたが見た企業'];
       final sectionSize = (videos.length / topicNames.length).ceil().clamp(2, 10);
 
       for (int i = 0; i < topicNames.length; i++) {
@@ -147,6 +152,96 @@ final topicSectionsProvider = Provider<AsyncValue<List<TopicSection>>>((ref) {
   );
 });
 
+// ========== フィードセクション関連プロバイダー ==========
+
+// feed_sectionsテーブルからセクション名を取得
+final feedSectionNamesProvider = FutureProvider<List<String>>((ref) async {
+  final supabase = ref.watch(supabaseClientProvider);
+  try {
+    final response = await supabase
+        .from('feed_sections')
+        .select('title')
+        .eq('is_active', true)
+        .order('sort_order');
+    final list = List<Map<String, dynamic>>.from(response as List);
+    if (list.isEmpty) return [];
+    return list.map((e) => e['title'] as String).toList();
+  } catch (e) {
+    return [];
+  }
+});
+
+// feed_bannersテーブルからスライドショーデータ取得
+final feedBannersProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final supabase = ref.watch(supabaseClientProvider);
+  try {
+    final response = await supabase
+        .from('feed_banners')
+        .select()
+        .eq('is_active', true)
+        .order('sort_order');
+    return List<Map<String, dynamic>>.from(response as List);
+  } catch (e) {
+    return [];
+  }
+});
+
+// companiesテーブルから企業一覧取得（フィードセクション用）
+final feedCompaniesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final supabase = ref.watch(supabaseClientProvider);
+  try {
+    final response = await supabase
+        .from('companies')
+        .select('id, name, industry, logo_url, catchphrase')
+        .eq('is_suspended', false)
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(response as List);
+  } catch (e) {
+    return [];
+  }
+});
+
+// 業種マスターデータ取得（companiesテーブルから動的取得）
+final industryMasterProvider = FutureProvider<List<String>>((ref) async {
+  final supabase = ref.watch(supabaseClientProvider);
+  try {
+    final response = await supabase
+        .from('companies')
+        .select('industry')
+        .not('industry', 'is', null)
+        .not('industry', 'eq', '');
+    final list = List<Map<String, dynamic>>.from(response as List);
+    final industries = list
+        .map((e) => e['industry'] as String)
+        .toSet()
+        .toList()
+      ..sort();
+    return industries;
+  } catch (e) {
+    return defaultIndustries;
+  }
+});
+
+// 視聴履歴プロバイダー
+final watchHistoryProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final supabase = ref.watch(supabaseClientProvider);
+  final userId = supabase.auth.currentUser?.id;
+  if (userId == null) return [];
+
+  try {
+    final response = await supabase
+        .from('video_views')
+        .select('*, company_videos(*, companies(*))')
+        .eq('profile_id', userId)
+        .order('watched_at', ascending: false)
+        .limit(30);
+    return List<Map<String, dynamic>>.from(response);
+  } catch (e) {
+    debugPrint('Error fetching watch history: $e');
+    return [];
+  }
+});
+
 // 特定の動画取得プロバイダー
 final videoByIdProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, videoId) async {
   final supabase = ref.watch(supabaseClientProvider);
@@ -158,9 +253,9 @@ final videoByIdProvider = FutureProvider.family<Map<String, dynamic>?, String>((
         .eq('id', videoId)
         .single();
 
-    return response as Map<String, dynamic>;
+    return response;
   } catch (e) {
-    print('Error fetching video by id: $e');
+    debugPrint('Error fetching video by id: $e');
     return null;
   }
 });

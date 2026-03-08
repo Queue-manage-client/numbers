@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/intern/presentation/providers/intern_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/features/user/feed/presentation/providers/feed_provider.dart';
 
 class InternListPage extends ConsumerStatefulWidget {
   const InternListPage({super.key});
@@ -15,16 +16,10 @@ class InternListPage extends ConsumerStatefulWidget {
 class _InternListPageState extends ConsumerState<InternListPage> {
   final _searchController = TextEditingController();
 
-  static const List<String> _industries = [
-    'IT',
-    '金融',
-    '建築・土木',
-    '製造',
-    'サービス',
-    '小売',
-    '医療・福祉',
-    '教育',
-  ];
+  List<String> _getIndustries(WidgetRef ref) {
+    final dbIndustries = ref.watch(industryMasterProvider).valueOrNull;
+    return (dbIndustries != null && dbIndustries.isNotEmpty) ? dbIndustries : defaultIndustries;
+  }
 
   @override
   void dispose() {
@@ -157,7 +152,7 @@ class _InternListPageState extends ConsumerState<InternListPage> {
                   ),
                 ),
                 // 業種チップ
-                ..._industries.map((industry) {
+                ..._getIndustries(ref).map((industry) {
                   final isSelected = selectedIndustry == industry;
                   return Padding(
                     padding:

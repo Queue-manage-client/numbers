@@ -321,7 +321,10 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/company-portal/interns/:id/edit',
-      builder: (context, state) => const CompanyInternEditPage(),
+      builder: (context, state) {
+        final internshipId = state.pathParameters['id'] ?? '';
+        return CompanyInternEditPage(internshipId: internshipId);
+      },
     ),
     GoRoute(
       path: '/company-portal/interns/:id/applications',
