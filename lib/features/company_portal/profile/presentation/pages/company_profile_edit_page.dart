@@ -82,7 +82,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
                   color: ColorPalette.neutral0,
                 ),
               ),
-              backgroundColor: ColorPalette.systemGreen,
+              backgroundColor: ColorPalette.systemGold,
             ),
           );
           context.go('/company-portal/dashboard');

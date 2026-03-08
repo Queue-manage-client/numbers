@@ -10,6 +10,24 @@ import 'package:numbers/features/user/profile/presentation/providers/profile_pro
 import 'package:numbers/core/theme/app_theme.dart';
 import '../widgets/vertical_video_feed.dart';
 
+// ロゴ画像がない企業用のプレースホルダー
+Widget _companyPlaceholder(String name) {
+  return Container(
+    color: ColorPalette.neutral600,
+    child: Center(
+      child: Text(
+        name.isNotEmpty ? name[0] : '?',
+        style: const TextStyle(
+          fontFamily: 'NotoSansJP',
+          fontSize: 28,
+          fontVariations: [FontVariation('wght', 800)],
+          color: ColorPalette.neutral400,
+        ),
+      ),
+    ),
+  );
+}
+
 // 選択中のホームタブインデックス
 final selectedHomeTabProvider = StateProvider<int>((ref) => 0);
 
@@ -24,7 +42,7 @@ class FeedPage extends ConsumerWidget {
     // 認証状態の変更を監視
     ref.listen<AsyncValue<AuthState>>(authStateProvider, (previous, next) {
       next.whenData((state) {
-        if (state.session == null || state.session!.user == null) {
+        if (state.session == null) {
           context.go('/login');
         }
       });
@@ -45,8 +63,16 @@ class FeedPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
-        title: const Text('ホーム'),
-        centerTitle: false,
+        leadingWidth: 52,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 10.0, top: 6.0, bottom: 6.0),
+          child: Image.asset(
+            'assets/images/icon.png',
+            width: 36,
+            height: 36,
+            fit: BoxFit.contain,
+          ),
+        ),
         actions: [
           IconButton(
             onPressed: () => context.go('/search/videos'),
@@ -141,269 +167,802 @@ class FeedPage extends ConsumerWidget {
   }
 }
 
-// 特集タブ - バナーカルーセル + Admin設定セクション
+// 特集タブ - トピック別に動画を横並び表示
 class _FeaturedTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bannersAsync = ref.watch(feedBannersProvider);
-    final sectionsAsync = ref.watch(feedSectionsProvider);
+    final sectionsAsync = ref.watch(topicSectionsProvider);
+    final supabase = Supabase.instance.client;
 
-    return ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        // バナーカルーセル（タブ直下、padding無し、白銀比）
-        bannersAsync.when(
-          data: (banners) {
-            if (banners.isEmpty) return const SizedBox.shrink();
-            return _BannerCarousel(banners: banners);
-          },
-          loading: () {
-            final width = MediaQuery.of(context).size.width;
-            final height = width / 1.414;
-            return SizedBox(
-              height: height,
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: ColorPalette.primaryColor,
-                ),
-              ),
-            );
-          },
-          error: (_, __) => const SizedBox.shrink(),
-        ),
+    return sectionsAsync.when(
+      data: (sections) {
+        if (sections.isEmpty) {
+          return _buildEmptyState(context);
+        }
 
-        // Admin設定の特集セクション
-        sectionsAsync.when(
-          data: (sections) {
-            if (sections.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.all(SpacePalette.base),
-                child: Center(
-                  child: Text(
-                    '特集コンテンツがありません',
-                    style: TextStylePalette.subText,
-                  ),
-                ),
-              );
+        return ListView.builder(
+          padding: EdgeInsets.zero,
+          itemCount: sections.length + 5, // slideshow + 注目企業 + 急募 + 今週のおすすめ + 若手活躍 + あなたが見た企業 - sections[0]スキップ
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return const _ImageSlideshow();
             }
-            return Column(
-              children: sections.map((section) {
-                final sectionTitle = section['title'] as String? ?? '';
-                final videos = section['videos'] as List<Map<String, dynamic>>? ?? [];
-                if (videos.isEmpty) return const SizedBox.shrink();
-                return _CuratedVideoSection(
-                  title: sectionTitle,
-                  videos: videos,
-                );
-              }).toList(),
+
+            // 注目企業セクション
+            if (index == 1) {
+              return const _FeaturedCompaniesSection();
+            }
+
+            // 急募の企業セクション
+            if (index == 2) {
+              return const _PopularCompaniesSection();
+            }
+
+            // 今週のおすすめ企業セクション
+            if (index == 3) {
+              return const _RecommendedCompaniesSection();
+            }
+
+            // 若手が活躍できる企業セクション
+            if (index == 4) {
+              return const _YoungActiveCompaniesSection();
+            }
+
+            // あなたが見た企業セクション
+            if (index == 5) {
+              return const _WatchedVideosSection();
+            }
+
+            // 残りのセクション
+            final sectionIndex = index - 5;
+            if (sectionIndex >= sections.length) return const SizedBox.shrink();
+
+            final section = sections[sectionIndex];
+            return _TopicVideoSection(
+              title: section.title,
+              videos: section.videos,
+              supabase: supabase,
             );
           },
-          loading: () => Padding(
-            padding: const EdgeInsets.all(SpacePalette.lg),
-            child: Center(
-              child: CircularProgressIndicator(
-                color: ColorPalette.primaryColor,
-              ),
-            ),
-          ),
-          error: (error, _) => Padding(
-            padding: const EdgeInsets.all(SpacePalette.base),
-            child: Center(
-              child: Column(
-                children: [
-                  Text(
-                    '読み込みに失敗しました',
-                    style: TextStylePalette.subText,
-                  ),
-                  const SizedBox(height: SpacePalette.sm),
-                  OutlinedButton(
-                    onPressed: () {
-                      ref.invalidate(feedSectionsProvider);
-                      ref.invalidate(feedBannersProvider);
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: ColorPalette.primaryColor,
-                      side: const BorderSide(
-                        color: ColorPalette.primaryColor,
-                      ),
-                    ),
-                    child: const Text('再試行'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+        );
+      },
+      loading: () => Center(
+        child: CircularProgressIndicator(color: ColorPalette.primaryColor),
+      ),
+      error: (error, stack) => _buildErrorState(context, ref),
+    );
+  }
 
-        const SizedBox(height: 80),
-      ],
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(SpacePalette.base),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.video_library_outlined,
+              size: 80,
+              color: ColorPalette.neutral400,
+            ),
+            const SizedBox(height: SpacePalette.lg),
+            Text(
+              '動画がありません',
+              style: TextStylePalette.header,
+            ),
+            const SizedBox(height: SpacePalette.sm),
+            Text(
+              '企業が動画を投稿すると、\nここに表示されます',
+              textAlign: TextAlign.center,
+              style: TextStylePalette.subText,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, WidgetRef ref) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(SpacePalette.base),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 80,
+              color: ColorPalette.primaryColor,
+            ),
+            const SizedBox(height: SpacePalette.lg),
+            Text(
+              '動画の読み込みに失敗しました',
+              style: TextStylePalette.header,
+            ),
+            const SizedBox(height: SpacePalette.sm),
+            Text(
+              'もう一度お試しください',
+              style: TextStylePalette.subText,
+            ),
+            const SizedBox(height: SpacePalette.lg * 2),
+            OutlinedButton(
+              onPressed: () {
+                ref.invalidate(feedVideosProvider);
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: ColorPalette.primaryColor,
+                side: const BorderSide(
+                  color: ColorPalette.primaryColor,
+                  width: 2,
+                ),
+                minimumSize: const Size(120, ButtonSizePalette.button),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(RadiusPalette.base),
+                ),
+              ),
+              child: const Text('再試行'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
-// バナーカルーセル（自動スクロール、白銀比、padding無し）
-class _BannerCarousel extends StatefulWidget {
-  final List<Map<String, dynamic>> banners;
-
-  const _BannerCarousel({required this.banners});
+// 自動スクロールスライドショー（DB連携：feed_bannersテーブルから取得）
+class _ImageSlideshow extends ConsumerStatefulWidget {
+  const _ImageSlideshow();
 
   @override
-  State<_BannerCarousel> createState() => _BannerCarouselState();
+  ConsumerState<_ImageSlideshow> createState() => _ImageSlideshowState();
 }
 
-class _BannerCarouselState extends State<_BannerCarousel> {
-  late final PageController _pageController;
-  Timer? _autoScrollTimer;
+class _ImageSlideshowState extends ConsumerState<_ImageSlideshow> {
+  final PageController _pageController = PageController();
+  Timer? _timer;
   int _currentPage = 0;
 
+  static const _defaultGradients = [
+    [Color(0xFF1a237e), Color(0xFF0d47a1)],
+    [Color(0xFF004d40), Color(0xFF00695c)],
+    [Color(0xFF4a148c), Color(0xFF6a1b9a)],
+    [Color(0xFFbf360c), Color(0xFFd84315)],
+    [Color(0xFF1b5e20), Color(0xFF2e7d32)],
+    [Color(0xFF880e4f), Color(0xFFad1457)],
+    [Color(0xFF0d47a1), Color(0xFF1565c0)],
+  ];
+
   @override
-  void initState() {
-    super.initState();
-    _pageController = PageController();
-    if (widget.banners.length > 1) {
-      _startAutoScroll();
-    }
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
   }
 
-  void _startAutoScroll() {
-    _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+  void _startAutoScroll(int slideCount) {
+    _timer?.cancel();
+    if (slideCount <= 1) return;
+    _timer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (!mounted) return;
-      _currentPage = (_currentPage + 1) % widget.banners.length;
+      _currentPage = (_currentPage + 1) % slideCount;
       _pageController.animateToPage(
         _currentPage,
-        duration: const Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
     });
   }
 
   @override
-  void dispose() {
-    _autoScrollTimer?.cancel();
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final height = width / 1.414; // 白銀比
+    final bannersAsync = ref.watch(feedBannersProvider);
+    final banners = bannersAsync.valueOrNull ?? [];
+    final screenWidth = MediaQuery.of(context).size.width;
 
-    return SizedBox(
-      width: width,
-      height: height,
-      child: Stack(
-        children: [
-          PageView.builder(
+    if (banners.isEmpty) {
+      return SizedBox(height: screenWidth * 9 / 16);
+    }
+
+    // 初回のみタイマー起動
+    if (_timer == null || !_timer!.isActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _startAutoScroll(banners.length);
+      });
+    }
+
+    return Column(
+      children: [
+        SizedBox(
+          height: screenWidth * 9 / 16,
+          child: PageView.builder(
             controller: _pageController,
-            itemCount: widget.banners.length,
+            itemCount: banners.length,
             onPageChanged: (index) {
               setState(() => _currentPage = index);
             },
             itemBuilder: (context, index) {
-              final banner = widget.banners[index];
-              final imageUrl = banner['image_url'] as String? ?? '';
-              final linkUrl = banner['link_url'] as String?;
+              final banner = banners[index];
+              final title = banner['title'] as String? ?? '';
+              final subtitle = banner['subtitle'] as String? ?? '';
+              final imageUrl = banner['image_url'] as String?;
+              final bannerId = banner['id'] as String? ?? 'banner-$index';
+              final gradient = _defaultGradients[index % _defaultGradients.length];
 
               return GestureDetector(
                 onTap: () {
-                  if (linkUrl != null && linkUrl.isNotEmpty) {
-                    context.push(linkUrl);
-                  }
+                  context.push('/feature/$bannerId', extra: SlideData(
+                    id: bannerId,
+                    title: title,
+                    subtitle: subtitle,
+                  ));
                 },
-                child: imageUrl.isNotEmpty
-                    ? Image.network(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // 背景: DB画像 or グラデーション
+                    if (imageUrl != null && imageUrl.isNotEmpty)
+                      Image.network(
                         imageUrl,
                         fit: BoxFit.cover,
-                        width: width,
-                        height: height,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: ColorPalette.neutral800,
-                            child: const Center(
-                              child: Icon(
-                                Icons.image_not_supported,
-                                color: ColorPalette.neutral400,
-                                size: 40,
-                              ),
+                        errorBuilder: (_, __, ___) => Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: gradient,
                             ),
-                          );
-                        },
+                          ),
+                        ),
                       )
-                    : Container(
-                        color: ColorPalette.neutral800,
-                        child: const Center(
-                          child: Icon(
-                            Icons.image,
-                            color: ColorPalette.neutral400,
-                            size: 40,
+                    else
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: gradient,
                           ),
                         ),
                       ),
+                    // 下部グラデーションオーバーレイ
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: 120,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.7),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // テキスト（下部配置）
+                    Positioned(
+                      bottom: 20,
+                      left: SpacePalette.base,
+                      right: SpacePalette.base,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              fontFamily: 'NotoSansJP',
+                              fontSize: FontSizePalette.size12,
+                              fontVariations: const [
+                                FontVariation('wght', 600),
+                              ],
+                              color: Colors.white.withValues(alpha: 0.8),
+                            ),
+                          ),
+                          const SizedBox(height: SpacePalette.xs),
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontFamily: 'NotoSansJP',
+                              fontSize: FontSizePalette.size20,
+                              fontVariations: [FontVariation('wght', 900)],
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               );
             },
           ),
-          // ページインジケーター
-          if (widget.banners.length > 1)
-            Positioned(
-              bottom: 8,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(widget.banners.length, (index) {
-                  return Container(
-                    width: _currentPage == index ? 20 : 6,
-                    height: 6,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(3),
-                      color: _currentPage == index
-                          ? ColorPalette.neutral0
-                          : ColorPalette.neutral0.withValues(alpha: 0.4),
-                    ),
-                  );
-                }),
+        ),
+        const SizedBox(height: SpacePalette.sm),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            banners.length,
+            (index) => AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              width: 20,
+              height: 3,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(1.5),
+                color: _currentPage == index
+                    ? ColorPalette.primaryColor
+                    : ColorPalette.neutral600,
               ),
             ),
-        ],
+          ),
+        ),
+        const SizedBox(height: SpacePalette.base),
+      ],
+    );
+  }
+}
+
+class SlideData {
+  final String id;
+  final String title;
+  final String subtitle;
+
+  const SlideData({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+  });
+}
+
+// 注目企業セクション（DB連携）
+class _FeaturedCompaniesSection extends ConsumerWidget {
+  const _FeaturedCompaniesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final companiesAsync = ref.watch(feedCompaniesProvider);
+    final companies = companiesAsync.valueOrNull ?? [];
+    final cardWidth = 120.0;
+    final cardHeight = cardWidth * 1.6;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpacePalette.base,
+            vertical: SpacePalette.sm,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '注目企業',
+                  style: TextStylePalette.smHeader,
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: ColorPalette.neutral400,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: cardHeight,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
+            itemCount: companies.length,
+            itemBuilder: (context, index) {
+              final company = companies[index];
+              final name = company['name'] as String? ?? '';
+              final companyId = company['id'] as String?;
+              final logoUrl = company['logo_url'] as String?;
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index < companies.length - 1 ? SpacePalette.sm : 0,
+                ),
+                child: GestureDetector(
+                  onTap: () {
+                    if (companyId != null) {
+                      context.push('/companies/$companyId');
+                    }
+                  },
+                  child: Container(
+                    width: cardWidth,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(RadiusPalette.base),
+                      color: ColorPalette.neutral800,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        (logoUrl != null && logoUrl.isNotEmpty)
+                            ? Image.network(
+                                logoUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => _companyPlaceholder(name),
+                              )
+                            : _companyPlaceholder(name),
+                        Positioned(
+                          left: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.7),
+                                  Colors.transparent,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: const BorderRadius.only(
+                                bottomRight: Radius.circular(RadiusPalette.base),
+                              ),
+                            ),
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                fontFamily: 'NotoSansJP',
+                                fontSize: 32,
+                                fontVariations: const [FontVariation('wght', 900)],
+                                color: ColorPalette.primaryColor,
+                                height: 1.0,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        // 下部に企業名
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.8),
+                                ],
+                              ),
+                            ),
+                            child: Text(
+                              name,
+                              style: const TextStyle(
+                                fontFamily: 'NotoSansJP',
+                                fontSize: FontSizePalette.size12,
+                                fontVariations: [FontVariation('wght', 700)],
+                                color: Colors.white,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: SpacePalette.base),
+      ],
+    );
+  }
+}
+
+// 急募の企業セクション（DB連携）
+class _PopularCompaniesSection extends ConsumerWidget {
+  const _PopularCompaniesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final companiesAsync = ref.watch(feedCompaniesProvider);
+    final allCompanies = companiesAsync.valueOrNull ?? [];
+    // 急募用：後半の企業を表示
+    final companies = allCompanies.length > 4 ? allCompanies.sublist(4) : allCompanies;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.42;
+    final thumbnailHeight = cardWidth * 0.65;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpacePalette.base,
+            vertical: SpacePalette.sm,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '急募の企業',
+                  style: TextStylePalette.smHeader,
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: ColorPalette.neutral400,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+
+        SizedBox(
+          height: thumbnailHeight,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
+            itemCount: companies.length,
+            itemBuilder: (context, index) {
+              final company = companies[index];
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index < companies.length - 1 ? SpacePalette.sm : 0,
+                ),
+                child: _CompanyThumbnailCard(
+                  company: company,
+                  cardWidth: cardWidth,
+
+                ),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: SpacePalette.base),
+      ],
+    );
+  }
+}
+
+// 企業サムネイルカード（共通）
+class _CompanyThumbnailCard extends StatelessWidget {
+  final Map<String, dynamic> company;
+  final double cardWidth;
+
+  const _CompanyThumbnailCard({
+    required this.company,
+    required this.cardWidth,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final logoUrl = company['logo_url'] as String?;
+    final companyId = company['id'] as String?;
+    final name = company['name'] as String? ?? '';
+
+    return GestureDetector(
+      onTap: () {
+        if (companyId != null) {
+          context.push('/companies/$companyId');
+        }
+      },
+      child: Container(
+        width: cardWidth,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(RadiusPalette.base),
+          color: ColorPalette.neutral800,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: (logoUrl != null && logoUrl.isNotEmpty)
+            ? Image.network(
+                logoUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _companyPlaceholder(name),
+              )
+            : _companyPlaceholder(name),
       ),
     );
   }
 }
 
-// Admin設定の特集セクション
-class _CuratedVideoSection extends StatelessWidget {
+// 今週のおすすめ企業セクション（DB連携）
+class _RecommendedCompaniesSection extends ConsumerWidget {
+  const _RecommendedCompaniesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final companiesAsync = ref.watch(feedCompaniesProvider);
+    final allCompanies = companiesAsync.valueOrNull ?? [];
+    // おすすめ用：中間の企業を表示
+    final start = (allCompanies.length * 0.3).round().clamp(0, allCompanies.length);
+    final end = (start + 5).clamp(0, allCompanies.length);
+    final companies = allCompanies.sublist(start, end);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.42;
+    final thumbnailHeight = cardWidth * 0.65;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpacePalette.base,
+            vertical: SpacePalette.sm,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '今週のおすすめ企業',
+                  style: TextStylePalette.smHeader,
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: ColorPalette.neutral400,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+
+        SizedBox(
+          height: thumbnailHeight,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
+            itemCount: companies.length,
+            itemBuilder: (context, index) {
+              final company = companies[index];
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index < companies.length - 1 ? SpacePalette.sm : 0,
+                ),
+                child: _CompanyThumbnailCard(
+                  company: company,
+                  cardWidth: cardWidth,
+
+                ),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: SpacePalette.base),
+      ],
+    );
+  }
+}
+
+// 若手が活躍できる企業セクション（DB連携）
+class _YoungActiveCompaniesSection extends ConsumerWidget {
+  const _YoungActiveCompaniesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final companiesAsync = ref.watch(feedCompaniesProvider);
+    final allCompanies = companiesAsync.valueOrNull ?? [];
+    // 若手用：最新の企業を表示
+    final companies = allCompanies.take(5).toList();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.42;
+    final thumbnailHeight = cardWidth * 0.65;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpacePalette.base,
+            vertical: SpacePalette.sm,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '若手が活躍できる企業',
+                  style: TextStylePalette.smHeader,
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: ColorPalette.neutral400,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: thumbnailHeight,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
+            itemCount: companies.length,
+            itemBuilder: (context, index) {
+              final company = companies[index];
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index < companies.length - 1 ? SpacePalette.sm : 0,
+                ),
+                child: _CompanyThumbnailCard(
+                  company: company,
+                  cardWidth: cardWidth,
+
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: SpacePalette.base),
+      ],
+    );
+  }
+}
+
+// トピック別動画セクション（Huluスタイル）
+class _TopicVideoSection extends StatelessWidget {
   final String title;
   final List<Map<String, dynamic>> videos;
+  final SupabaseClient supabase;
 
-  const _CuratedVideoSection({
+  const _TopicVideoSection({
     required this.title,
     required this.videos,
+    required this.supabase,
   });
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.42;
+    final thumbnailHeight = cardWidth * 0.65;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // セクションタイトル
+        // トピックヘッダー
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-            SpacePalette.base,
-            SpacePalette.lg,
-            SpacePalette.base,
-            SpacePalette.sm,
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpacePalette.base,
+            vertical: SpacePalette.sm,
           ),
-          child: Text(
-            title,
-            style: TextStylePalette.smHeader,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStylePalette.smHeader,
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: ColorPalette.neutral400,
+                size: 24,
+              ),
+            ],
           ),
         ),
 
-        // 動画横スクロールリスト（16:9サムネ + タイトルオーバーレイ）
+        // 動画横スクロールリスト（サムネのみ）
         SizedBox(
-          height: 140,
+          height: thumbnailHeight,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
@@ -414,32 +973,64 @@ class _CuratedVideoSection extends StatelessWidget {
                 padding: EdgeInsets.only(
                   right: index < videos.length - 1 ? SpacePalette.sm : 0,
                 ),
-                child: _SectionVideoCard(video: video),
+                child: _FeaturedVideoCard(
+                  video: video,
+                  supabase: supabase,
+                  cardWidth: cardWidth,
+                ),
               );
             },
           ),
         ),
+
+        const SizedBox(height: SpacePalette.base),
       ],
     );
   }
 }
 
-// セクション内の動画カード（16:9、タイトルオーバーレイ）
-class _SectionVideoCard extends StatelessWidget {
+// 特集タブの動画カード（サムネのみ）
+class _FeaturedVideoCard extends StatelessWidget {
   final Map<String, dynamic> video;
+  final SupabaseClient supabase;
+  final double cardWidth;
 
-  const _SectionVideoCard({required this.video});
+  const _FeaturedVideoCard({
+    required this.video,
+    required this.supabase,
+    required this.cardWidth,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final title = video['title'] as String? ?? '無題';
+    final thumbnailPath = video['thumbnail_path'] as String?;
     final companyId = video['company_id'] as String?;
     final videoId = video['id'] as String?;
-    final thumbnailUrl = video['thumbnail_url'] as String?;
 
-    // 16:9 aspect ratio
-    const double cardWidth = 220;
-    const double cardHeight = cardWidth * 9 / 16;
+    String? thumbnailUrl;
+    if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+      thumbnailUrl = supabase.storage
+          .from('company-thumbnails')
+          .getPublicUrl(thumbnailPath);
+    }
+
+    Widget thumbnailWidget = Container(
+      color: ColorPalette.neutral600,
+      child: thumbnailUrl != null
+          ? Image.network(
+              thumbnailUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return _placeholder;
+              },
+              frameBuilder:
+                  (context, child, frame, wasSynchronouslyLoaded) {
+                if (wasSynchronouslyLoaded) return child;
+                return frame != null ? child : _loadingPlaceholder;
+              },
+            )
+          : _placeholder,
+    );
 
     return GestureDetector(
       onTap: () {
@@ -449,78 +1040,173 @@ class _SectionVideoCard extends StatelessWidget {
       },
       child: Container(
         width: cardWidth,
-        height: cardHeight,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(RadiusPalette.base),
           color: ColorPalette.neutral800,
         ),
         clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // サムネイル画像
-            if (thumbnailUrl != null && thumbnailUrl.isNotEmpty)
-              Image.network(
-                thumbnailUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: ColorPalette.neutral600,
-                    child: const Center(
-                      child: Icon(
-                        Icons.play_circle_outline,
-                        size: 36,
-                        color: ColorPalette.neutral400,
+        child: thumbnailWidget,
+      ),
+    );
+  }
+
+  static const Widget _placeholder = Center(
+    child: Icon(
+      Icons.play_circle_outline,
+      size: 40,
+      color: ColorPalette.neutral400,
+    ),
+  );
+
+  static const Widget _loadingPlaceholder = Center(
+    child: SizedBox(
+      width: 20,
+      height: 20,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        color: ColorPalette.neutral400,
+      ),
+    ),
+  );
+}
+
+// あなたが見た企業セクション（DB連携：video_viewsテーブルから取得）
+class _WatchedVideosSection extends ConsumerWidget {
+  const _WatchedVideosSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final historyAsync = ref.watch(watchHistoryProvider);
+    final history = historyAsync.valueOrNull ?? [];
+    // video_viewsテーブルから視聴済み動画を取得
+    final recentVideos = history
+        .where((v) => v['company_videos'] != null)
+        .map((v) => v['company_videos'] as Map<String, dynamic>)
+        .take(5)
+        .toList();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.42;
+    final thumbnailHeight = cardWidth * 0.65;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ヘッダー
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpacePalette.base,
+            vertical: SpacePalette.sm,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'あなたが見た企業',
+                  style: TextStylePalette.smHeader,
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: ColorPalette.neutral400,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+
+        // 動画横スクロール（サムネ + すべて見るカード）
+        SizedBox(
+          height: thumbnailHeight,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
+            itemCount: recentVideos.length + 1,
+            itemBuilder: (context, index) {
+              // 6番目: すべて見るカード
+              if (index == recentVideos.length) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 0),
+                  child: GestureDetector(
+                    onTap: () => context.push('/watch-history'),
+                    child: Container(
+                      width: cardWidth,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(RadiusPalette.base),
+                        color: ColorPalette.neutral800,
+                        border: Border.all(
+                          color: ColorPalette.neutral600,
+                          width: 1,
+                        ),
+                      ),
+                      child: const Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.arrow_forward,
+                              color: ColorPalette.neutral0,
+                              size: 28,
+                            ),
+                            SizedBox(height: SpacePalette.xs),
+                            Text(
+                              'すべて見る',
+                              style: TextStyle(
+                                fontFamily: 'NotoSansJP',
+                                fontSize: FontSizePalette.size14,
+                                fontVariations: [FontVariation('wght', 600)],
+                                color: ColorPalette.neutral0,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  );
-                },
-              )
-            else
-              Container(
-                color: ColorPalette.neutral600,
-                child: const Center(
-                  child: Icon(
-                    Icons.play_circle_outline,
-                    size: 36,
-                    color: ColorPalette.neutral400,
                   ),
-                ),
-              ),
+                );
+              }
 
-            // グラデーション + タイトルオーバーレイ
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                padding: const EdgeInsets.all(SpacePalette.sm),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.7),
-                    ],
+              final video = recentVideos[index];
+              final thumbnailPath = video['thumbnail_path'] as String?;
+              final title = video['title'] as String? ?? '';
+              String? thumbnailUrl;
+              if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+                thumbnailUrl = Supabase.instance.client.storage
+                    .from('company-thumbnails')
+                    .getPublicUrl(thumbnailPath);
+              }
+              return Padding(
+                padding: const EdgeInsets.only(right: SpacePalette.sm),
+                child: GestureDetector(
+                  onTap: () {
+                    final videoId = video['id'] as String?;
+                    final companyId = video['company_id'] as String?;
+                    if (companyId != null && videoId != null) {
+                      context.push('/companies/$companyId/videos/$videoId');
+                    }
+                  },
+                  child: Container(
+                    width: cardWidth,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(RadiusPalette.base),
+                      color: ColorPalette.neutral800,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: thumbnailUrl != null
+                        ? Image.network(
+                            thumbnailUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _companyPlaceholder(title),
+                          )
+                        : _companyPlaceholder(title),
                   ),
                 ),
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontFamily: 'NotoSansJP',
-                    fontSize: FontSizePalette.size12,
-                    fontVariations: [FontVariation('wght', 700)],
-                    color: ColorPalette.neutral0,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          ],
+              );
+            },
+          ),
         ),
-      ),
+
+        const SizedBox(height: SpacePalette.sm),
+      ],
     );
   }
 }

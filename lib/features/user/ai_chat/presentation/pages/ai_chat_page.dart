@@ -1,8 +1,8 @@
 // ai_chat/presentation/pages/ai_chat_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import '../providers/ai_chat_provider.dart';
 import '../widgets/ai_conversation_drawer.dart';
@@ -19,6 +19,15 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // DBから会話を読み込み
+    Future.microtask(() {
+      ref.read(aiConversationsProvider.notifier).loadConversations();
+    });
+  }
 
   @override
   void dispose() {
@@ -49,7 +58,8 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
     var conversationId = ref.read(selectedConversationIdProvider);
     if (conversationId == null) {
       final notifier = ref.read(aiConversationsProvider.notifier);
-      conversationId = notifier.createConversation();
+      conversationId = await notifier.createConversation();
+      if (conversationId == null) return;
       ref.read(selectedConversationIdProvider.notifier).state = conversationId;
     }
 
@@ -119,11 +129,12 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Opacity(
-            opacity: 0.4,
+            opacity: 0.15,
             child: Image.asset(
-              'assets/images/nbs_button_logo.png',
+              'assets/images/ai_button.png',
               width: 64,
               height: 64,
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(height: SpacePalette.base),
@@ -264,8 +275,9 @@ class _MessageBubble extends StatelessWidget {
           maxWidth: MediaQuery.of(context).size.width * 0.8,
         ),
         decoration: BoxDecoration(
-          color: isUser ? ColorPalette.primaryColor : ColorPalette.neutral800,
+          color: isUser ? ColorPalette.primaryColor : const Color(0xFF262626),
           borderRadius: BorderRadius.circular(RadiusPalette.base),
+          border: isUser ? null : Border.all(color: ColorPalette.neutral600, width: 0.5),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,14 +288,14 @@ class _MessageBubble extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Image.asset(
-                      'assets/images/nbs_button_logo.png',
-                      width: 14,
-                      height: 14,
+                    const Icon(
+                      Icons.auto_awesome,
+                      size: 14,
+                      color: ColorPalette.primaryColor,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'NBS',
+                      'AI',
                       style: TextStylePalette.subText.copyWith(
                         color: ColorPalette.neutral0,
                         fontWeight: FontWeight.w600,
@@ -292,12 +304,53 @@ class _MessageBubble extends StatelessWidget {
                   ],
                 ),
               ),
-            Text(
-              message.content,
-              style: TextStylePalette.normalText.copyWith(
-                color: ColorPalette.neutral0,
+            if (isUser)
+              Text(
+                message.content,
+                style: TextStylePalette.normalText.copyWith(
+                  color: ColorPalette.neutral0,
+                ),
+              )
+            else
+              MarkdownBody(
+                data: message.content,
+                selectable: true,
+                shrinkWrap: true,
+                softLineBreak: true,
+                styleSheet: MarkdownStyleSheet(
+                  p: TextStylePalette.normalText.copyWith(
+                    color: ColorPalette.neutral0,
+                  ),
+                  strong: TextStylePalette.normalText.copyWith(
+                    color: ColorPalette.primaryColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  listBullet: TextStylePalette.normalText.copyWith(
+                    color: ColorPalette.neutral0,
+                  ),
+                  h1: TextStylePalette.normalText.copyWith(
+                    color: ColorPalette.neutral0,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  h2: TextStylePalette.normalText.copyWith(
+                    color: ColorPalette.neutral0,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  code: TextStylePalette.normalText.copyWith(
+                    color: ColorPalette.primaryLight,
+                    backgroundColor: ColorPalette.neutral600,
+                    fontSize: 13,
+                  ),
+                  codeblockDecoration: BoxDecoration(
+                    color: ColorPalette.neutral800,
+                    borderRadius: BorderRadius.circular(RadiusPalette.mini),
+                  ),
+                  pPadding: const EdgeInsets.only(bottom: 4),
+                  listBulletPadding: const EdgeInsets.only(right: 8),
+                ),
               ),
-            ),
           ],
         ),
       ),

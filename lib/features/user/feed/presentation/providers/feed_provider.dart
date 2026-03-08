@@ -1,6 +1,12 @@
 // feed/presentation/providers/feed_provider.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+// 業種フォールバックリスト（DBから取得できない場合に使用）
+const List<String> defaultIndustries = [
+  'IT', '金融', '建築・土木', '製造', 'サービス', '小売', '医療・福祉', '教育',
+];
 
 // Supabaseクライアントプロバイダー
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
@@ -19,47 +25,9 @@ final feedVideosProvider = FutureProvider<List<Map<String, dynamic>>>((ref) asyn
         .order('created_at', ascending: false)
         .limit(50);
 
-    if (response == null) {
-      return [];
-    }
-
-    final videos = (response as List)
-        .map((v) => Map<String, dynamic>.from(v as Map))
-        .toList();
-
-    // Generate signed URLs for private storage buckets
-    await Future.wait(videos.map((video) async {
-      final videoPath = video['video_path'] as String?;
-      final thumbnailPath = video['thumbnail_path'] as String?;
-
-      if (videoPath != null && videoPath.isNotEmpty) {
-        try {
-          video['video_url'] = videoPath.startsWith('http')
-              ? videoPath
-              : await supabase.storage
-                  .from('company-videos')
-                  .createSignedUrl(videoPath, 3600);
-        } catch (e) {
-          video['video_url'] = '';
-        }
-      }
-
-      if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
-        try {
-          video['thumbnail_url'] = thumbnailPath.startsWith('http')
-              ? thumbnailPath
-              : await supabase.storage
-                  .from('company-thumbnails')
-                  .createSignedUrl(thumbnailPath, 3600);
-        } catch (e) {
-          video['thumbnail_url'] = '';
-        }
-      }
-    }));
-
-    return videos;
+    return List<Map<String, dynamic>>.from(response);
   } catch (e) {
-    print('Error fetching feed videos: $e');
+    debugPrint('Error fetching feed videos: $e');
     rethrow;
   }
 });
@@ -92,7 +60,7 @@ final videoCategoriesProvider = FutureProvider<List<String>>((ref) async {
 
     return sortedTags.take(7).map((e) => e.key).toList();
   } catch (e) {
-    print('Error fetching video categories: $e');
+    debugPrint('Error fetching video categories: $e');
     return [];
   }
 });
@@ -145,9 +113,65 @@ final groupedVideosByCompanyProvider =
   );
 });
 
-// ========== バナー・特集セクション ==========
+// トピックセクションモデル
+class TopicSection {
+  final String title;
+  final List<Map<String, dynamic>> videos;
+  const TopicSection({required this.title, required this.videos});
+}
 
-// バナー画像取得プロバイダー
+// トピック別動画セクションプロバイダー（特集タブ用）
+final topicSectionsProvider = Provider<AsyncValue<List<TopicSection>>>((ref) {
+  final videosAsync = ref.watch(feedVideosProvider);
+
+  return videosAsync.when(
+    data: (videos) {
+      if (videos.isEmpty) return const AsyncValue.data([]);
+
+      final sections = <TopicSection>[];
+      final sectionNames = ref.watch(feedSectionNamesProvider).valueOrNull ?? [];
+      final topicNames = sectionNames.isNotEmpty
+          ? sectionNames
+          : ['注目企業', '急募の企業', '今週のおすすめ企業', '若手が活躍できる企業', 'あなたが見た企業'];
+      final sectionSize = (videos.length / topicNames.length).ceil().clamp(2, 10);
+
+      for (int i = 0; i < topicNames.length; i++) {
+        final start = i * sectionSize;
+        if (start >= videos.length) break;
+        final end = (start + sectionSize).clamp(0, videos.length);
+        sections.add(TopicSection(
+          title: topicNames[i],
+          videos: videos.sublist(start, end),
+        ));
+      }
+
+      return AsyncValue.data(sections);
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (e, s) => AsyncValue.error(e, s),
+  );
+});
+
+// ========== フィードセクション関連プロバイダー ==========
+
+// feed_sectionsテーブルからセクション名を取得
+final feedSectionNamesProvider = FutureProvider<List<String>>((ref) async {
+  final supabase = ref.watch(supabaseClientProvider);
+  try {
+    final response = await supabase
+        .from('feed_sections')
+        .select('title')
+        .eq('is_active', true)
+        .order('sort_order');
+    final list = List<Map<String, dynamic>>.from(response as List);
+    if (list.isEmpty) return [];
+    return list.map((e) => e['title'] as String).toList();
+  } catch (e) {
+    return [];
+  }
+});
+
+// feed_bannersテーブルからスライドショーデータ取得
 final feedBannersProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final supabase = ref.watch(supabaseClientProvider);
   try {
@@ -155,8 +179,7 @@ final feedBannersProvider = FutureProvider<List<Map<String, dynamic>>>((ref) asy
         .from('feed_banners')
         .select()
         .eq('is_active', true)
-        .order('sort_order', ascending: true)
-        .limit(10);
+        .order('sort_order');
     return List<Map<String, dynamic>>.from(response as List);
   } catch (e) {
     return [];
@@ -211,6 +234,62 @@ final feedSectionsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) as
   }
 });
 
+// companiesテーブルから企業一覧取得（フィードセクション用）
+final feedCompaniesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final supabase = ref.watch(supabaseClientProvider);
+  try {
+    final response = await supabase
+        .from('companies')
+        .select('id, name, industry, logo_url, catchphrase')
+        .eq('is_suspended', false)
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(response as List);
+  } catch (e) {
+    return [];
+  }
+});
+
+// 業種マスターデータ取得（companiesテーブルから動的取得）
+final industryMasterProvider = FutureProvider<List<String>>((ref) async {
+  final supabase = ref.watch(supabaseClientProvider);
+  try {
+    final response = await supabase
+        .from('companies')
+        .select('industry')
+        .not('industry', 'is', null)
+        .not('industry', 'eq', '');
+    final list = List<Map<String, dynamic>>.from(response as List);
+    final industries = list
+        .map((e) => e['industry'] as String)
+        .toSet()
+        .toList()
+      ..sort();
+    return industries;
+  } catch (e) {
+    return defaultIndustries;
+  }
+});
+
+// 視聴履歴プロバイダー
+final watchHistoryProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final supabase = ref.watch(supabaseClientProvider);
+  final userId = supabase.auth.currentUser?.id;
+  if (userId == null) return [];
+
+  try {
+    final response = await supabase
+        .from('video_views')
+        .select('*, company_videos(*, companies(*))')
+        .eq('profile_id', userId)
+        .order('watched_at', ascending: false)
+        .limit(30);
+    return List<Map<String, dynamic>>.from(response);
+  } catch (e) {
+    debugPrint('Error fetching watch history: $e');
+    return [];
+  }
+});
+
 // 特定の動画取得プロバイダー
 final videoByIdProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, videoId) async {
   final supabase = ref.watch(supabaseClientProvider);
@@ -222,39 +301,9 @@ final videoByIdProvider = FutureProvider.family<Map<String, dynamic>?, String>((
         .eq('id', videoId)
         .single();
 
-    final video = Map<String, dynamic>.from(response as Map);
-
-    // Generate signed URLs for private storage buckets
-    final videoPath = video['video_path'] as String?;
-    final thumbnailPath = video['thumbnail_path'] as String?;
-
-    if (videoPath != null && videoPath.isNotEmpty) {
-      try {
-        video['video_url'] = videoPath.startsWith('http')
-            ? videoPath
-            : await supabase.storage
-                .from('company-videos')
-                .createSignedUrl(videoPath, 3600);
-      } catch (e) {
-        video['video_url'] = '';
-      }
-    }
-
-    if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
-      try {
-        video['thumbnail_url'] = thumbnailPath.startsWith('http')
-            ? thumbnailPath
-            : await supabase.storage
-                .from('company-thumbnails')
-                .createSignedUrl(thumbnailPath, 3600);
-      } catch (e) {
-        video['thumbnail_url'] = '';
-      }
-    }
-
-    return video;
+    return response;
   } catch (e) {
-    print('Error fetching video by id: $e');
+    debugPrint('Error fetching video by id: $e');
     return null;
   }
 });

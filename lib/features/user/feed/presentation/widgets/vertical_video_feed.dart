@@ -226,20 +226,11 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
                       child: VideoPlayer(_controller!),
                     ),
                   )
-                : Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const CircularProgressIndicator(
-                          color: ColorPalette.primaryColor,
-                        ),
-                        const SizedBox(height: SpacePalette.base),
-                        Text(
-                          '読み込み中...',
-                          style: TextStylePalette.subText,
-                        ),
-                      ],
-                    ),
+                : Image.asset(
+                    'assets/images/tiktok.png',
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
                   ),
           ),
 
@@ -305,7 +296,7 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
                           Text(
                             companyName,
                             style: TextStylePalette.normalText.copyWith(
-                              color: ColorPalette.primaryColor,
+                              color: Colors.white,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

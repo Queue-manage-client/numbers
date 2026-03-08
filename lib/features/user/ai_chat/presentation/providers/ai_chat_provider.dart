@@ -1,12 +1,25 @@
 // ai_chat/presentation/providers/ai_chat_provider.dart
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import '../../data/repositories/ai_chat_repository.dart';
 import '../../data/services/gemini_service.dart';
 import '../../domain/models/ai_conversation.dart';
 import '../../domain/models/ai_message.dart';
 
 const _uuid = Uuid();
+
+// Supabaseクライアントプロバイダー
+final _supabaseProvider = Provider<SupabaseClient>((ref) {
+  return Supabase.instance.client;
+});
+
+// AI Chatリポジトリプロバイダー
+final aiChatRepositoryProvider = Provider<AiChatRepository>((ref) {
+  return AiChatRepository(ref.watch(_supabaseProvider));
+});
 
 // Gemini service provider
 final geminiServiceProvider = Provider<GeminiService>((ref) {
@@ -16,7 +29,8 @@ final geminiServiceProvider = Provider<GeminiService>((ref) {
 // 会話一覧を管理するプロバイダー
 final aiConversationsProvider =
     StateNotifierProvider<AiConversationsNotifier, List<AiConversation>>((ref) {
-  return AiConversationsNotifier();
+  final repository = ref.watch(aiChatRepositoryProvider);
+  return AiConversationsNotifier(repository);
 });
 
 // 現在選択中の会話IDを管理するプロバイダー
@@ -37,13 +51,25 @@ final currentConversationProvider = Provider<AiConversation?>((ref) {
 });
 
 class AiConversationsNotifier extends StateNotifier<List<AiConversation>> {
-  AiConversationsNotifier() : super([]);
+  final AiChatRepository _repository;
+  bool _isLoaded = false;
+
+  AiConversationsNotifier(this._repository) : super([]);
+
+  /// DBから会話を読み込み
+  Future<void> loadConversations() async {
+    if (_isLoaded) return;
+    final conversations = await _repository.getConversations();
+    state = conversations;
+    _isLoaded = true;
+  }
 
   // 新しい会話を作成
-  String createConversation() {
-    final id = _uuid.v4();
-    final now = DateTime.now();
+  Future<String?> createConversation() async {
+    final id = await _repository.createConversation();
+    if (id == null) return null;
 
+    final now = DateTime.now();
     final conversation = AiConversation(
       id: id,
       title: '新しい会話',
@@ -57,21 +83,35 @@ class AiConversationsNotifier extends StateNotifier<List<AiConversation>> {
   }
 
   // 会話を削除
-  void deleteConversation(String id) {
+  Future<void> deleteConversation(String id) async {
+    await _repository.deleteConversation(id);
     state = state.where((c) => c.id != id).toList();
   }
 
-  // メッセージを追加
-  void addMessage(String conversationId, AiMessage message) {
+  // メッセージを追加（ローカル + DB）
+  Future<void> _addMessage(String conversationId, AiMessage message) async {
+    // DBに保存
+    final savedId = await _repository.addMessage(
+      conversationId: conversationId,
+      content: message.content,
+      isUser: message.isUser,
+    );
+
+    final actualMessage = savedId != null
+        ? AiMessage(id: savedId, content: message.content, isUser: message.isUser, createdAt: message.createdAt)
+        : message;
+
+    // ローカルステートを更新
     state = state.map((c) {
       if (c.id == conversationId) {
-        final newMessages = [...c.messages, message];
-        // 最初のユーザーメッセージをタイトルにする
+        final newMessages = [...c.messages, actualMessage];
         String title = c.title;
         if (message.isUser && c.messages.isEmpty) {
           title = message.content.length > 20
               ? '${message.content.substring(0, 20)}...'
               : message.content;
+          // タイトルもDB更新
+          _repository.updateConversationTitle(conversationId, title);
         }
         return c.copyWith(
           messages: newMessages,
@@ -92,7 +132,7 @@ class AiConversationsNotifier extends StateNotifier<List<AiConversation>> {
       isUser: true,
       createdAt: DateTime.now(),
     );
-    addMessage(conversationId, userMsg);
+    await _addMessage(conversationId, userMsg);
 
     try {
       // 会話履歴を取得
@@ -118,8 +158,9 @@ class AiConversationsNotifier extends StateNotifier<List<AiConversation>> {
         isUser: false,
         createdAt: DateTime.now(),
       );
-      addMessage(conversationId, aiMsg);
+      await _addMessage(conversationId, aiMsg);
     } catch (e) {
+      debugPrint('Error generating AI response: $e');
       // エラー時のフォールバック応答
       final aiMsg = AiMessage(
         id: _uuid.v4(),
@@ -127,7 +168,7 @@ class AiConversationsNotifier extends StateNotifier<List<AiConversation>> {
         isUser: false,
         createdAt: DateTime.now(),
       );
-      addMessage(conversationId, aiMsg);
+      await _addMessage(conversationId, aiMsg);
     }
   }
 }

@@ -63,7 +63,7 @@ class CompanyChatRoomCreatePage extends HookConsumerWidget {
                   color: ColorPalette.neutral0,
                 ),
               ),
-              backgroundColor: ColorPalette.systemGreen,
+              backgroundColor: ColorPalette.systemGold,
             ),
           );
           context.go('/company-portal/chats/list');

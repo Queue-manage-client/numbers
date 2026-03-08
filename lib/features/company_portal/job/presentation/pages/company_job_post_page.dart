@@ -83,7 +83,7 @@ class CompanyJobPostPage extends HookConsumerWidget {
                   style: TextStylePalette.normalText
                       .copyWith(color: ColorPalette.neutral0),
                 ),
-                backgroundColor: ColorPalette.systemGreen,
+                backgroundColor: ColorPalette.systemGold,
               ),
             );
             context.go('/company-portal/jobs');

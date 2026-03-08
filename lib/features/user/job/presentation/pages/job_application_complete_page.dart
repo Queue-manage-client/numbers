@@ -25,7 +25,7 @@ class JobApplicationCompletePage extends StatelessWidget {
               Icon(
                 Icons.check_circle,
                 size: 80,
-                color: ColorPalette.systemGreen,
+                color: ColorPalette.systemGold,
               ),
               const SizedBox(height: SpacePalette.lg),
               Text(

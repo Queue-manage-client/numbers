@@ -12,13 +12,55 @@ final internRepositoryProvider = Provider<InternRepository>((ref) {
 final internshipsProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final repository = ref.watch(internRepositoryProvider);
-  return await repository.getInternships();
+  final data = await repository.getInternships();
+  return data;
 });
 
 final internshipProvider = FutureProvider.family<Map<String, dynamic>?, String>(
     (ref, internshipId) async {
   final repository = ref.watch(internRepositoryProvider);
   return await repository.getInternship(internshipId);
+});
+
+// ========== 検索・フィルター関連プロバイダー ==========
+
+/// 検索テキスト
+final internSearchQueryProvider = StateProvider<String>((ref) => '');
+
+/// 業種フィルター（null = 全て）
+final internIndustryFilterProvider = StateProvider<String?>((ref) => null);
+
+/// フィルタリング済みインターン一覧
+final filteredInternshipsProvider =
+    Provider<AsyncValue<List<Map<String, dynamic>>>>((ref) {
+  final internshipsAsync = ref.watch(internshipsProvider);
+  final query = ref.watch(internSearchQueryProvider).toLowerCase();
+  final industry = ref.watch(internIndustryFilterProvider);
+
+  return internshipsAsync.whenData((internships) {
+    return internships.where((internship) {
+      // テキスト検索
+      if (query.isNotEmpty) {
+        final title = (internship['title'] as String? ?? '').toLowerCase();
+        final company = internship['companies'] as Map<String, dynamic>?;
+        final companyName = (company?['name'] as String? ?? '').toLowerCase();
+        if (!title.contains(query) && !companyName.contains(query)) {
+          return false;
+        }
+      }
+
+      // 業種フィルター
+      if (industry != null) {
+        final company = internship['companies'] as Map<String, dynamic>?;
+        final companyIndustry = company?['industry'] as String?;
+        if (companyIndustry != industry) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+  });
 });
 
 // ========== 申し込み関連プロバイダー ==========

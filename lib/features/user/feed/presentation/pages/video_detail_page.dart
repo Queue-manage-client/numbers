@@ -26,6 +26,7 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
   String? _errorMessage;
   Map<String, dynamic>? _videoData;
   Map<String, dynamic>? _companyData;
+  List<Map<String, dynamic>> _relatedVideos = [];
   bool _isPlaying = false;
   bool _showControls = true;
 
@@ -110,6 +111,9 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
         }
       });
 
+      // 関連動画を取得（同じ企業の他の動画）
+      await _loadRelatedVideos();
+
       setState(() {
         _isLoading = false;
       });
@@ -118,6 +122,24 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
         _isLoading = false;
         _errorMessage = '動画の読み込みに失敗しました: $e';
       });
+    }
+  }
+
+  Future<void> _loadRelatedVideos() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('company_videos')
+          .select('*, companies(*)')
+          .eq('company_id', widget.companyId)
+          .neq('id', widget.videoId)
+          .limit(10);
+
+      setState(() {
+        _relatedVideos = List<Map<String, dynamic>>.from(response);
+      });
+    } catch (e) {
+      debugPrint('Related videos load error: $e');
     }
   }
 
@@ -135,6 +157,112 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
     setState(() {
       _showControls = !_showControls;
     });
+  }
+
+  Widget _buildRelatedVideoCard(Map<String, dynamic> video) {
+    final title = video['title'] as String? ?? '無題';
+    final thumbnailPath = video['thumbnail_path'] as String?;
+    final videoId = video['id'] as String? ?? '';
+    final companyId = video['company_id'] as String? ?? '';
+    final company = video['companies'] as Map<String, dynamic>?;
+    final companyName = company?['name'] as String? ?? '';
+
+    String? thumbnailUrl;
+    if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+      thumbnailUrl = Supabase.instance.client.storage
+          .from('company-thumbnails')
+          .getPublicUrl(thumbnailPath);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SpacePalette.sm),
+      child: GestureDetector(
+        onTap: () {
+          context.push('/companies/$companyId/videos/$videoId');
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: ColorPalette.neutral800,
+            borderRadius: BorderRadius.circular(RadiusPalette.base),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Row(
+            children: [
+              // サムネイル
+              SizedBox(
+                width: 140,
+                height: 80,
+                child: thumbnailUrl != null
+                    ? Image.network(
+                        thumbnailUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: ColorPalette.neutral600,
+                            child: const Center(
+                              child: Icon(
+                                Icons.play_circle_outline,
+                                color: ColorPalette.neutral400,
+                                size: 32,
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        color: ColorPalette.neutral600,
+                        child: const Center(
+                          child: Icon(
+                            Icons.play_circle_outline,
+                            color: ColorPalette.neutral400,
+                            size: 32,
+                          ),
+                        ),
+                      ),
+              ),
+              const SizedBox(width: SpacePalette.sm),
+              // テキスト情報
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: SpacePalette.sm),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontFamily: 'NotoSansJP',
+                          fontSize: FontSizePalette.size14,
+                          fontVariations: [FontVariation('wght', 700)],
+                          color: Colors.white,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (companyName.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          companyName,
+                          style: TextStyle(
+                            fontFamily: 'NotoSansJP',
+                            fontSize: FontSizePalette.size12,
+                            fontVariations: const [FontVariation('wght', 500)],
+                            color: ColorPalette.neutral400,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: SpacePalette.sm),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   String _formatDuration(Duration duration) {
@@ -493,7 +621,7 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
                         fontFamily: 'NotoSansJP',
                         fontSize: FontSizePalette.size14,
                         fontWeight: FontWeight.w400,
-                        color: ColorPalette.neutral200,
+                        color: ColorPalette.neutral400,
                         height: 1.6,
                       ),
                     ),
@@ -545,6 +673,25 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
                     ),
                   ),
                 ),
+
+                // 関連動画セクション
+                if (_relatedVideos.isNotEmpty) ...[
+                  const SizedBox(height: SpacePalette.lg * 2),
+                  const Text(
+                    '関連動画',
+                    style: TextStyle(
+                      fontFamily: 'NotoSansJP',
+                      fontSize: FontSizePalette.size16,
+                      fontVariations: [FontVariation('wght', 800)],
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  ...List.generate(_relatedVideos.length, (index) {
+                    final related = _relatedVideos[index];
+                    return _buildRelatedVideoCard(related);
+                  }),
+                ],
               ],
             ),
           ),

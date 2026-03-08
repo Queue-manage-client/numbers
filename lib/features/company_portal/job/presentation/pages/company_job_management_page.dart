@@ -254,7 +254,7 @@ class CompanyJobManagementPage extends ConsumerWidget {
                                       ),
                                       decoration: BoxDecoration(
                                         color: isOpen
-                                            ? ColorPalette.systemGreen
+                                            ? ColorPalette.systemGold
                                                 .withOpacity(0.1)
                                             : ColorPalette.neutral600
                                                 .withOpacity(0.3),
@@ -266,7 +266,7 @@ class CompanyJobManagementPage extends ConsumerWidget {
                                         style:
                                             TextStylePalette.miniTitle.copyWith(
                                           color: isOpen
-                                              ? ColorPalette.systemGreen
+                                              ? ColorPalette.systemGold
                                               : ColorPalette.neutral500,
                                         ),
                                       ),
@@ -371,7 +371,7 @@ class CompanyJobManagementPage extends ConsumerWidget {
                           .copyWith(color: ColorPalette.neutral0),
                     ),
                     backgroundColor:
-                        success ? ColorPalette.systemGreen : Colors.red,
+                        success ? ColorPalette.systemGold : Colors.red,
                   ),
                 );
               }

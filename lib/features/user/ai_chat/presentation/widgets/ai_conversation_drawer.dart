@@ -50,12 +50,12 @@ class AiConversationDrawer extends ConsumerWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
                     final notifier = ref.read(aiConversationsProvider.notifier);
-                    final newId = notifier.createConversation();
+                    final newId = await notifier.createConversation();
                     ref.read(selectedConversationIdProvider.notifier).state =
                         newId;
-                    Navigator.of(context).pop();
+                    if (context.mounted) Navigator.of(context).pop();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ColorPalette.primaryColor,

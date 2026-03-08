@@ -1,10 +1,8 @@
 // features/user/chat/presentation/pages/chat_list_page.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/chat/presentation/providers/chat_provider.dart';
-import 'package:numbers/features/user/chat/presentation/pages/group_chat_create_page.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
 class ChatListPage extends HookConsumerWidget {
@@ -14,50 +12,34 @@ class ChatListPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final allGroupChatsAsync = ref.watch(allGroupChatsProvider);
     final myChatRoomsAsync = ref.watch(chatRoomsProvider);
-    final tabController = useTabController(initialLength: 2);
-    final currentTabIndex = useState(0);
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: ColorPalette.neutral900,
+        appBar: AppBar(
+          title: const Text('チャット'),
+          bottom: TabBar(
+            indicatorColor: ColorPalette.primaryColor,
+            labelColor: ColorPalette.primaryColor,
+            unselectedLabelColor: ColorPalette.neutral500,
+            dividerColor: ColorPalette.neutral600,
+            dividerHeight: 0.5,
+            tabs: const [
+              Tab(text: 'グループ'),
+              Tab(text: 'DM'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            // グループチャットタブ（全公開）
+            _buildGroupChatTab(context, ref, allGroupChatsAsync),
 
-    useEffect(() {
-      void listener() {
-        currentTabIndex.value = tabController.index;
-      }
-      tabController.addListener(listener);
-      return () => tabController.removeListener(listener);
-    }, [tabController]);
-
-    return Scaffold(
-      backgroundColor: ColorPalette.neutral900,
-      appBar: AppBar(
-        title: const Text('チャット'),
-        bottom: TabBar(
-          controller: tabController,
-          indicatorColor: ColorPalette.primaryColor,
-          labelColor: ColorPalette.primaryColor,
-          unselectedLabelColor: ColorPalette.neutral500,
-          dividerColor: ColorPalette.neutral600,
-          dividerHeight: 0.5,
-          tabs: const [
-            Tab(text: 'グループ'),
-            Tab(text: 'DM'),
+            // DMタブ（参加中のみ）
+            _buildDMTab(context, ref, myChatRoomsAsync),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: tabController,
-        children: [
-          // グループチャットタブ（全公開）
-          _buildGroupChatTab(context, ref, allGroupChatsAsync),
-
-          // DMタブ（参加中のみ）
-          _buildDMTab(context, ref, myChatRoomsAsync),
-        ],
-      ),
-      floatingActionButton: currentTabIndex.value == 0
-          ? FloatingActionButton(
-              onPressed: () => context.push('/chats/create'),
-              child: const Icon(Icons.add),
-            )
-          : null,
     );
   }
 
@@ -77,7 +59,7 @@ class ChatListPage extends HookConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.group_outlined,
+                    Icons.forum_outlined,
                     size: 80,
                     color: ColorPalette.neutral400,
                   ),
@@ -88,7 +70,7 @@ class ChatListPage extends HookConsumerWidget {
                   ),
                   const SizedBox(height: SpacePalette.sm),
                   Text(
-                    '右下の「+」ボタンからグループを作成できます',
+                    'グループチャットが作成されると\nここに表示されます',
                     style: TextStylePalette.subText,
                     textAlign: TextAlign.center,
                   ),
@@ -103,22 +85,21 @@ class ChatListPage extends HookConsumerWidget {
           itemCount: groupChats.length,
           itemBuilder: (context, index) {
             final room = groupChats[index];
-            final roomId = room['id'] as String;
-            final roomName = room['name'] as String? ?? 'グループチャット';
+            final roomName = room['name'] as String? ?? 'グループ';
             final description = room['description'] as String? ?? '';
+            final roomId = room['id'] as String?;
             final iconUrl = room['icon_url'] as String?;
-            final companyId = room['company_id'];
-            final company = room['companies'] as Map<String, dynamic>?;
-            final subtitle = companyId != null
-                ? (company?['name'] as String? ?? '企業')
-                : 'ユーザー作成グループ';
+            final memberCountList = room['chat_room_members'] as List<dynamic>?;
+            final members = (memberCountList != null && memberCountList.isNotEmpty)
+                ? (memberCountList[0]['count'] as int? ?? 0)
+                : 0;
 
             return Card(
               margin: const EdgeInsets.only(bottom: SpacePalette.sm),
               child: InkWell(
-                onTap: () {
-                  context.push('/chats/$roomId');
-                },
+                onTap: roomId != null
+                    ? () => context.push('/chats/$roomId')
+                    : null,
                 borderRadius: BorderRadius.circular(RadiusPalette.lg),
                 child: Padding(
                   padding: const EdgeInsets.all(SpacePalette.base),
@@ -136,7 +117,15 @@ class ChatListPage extends HookConsumerWidget {
                                 width: 1.8,
                               ),
                             ),
-                            child: buildChatIconWidget(iconUrl),
+                            child: CircleAvatar(
+                              backgroundColor: ColorPalette.neutral800,
+                              backgroundImage: iconUrl != null && iconUrl.isNotEmpty
+                                  ? NetworkImage(iconUrl)
+                                  : null,
+                              child: iconUrl == null || iconUrl.isEmpty
+                                  ? Icon(Icons.group, color: ColorPalette.neutral400)
+                                  : null,
+                            ),
                           ),
                           const SizedBox(width: SpacePalette.base),
                           Expanded(
@@ -149,7 +138,7 @@ class ChatListPage extends HookConsumerWidget {
                                 ),
                                 const SizedBox(height: SpacePalette.xs),
                                 Text(
-                                  subtitle,
+                                  '$members人が参加中',
                                   style: TextStylePalette.smListLeading,
                                 ),
                               ],
@@ -157,15 +146,13 @@ class ChatListPage extends HookConsumerWidget {
                           ),
                         ],
                       ),
-                      if (description.isNotEmpty) ...[
-                        const SizedBox(height: SpacePalette.sm),
-                        Text(
-                          description,
-                          style: TextStylePalette.subText,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                      const SizedBox(height: SpacePalette.sm),
+                      Text(
+                        description,
+                        style: TextStylePalette.subText,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const SizedBox(height: SpacePalette.sm),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -215,12 +202,6 @@ class ChatListPage extends HookConsumerWidget {
               Text(
                 'エラーが発生しました',
                 style: TextStylePalette.header,
-              ),
-              const SizedBox(height: SpacePalette.sm),
-              Text(
-                '$error',
-                style: TextStylePalette.subText,
-                textAlign: TextAlign.center,
               ),
               const SizedBox(height: SpacePalette.lg),
               OutlinedButton(

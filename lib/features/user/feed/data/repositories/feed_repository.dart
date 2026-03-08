@@ -1,4 +1,5 @@
 // feed/data/repositories/feed_repository.dart
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FeedRepository {
@@ -25,7 +26,7 @@ class FeedRepository {
 
       return List<Map<String, dynamic>>.from(response as List);
     } catch (e) {
-      print('Error fetching feed videos: $e');
+      debugPrint('Error fetching feed videos: $e');
       rethrow;
     }
   }
@@ -41,7 +42,7 @@ class FeedRepository {
 
       return response as Map<String, dynamic>;
     } catch (e) {
-      print('Error fetching video by id: $e');
+      debugPrint('Error fetching video by id: $e');
       return null;
     }
   }
@@ -74,7 +75,7 @@ class FeedRepository {
         return true;
       }
     } catch (e) {
-      print('Error toggling bookmark: $e');
+      debugPrint('Error toggling bookmark: $e');
       rethrow;
     }
   }
@@ -84,12 +85,27 @@ class FeedRepository {
     try {
       await _supabase.from('video_views').insert({
         'video_id': videoId,
-        'user_id': userId,
-        'viewed_at': DateTime.now().toIso8601String(),
+        'profile_id': userId,
       });
     } catch (e) {
-      print('Error recording view: $e');
+      debugPrint('Error recording view: $e');
       // 視聴履歴の記録失敗は致命的ではないのでエラーを投げない
+    }
+  }
+
+  /// 視聴履歴を取得
+  Future<List<Map<String, dynamic>>> getWatchHistory(String userId, {int limit = 30}) async {
+    try {
+      final response = await _supabase
+          .from('video_views')
+          .select('*, company_videos(*, companies(*))')
+          .eq('profile_id', userId)
+          .order('watched_at', ascending: false)
+          .limit(limit);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error fetching watch history: $e');
+      return [];
     }
   }
 
@@ -101,7 +117,7 @@ class FeedRepository {
         'user_id': userId,
       });
     } catch (e) {
-      print('Error following company: $e');
+      debugPrint('Error following company: $e');
       rethrow;
     }
   }
@@ -115,7 +131,7 @@ class FeedRepository {
           .eq('company_id', companyId)
           .eq('user_id', userId);
     } catch (e) {
-      print('Error unfollowing company: $e');
+      debugPrint('Error unfollowing company: $e');
       rethrow;
     }
   }
@@ -128,7 +144,7 @@ class FeedRepository {
           .from('company-videos')
           .createSignedUrl(videoPath, 3600);
     } catch (e) {
-      print('Error getting video URL: $e');
+      debugPrint('Error getting video URL: $e');
       return '';
     }
   }
@@ -141,7 +157,7 @@ class FeedRepository {
           .from('company-thumbnails')
           .createSignedUrl(thumbnailPath, 3600);
     } catch (e) {
-      print('Error getting thumbnail URL: $e');
+      debugPrint('Error getting thumbnail URL: $e');
       return '';
     }
   }
