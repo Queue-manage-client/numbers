@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/chat/presentation/providers/chat_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/features/user/chat/presentation/pages/group_chat_create_page.dart';
 
 class ChatListPage extends HookConsumerWidget {
   const ChatListPage({super.key});
@@ -117,15 +118,7 @@ class ChatListPage extends HookConsumerWidget {
                                 width: 1.8,
                               ),
                             ),
-                            child: CircleAvatar(
-                              backgroundColor: ColorPalette.neutral800,
-                              backgroundImage: iconUrl != null && iconUrl.isNotEmpty
-                                  ? NetworkImage(iconUrl)
-                                  : null,
-                              child: iconUrl == null || iconUrl.isEmpty
-                                  ? Icon(Icons.group, color: ColorPalette.neutral400)
-                                  : null,
-                            ),
+                            child: buildChatIconWidget(iconUrl),
                           ),
                           const SizedBox(width: SpacePalette.base),
                           Expanded(

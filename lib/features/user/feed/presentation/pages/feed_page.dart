@@ -525,7 +525,8 @@ class _FeaturedCompaniesSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final companiesAsync = ref.watch(feedCompaniesProvider);
-    final companies = companiesAsync.valueOrNull ?? [];
+    final allCompanies = companiesAsync.valueOrNull ?? [];
+    final companies = allCompanies.take(5).toList();
     final cardWidth = 120.0;
     final cardHeight = cardWidth * 1.6;
 
@@ -537,20 +538,9 @@ class _FeaturedCompaniesSection extends ConsumerWidget {
             horizontal: SpacePalette.base,
             vertical: SpacePalette.sm,
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '注目企業',
-                  style: TextStylePalette.smHeader,
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                color: ColorPalette.neutral400,
-                size: 24,
-              ),
-            ],
+          child: Text(
+            '注目企業',
+            style: TextStylePalette.smHeader,
           ),
         ),
         SizedBox(
@@ -696,20 +686,9 @@ class _PopularCompaniesSection extends ConsumerWidget {
             horizontal: SpacePalette.base,
             vertical: SpacePalette.sm,
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '急募の企業',
-                  style: TextStylePalette.smHeader,
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                color: ColorPalette.neutral400,
-                size: 24,
-              ),
-            ],
+          child: Text(
+            '急募の企業',
+            style: TextStylePalette.smHeader,
           ),
         ),
 
@@ -806,20 +785,9 @@ class _RecommendedCompaniesSection extends ConsumerWidget {
             horizontal: SpacePalette.base,
             vertical: SpacePalette.sm,
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '今週のおすすめ企業',
-                  style: TextStylePalette.smHeader,
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                color: ColorPalette.neutral400,
-                size: 24,
-              ),
-            ],
+          child: Text(
+            '今週のおすすめ企業',
+            style: TextStylePalette.smHeader,
           ),
         ),
 
@@ -873,20 +841,9 @@ class _YoungActiveCompaniesSection extends ConsumerWidget {
             horizontal: SpacePalette.base,
             vertical: SpacePalette.sm,
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '若手が活躍できる企業',
-                  style: TextStylePalette.smHeader,
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                color: ColorPalette.neutral400,
-                size: 24,
-              ),
-            ],
+          child: Text(
+            '若手が活躍できる企業',
+            style: TextStylePalette.smHeader,
           ),
         ),
         SizedBox(
@@ -943,20 +900,9 @@ class _TopicVideoSection extends StatelessWidget {
             horizontal: SpacePalette.base,
             vertical: SpacePalette.sm,
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStylePalette.smHeader,
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                color: ColorPalette.neutral400,
-                size: 24,
-              ),
-            ],
+          child: Text(
+            title,
+            style: TextStylePalette.smHeader,
           ),
         ),
 
@@ -1097,20 +1043,9 @@ class _WatchedVideosSection extends ConsumerWidget {
             horizontal: SpacePalette.base,
             vertical: SpacePalette.sm,
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'あなたが見た企業',
-                  style: TextStylePalette.smHeader,
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                color: ColorPalette.neutral400,
-                size: 24,
-              ),
-            ],
+          child: Text(
+            'あなたが見た企業',
+            style: TextStylePalette.smHeader,
           ),
         ),
 

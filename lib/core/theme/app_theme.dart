@@ -30,12 +30,13 @@ class ColorPalette {
   static const Color primaryLight = Color(0xFFFFD700); // ライトゴールド
   static const Color primaryPale = Color(0xFFFFFBED); // ほぼ白のゴールド
   static const Color systemGold = Color(0xFFDAA520);
+  static const Color systemGreen = Color(0xFF34C759);
 
   // グラデーション
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [primaryPale, primaryColor],
+    colors: [primaryLight, primaryColor],
   );
 }
 
@@ -574,7 +575,7 @@ class GradientButton extends StatelessWidget {
                           fontFamily: _fontFamily,
                           fontSize: FontSizePalette.size16,
                           fontVariations: const [FontVariation('wght', 900)],
-                          color: ColorPalette.neutral0,
+                          color: ColorPalette.neutral900,
                         ),
                       ),
                       if (icon != null) ...[
