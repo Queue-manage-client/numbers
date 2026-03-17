@@ -5,25 +5,29 @@ import 'package:geocoding/geocoding.dart';
 class GeocodingService {
   /// Convert an address string to coordinates
   /// Returns null if the address cannot be geocoded
+  /// Throws [GeocodingException] with a user-friendly message on failure
   Future<GeocodingResult?> getCoordinatesFromAddress(String address) async {
-    if (address.trim().isEmpty) {
+    final trimmed = address.trim();
+    if (trimmed.isEmpty) {
       return null;
     }
 
     try {
-      final locations = await locationFromAddress(address);
+      final locations = await locationFromAddress(trimmed);
       if (locations.isNotEmpty) {
         final location = locations.first;
         return GeocodingResult(
           latitude: location.latitude,
           longitude: location.longitude,
-          address: address,
+          address: trimmed,
         );
       }
+      throw GeocodingException('該当する住所が見つかりませんでした。\n都道府県名から入力してみてください。');
+    } on GeocodingException {
+      rethrow;
     } catch (e) {
-      // Geocoding failed
+      throw GeocodingException('住所の検索に失敗しました。\nネットワーク接続を確認してください。');
     }
-    return null;
   }
 
   /// Convert coordinates to an address
@@ -114,6 +118,15 @@ class GeocodingResult {
     required this.longitude,
     required this.address,
   });
+}
+
+/// Exception thrown when geocoding fails
+class GeocodingException implements Exception {
+  final String message;
+  const GeocodingException(this.message);
+
+  @override
+  String toString() => message;
 }
 
 /// Detailed location information from reverse geocoding

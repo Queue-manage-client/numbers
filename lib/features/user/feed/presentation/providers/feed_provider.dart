@@ -13,7 +13,7 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
   return Supabase.instance.client;
 });
 
-// フィード動画取得プロバイダー（公開動画のみ）
+// フィード動画取得プロバイダー（公開動画のみ、署名付きURL事前解決済み）
 final feedVideosProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final supabase = ref.watch(supabaseClientProvider);
 
@@ -25,7 +25,26 @@ final feedVideosProvider = FutureProvider<List<Map<String, dynamic>>>((ref) asyn
         .order('created_at', ascending: false)
         .limit(50);
 
-    return List<Map<String, dynamic>>.from(response);
+    final videos = List<Map<String, dynamic>>.from(response);
+
+    // 署名付きURLを事前に一括解決（各動画ページでの遅延を排除）
+    await Future.wait(videos.map((video) async {
+      final videoPath = video['video_path'] as String?;
+      if (videoPath == null || videoPath.isEmpty) return;
+      if (videoPath.startsWith('http')) {
+        video['video_url'] = videoPath;
+        return;
+      }
+      try {
+        video['video_url'] = await supabase.storage
+            .from('company-videos')
+            .createSignedUrl(videoPath, 3600);
+      } catch (e) {
+        debugPrint('Error pre-resolving video URL: $e');
+      }
+    }));
+
+    return videos;
   } catch (e) {
     debugPrint('Error fetching feed videos: $e');
     rethrow;

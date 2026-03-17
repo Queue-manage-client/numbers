@@ -59,6 +59,7 @@ class _VerticalVideoFeedState extends ConsumerState<VerticalVideoFeed> {
         return PageView.builder(
           controller: _pageController,
           scrollDirection: Axis.vertical,
+          allowImplicitScrolling: true, // 隣接ページを事前にビルド
           itemCount: videos.length,
           onPageChanged: _onPageChanged,
           itemBuilder: (context, index) {
@@ -113,7 +114,6 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
   VideoPlayerController? _controller;
   bool _isInitialized = false;
   bool _isPlaying = false;
-  bool _showControls = true;
 
   @override
   void initState() {
@@ -188,19 +188,13 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
     super.dispose();
   }
 
-  void _togglePlayPause() {
+  void _onTapVideo() {
     if (_controller == null) return;
     if (_isPlaying) {
       _controller!.pause();
     } else {
       _controller!.play();
     }
-  }
-
-  void _toggleControls() {
-    setState(() {
-      _showControls = !_showControls;
-    });
   }
 
   @override
@@ -212,7 +206,7 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
     final tags = (widget.video['tags'] as List<dynamic>?)?.cast<String>() ?? [];
 
     return GestureDetector(
-      onTap: _toggleControls,
+      onTap: _onTapVideo,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -234,23 +228,20 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
                   ),
           ),
 
-          // 再生/一時停止オーバーレイ
-          if (_showControls && _isInitialized)
+          // 一時停止中のみアイコン表示
+          if (_isInitialized && !_isPlaying)
             Center(
-              child: GestureDetector(
-                onTap: _togglePlayPause,
-                child: Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: ColorPalette.neutral900.withValues(alpha: 0.5),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    _isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: ColorPalette.neutral0,
-                    size: 40,
-                  ),
+              child: Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: ColorPalette.neutral900.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.play_arrow,
+                  color: ColorPalette.neutral0,
+                  size: 40,
                 ),
               ),
             ),

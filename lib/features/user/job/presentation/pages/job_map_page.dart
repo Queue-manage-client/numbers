@@ -143,7 +143,7 @@ class _JobMapPageState extends ConsumerState<JobMapPage> {
                 // Radius slider
                 if (_showRadiusSlider)
                   Positioned(
-                    bottom: selectedJob != null ? 280 : 100,
+                    bottom: selectedJob != null ? 320 : 140,
                     left: 0,
                     right: 0,
                     child: RadiusSlider(

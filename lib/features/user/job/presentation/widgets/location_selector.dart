@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/user/job/data/models/job_location.dart';
+import 'package:numbers/core/services/geocoding_service.dart';
 import 'package:numbers/features/user/job/presentation/providers/job_map_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
@@ -422,7 +423,7 @@ class _AddLocationSheetState extends ConsumerState<_AddLocationSheet> {
             TextField(
               controller: _addressController,
               decoration: InputDecoration(
-                hintText: '例: 東京都渋谷区渋谷1-1-1',
+                hintText: '例: 東京都渋谷区、茨城県つくば市 など',
               ),
             ),
 
@@ -458,7 +459,7 @@ class _AddLocationSheetState extends ConsumerState<_AddLocationSheet> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('住所が見つかりませんでした'),
+              content: Text('住所を入力してください'),
               backgroundColor: Colors.red,
             ),
           );
@@ -494,6 +495,15 @@ class _AddLocationSheetState extends ConsumerState<_AddLocationSheet> {
           SnackBar(
             content: Text('地点を保存しました'),
             backgroundColor: ColorPalette.primaryColor,
+          ),
+        );
+      }
+    } on GeocodingException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Colors.red,
           ),
         );
       }
