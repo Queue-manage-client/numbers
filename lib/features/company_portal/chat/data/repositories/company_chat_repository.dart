@@ -17,8 +17,7 @@ class CompanyChatRepository {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error getting company chat rooms: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -33,8 +32,7 @@ class CompanyChatRepository {
 
       return response as Map<String, dynamic>;
     } catch (e) {
-      print('Error getting chat room: $e');
-      return null;
+      rethrow;
     }
   }
 
@@ -49,8 +47,7 @@ class CompanyChatRepository {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error getting messages: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -68,17 +65,11 @@ class CompanyChatRepository {
         'created_at': DateTime.now().toIso8601String(),
       });
 
-      // チャットルームの最終更新日時を更新（updated_atがある場合のみ）
-      try {
-        await _supabase.from('chat_rooms').update({
-          'updated_at': DateTime.now().toIso8601String(),
-        }).eq('id', roomId);
-      } catch (e) {
-        // updated_atカラムがない場合は無視
-        print('Note: updated_at column not found (this is OK): $e');
-      }
+      // チャットルームの最終更新日時を更新
+      await _supabase.from('chat_rooms').update({
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', roomId);
     } catch (e) {
-      print('Error sending message: $e');
       rethrow;
     }
   }
@@ -138,24 +129,31 @@ class CompanyChatRepository {
 
       return roomId;
     } catch (e) {
-      print('Error creating chat room: $e');
       rethrow;
     }
   }
 
   /// チャットルームを削除
+  /// 関連データを順次削除する（部分的な失敗時もルーム削除を試行）
   Future<void> deleteChatRoom(String roomId) async {
     try {
-      // メッセージを削除
-      await _supabase.from('chat_messages').delete().eq('room_id', roomId);
+      // メッセージを削除（失敗しても続行）
+      try {
+        await _supabase.from('chat_messages').delete().eq('room_id', roomId);
+      } catch (_) {
+        // 子レコード削除失敗は続行
+      }
 
-      // メンバーを削除
-      await _supabase.from('chat_room_members').delete().eq('room_id', roomId);
+      // メンバーを削除（失敗しても続行）
+      try {
+        await _supabase.from('chat_room_members').delete().eq('room_id', roomId);
+      } catch (_) {
+        // 子レコード削除失敗は続行
+      }
 
-      // チャットルームを削除
+      // チャットルームを削除（これが主要操作）
       await _supabase.from('chat_rooms').delete().eq('id', roomId);
     } catch (e) {
-      print('Error deleting chat room: $e');
       rethrow;
     }
   }
@@ -171,7 +169,6 @@ class CompanyChatRepository {
         'profile_id': profileId,
       });
     } catch (e) {
-      print('Error adding member: $e');
       rethrow;
     }
   }
@@ -188,7 +185,6 @@ class CompanyChatRepository {
           .eq('room_id', roomId)
           .eq('profile_id', profileId);
     } catch (e) {
-      print('Error removing member: $e');
       rethrow;
     }
   }

@@ -8,13 +8,17 @@ class ProfileRepository {
   ProfileRepository(this._supabase);
 
   Future<Map<String, dynamic>?> getProfile(String userId) async {
-    final response = await _supabase
-        .from('profiles')
-        .select()
-        .eq('id', userId)
-        .maybeSingle();
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select()
+          .eq('id', userId)
+          .maybeSingle();
 
-    return response;
+      return response;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> updateProfile({
@@ -41,7 +45,11 @@ class ProfileRepository {
     if (skills != null) data['skills'] = skills;
     if (jobPreferences != null) data['job_preferences'] = jobPreferences;
 
-    await _supabase.from('profiles').update(data).eq('id', userId);
+    try {
+      await _supabase.from('profiles').update(data).eq('id', userId);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// 職務経歴書をアップロード
@@ -50,33 +58,41 @@ class ProfileRepository {
     required String filePath,
     required String fileName,
   }) async {
-    final file = File(filePath);
-    final storagePath = 'resumes/$userId/$fileName';
+    try {
+      final file = File(filePath);
+      final storagePath = 'resumes/$userId/$fileName';
 
-    await _supabase.storage
-        .from('documents')
-        .upload(storagePath, file, fileOptions: const FileOptions(upsert: true));
+      await _supabase.storage
+          .from('documents')
+          .upload(storagePath, file, fileOptions: const FileOptions(upsert: true));
 
-    final url = _supabase.storage
-        .from('documents')
-        .getPublicUrl(storagePath);
+      final url = _supabase.storage
+          .from('documents')
+          .getPublicUrl(storagePath);
 
-    // プロフィールに職務経歴書URLを保存
-    await _supabase.from('profiles').update({
-      'resume_url': url,
-      'resume_file_name': fileName,
-      'updated_at': DateTime.now().toIso8601String(),
-    }).eq('id', userId);
+      // プロフィールに職務経歴書URLを保存
+      await _supabase.from('profiles').update({
+        'resume_url': url,
+        'resume_file_name': fileName,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', userId);
 
-    return url;
+      return url;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// 職務経歴書を削除
   Future<void> deleteResume(String userId) async {
-    await _supabase.from('profiles').update({
-      'resume_url': null,
-      'resume_file_name': null,
-      'updated_at': DateTime.now().toIso8601String(),
-    }).eq('id', userId);
+    try {
+      await _supabase.from('profiles').update({
+        'resume_url': null,
+        'resume_file_name': null,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', userId);
+    } catch (e) {
+      rethrow;
+    }
   }
 }

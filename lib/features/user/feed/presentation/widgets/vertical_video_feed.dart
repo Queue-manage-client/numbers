@@ -212,7 +212,7 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
     final tags = (widget.video['tags'] as List<dynamic>?)?.cast<String>() ?? [];
 
     return GestureDetector(
-      onTap: _toggleControls,
+      onTap: _togglePlayPause,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -234,8 +234,8 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
                   ),
           ),
 
-          // 再生/一時停止オーバーレイ
-          if (_showControls && _isInitialized)
+          // 再生/一時停止オーバーレイ（一時停止中のみ表示）
+          if (_isInitialized && !_isPlaying)
             Center(
               child: GestureDetector(
                 onTap: _togglePlayPause,
@@ -246,8 +246,8 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
                     color: ColorPalette.neutral900.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    _isPlaying ? Icons.pause : Icons.play_arrow,
+                  child: const Icon(
+                    Icons.play_arrow,
                     color: ColorPalette.neutral0,
                     size: 40,
                   ),

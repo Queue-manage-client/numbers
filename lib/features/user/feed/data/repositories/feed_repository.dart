@@ -1,5 +1,4 @@
 // feed/data/repositories/feed_repository.dart
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FeedRepository {
@@ -26,7 +25,6 @@ class FeedRepository {
 
       return List<Map<String, dynamic>>.from(response as List);
     } catch (e) {
-      debugPrint('Error fetching feed videos: $e');
       rethrow;
     }
   }
@@ -42,40 +40,36 @@ class FeedRepository {
 
       return response as Map<String, dynamic>;
     } catch (e) {
-      debugPrint('Error fetching video by id: $e');
-      return null;
+      rethrow;
     }
   }
 
   /// 動画のブックマーク状態を切り替え
   Future<bool> toggleBookmark(String videoId, String userId) async {
     try {
-      // まず既存のブックマークを確認
-      final existing = await _supabase
+      // 削除を試みて、削除できたかどうかで判定（TOCTOU回避）
+      final deleted = await _supabase
           .from('bookmarks')
-          .select()
+          .delete()
           .eq('video_id', videoId)
           .eq('user_id', userId)
-          .maybeSingle();
+          .select();
 
-      if (existing != null) {
-        // 既にブックマーク済み → 削除
-        await _supabase
-            .from('bookmarks')
-            .delete()
-            .eq('video_id', videoId)
-            .eq('user_id', userId);
+      if ((deleted as List).isNotEmpty) {
+        // 削除できた → ブックマーク解除
         return false;
-      } else {
-        // 未ブックマーク → 追加
-        await _supabase.from('bookmarks').insert({
+      }
+
+      // 削除対象がなかった → 新規追加（競合時は無視）
+      await _supabase.from('bookmarks').upsert(
+        {
           'video_id': videoId,
           'user_id': userId,
-        });
-        return true;
-      }
+        },
+        onConflict: 'video_id, user_id',
+      );
+      return true;
     } catch (e) {
-      debugPrint('Error toggling bookmark: $e');
       rethrow;
     }
   }
@@ -87,8 +81,7 @@ class FeedRepository {
         'video_id': videoId,
         'profile_id': userId,
       });
-    } catch (e) {
-      debugPrint('Error recording view: $e');
+    } catch (_) {
       // 視聴履歴の記録失敗は致命的ではないのでエラーを投げない
     }
   }
@@ -104,8 +97,7 @@ class FeedRepository {
           .limit(limit);
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      debugPrint('Error fetching watch history: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -117,7 +109,6 @@ class FeedRepository {
         'user_id': userId,
       });
     } catch (e) {
-      debugPrint('Error following company: $e');
       rethrow;
     }
   }
@@ -131,7 +122,6 @@ class FeedRepository {
           .eq('company_id', companyId)
           .eq('user_id', userId);
     } catch (e) {
-      debugPrint('Error unfollowing company: $e');
       rethrow;
     }
   }
@@ -144,8 +134,7 @@ class FeedRepository {
           .from('company-videos')
           .createSignedUrl(videoPath, 3600);
     } catch (e) {
-      debugPrint('Error getting video URL: $e');
-      return '';
+      rethrow;
     }
   }
 
@@ -157,8 +146,7 @@ class FeedRepository {
           .from('company-thumbnails')
           .createSignedUrl(thumbnailPath, 3600);
     } catch (e) {
-      debugPrint('Error getting thumbnail URL: $e');
-      return '';
+      rethrow;
     }
   }
 }

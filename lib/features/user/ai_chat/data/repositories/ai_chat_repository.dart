@@ -1,5 +1,4 @@
 // ai_chat/data/repositories/ai_chat_repository.dart
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/models/ai_conversation.dart';
 import '../../domain/models/ai_message.dart';
@@ -43,8 +42,7 @@ class AiChatRepository {
         );
       }).toList();
     } catch (e) {
-      debugPrint('Error fetching AI conversations: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -65,8 +63,7 @@ class AiChatRepository {
 
       return response['id'] as String;
     } catch (e) {
-      debugPrint('Error creating AI conversation: $e');
-      return null;
+      rethrow;
     }
   }
 
@@ -78,7 +75,7 @@ class AiChatRepository {
           .delete()
           .eq('id', conversationId);
     } catch (e) {
-      debugPrint('Error deleting AI conversation: $e');
+      rethrow;
     }
   }
 
@@ -90,7 +87,7 @@ class AiChatRepository {
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', conversationId);
     } catch (e) {
-      debugPrint('Error updating conversation title: $e');
+      rethrow;
     }
   }
 
@@ -118,8 +115,7 @@ class AiChatRepository {
 
       return response['id'] as String;
     } catch (e) {
-      debugPrint('Error adding AI message: $e');
-      return null;
+      rethrow;
     }
   }
 }

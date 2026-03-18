@@ -38,12 +38,14 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
       });
     }
   }
@@ -70,6 +72,12 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
           .read(aiConversationsProvider.notifier)
           .generateAiResponse(conversationId, message);
       _scrollToBottom();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('AI応答の生成に失敗しました: $e')),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

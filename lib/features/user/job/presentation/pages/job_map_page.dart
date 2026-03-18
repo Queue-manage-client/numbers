@@ -32,18 +32,32 @@ class _JobMapPageState extends ConsumerState<JobMapPage> {
     });
   }
 
-  Future<void> _initializeLocation() async {
-    final currentBase = ref.read(selectedBaseLocationProvider);
-    if (currentBase != null) return;
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
+  }
 
-    // Try to get current position first
-    final position = await ref.read(currentPositionProvider.future);
-    if (position != null && mounted) {
-      ref.read(selectedBaseLocationProvider.notifier).state = BaseLocation(
-        name: '現在地',
-        latitude: position.latitude,
-        longitude: position.longitude,
-      );
+  Future<void> _initializeLocation() async {
+    try {
+      final currentBase = ref.read(selectedBaseLocationProvider);
+      if (currentBase != null) return;
+
+      // Try to get current position first
+      final position = await ref.read(currentPositionProvider.future);
+      if (position != null && mounted) {
+        ref.read(selectedBaseLocationProvider.notifier).state = BaseLocation(
+          name: '現在地',
+          latitude: position.latitude,
+          longitude: position.longitude,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('位置情報の取得に失敗しました: $e')),
+        );
+      }
     }
   }
 
@@ -229,7 +243,7 @@ class _JobMapPageState extends ConsumerState<JobMapPage> {
     return Container(
       padding: const EdgeInsets.all(SpacePalette.sm),
       decoration: BoxDecoration(
-        color: ColorPalette.neutral800.withOpacity(0.9),
+        color: ColorPalette.neutral800.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(RadiusPalette.base),
         border: Border.all(color: ColorPalette.neutral600),
       ),

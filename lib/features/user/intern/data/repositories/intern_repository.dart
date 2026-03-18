@@ -11,23 +11,31 @@ class InternRepository {
   // ========== インターン一覧・詳細 ==========
 
   Future<List<Map<String, dynamic>>> getInternships() async {
-    final response = await _supabase
-        .from('internships')
-        .select('*, companies(*)')
-        .eq('is_public', true)
-        .order('created_at', ascending: false);
+    try {
+      final response = await _supabase
+          .from('internships')
+          .select('*, companies(*)')
+          .eq('is_public', true)
+          .order('created_at', ascending: false);
 
-    return List<Map<String, dynamic>>.from(response);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<Map<String, dynamic>?> getInternship(String internshipId) async {
-    final response = await _supabase
-        .from('internships')
-        .select('*, companies(*)')
-        .eq('id', internshipId)
-        .maybeSingle();
+    try {
+      final response = await _supabase
+          .from('internships')
+          .select('*, companies(*)')
+          .eq('id', internshipId)
+          .maybeSingle();
 
-    return response;
+      return response;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // ========== 申し込み機能 ==========
@@ -42,17 +50,21 @@ class InternRepository {
       throw Exception('ログインが必要です');
     }
 
-    final response = await _supabase
-        .from('internship_applications')
-        .insert({
-          'internship_id': internshipId,
-          'user_id': userId,
-          'message': message,
-        })
-        .select()
-        .single();
+    try {
+      final response = await _supabase
+          .from('internship_applications')
+          .insert({
+            'internship_id': internshipId,
+            'user_id': userId,
+            'message': message,
+          })
+          .select()
+          .single();
 
-    return InternshipApplication.fromJson(response);
+      return InternshipApplication.fromJson(response);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// 申し込みをキャンセル
@@ -62,12 +74,16 @@ class InternRepository {
       throw Exception('ログインが必要です');
     }
 
-    await _supabase
-        .from('internship_applications')
-        .update({'status': 'cancelled'})
-        .eq('id', applicationId)
-        .eq('user_id', userId)
-        .eq('status', 'pending');
+    try {
+      await _supabase
+          .from('internship_applications')
+          .update({'status': 'cancelled'})
+          .eq('id', applicationId)
+          .eq('user_id', userId)
+          .eq('status', 'pending');
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// ユーザーの申し込み一覧を取得
@@ -77,15 +93,19 @@ class InternRepository {
       throw Exception('ログインが必要です');
     }
 
-    final response = await _supabase
-        .from('internship_applications')
-        .select('*, internships(*, companies(*))')
-        .eq('user_id', userId)
-        .order('applied_at', ascending: false);
+    try {
+      final response = await _supabase
+          .from('internship_applications')
+          .select('*, internships(*, companies(*))')
+          .eq('user_id', userId)
+          .order('applied_at', ascending: false);
 
-    return (response as List)
-        .map((json) => InternshipApplication.fromJson(json))
-        .toList();
+      return (response as List)
+          .map((json) => InternshipApplication.fromJson(json))
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// 特定インターンの申し込み状態を確認
@@ -95,20 +115,28 @@ class InternRepository {
       return null;
     }
 
-    final response = await _supabase
-        .from('internship_applications')
-        .select()
-        .eq('internship_id', internshipId)
-        .eq('user_id', userId)
-        .maybeSingle();
+    try {
+      final response = await _supabase
+          .from('internship_applications')
+          .select()
+          .eq('internship_id', internshipId)
+          .eq('user_id', userId)
+          .maybeSingle();
 
-    if (response == null) return null;
-    return InternshipApplication.fromJson(response);
+      if (response == null) return null;
+      return InternshipApplication.fromJson(response);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// 申し込み済みかどうかを確認
   Future<bool> hasApplied(String internshipId) async {
-    final application = await getApplicationStatus(internshipId);
-    return application != null && application.status != ApplicationStatus.cancelled;
+    try {
+      final application = await getApplicationStatus(internshipId);
+      return application != null && application.status != ApplicationStatus.cancelled;
+    } catch (e) {
+      rethrow;
+    }
   }
 }

@@ -11,34 +11,42 @@ class JobMapRepository {
 
   /// Get all jobs with valid coordinates
   Future<List<JobLocation>> getJobsWithCoordinates() async {
-    final response = await _supabase
-        .from('jobs')
-        .select('*, companies(*)')
-        .eq('status', 'open')
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null)
-        .order('created_at', ascending: false);
+    try {
+      final response = await _supabase
+          .from('jobs')
+          .select('*, companies(*)')
+          .eq('status', 'open')
+          .not('latitude', 'is', null)
+          .not('longitude', 'is', null)
+          .order('created_at', ascending: false);
 
-    return List<Map<String, dynamic>>.from(response)
-        .map((json) => JobLocation.fromJobJson(json))
-        .where((job) => job.hasValidCoordinates)
-        .toList();
+      return List<Map<String, dynamic>>.from(response)
+          .map((json) => JobLocation.fromJobJson(json))
+          .where((job) => job.hasValidCoordinates)
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// Get all internships with valid coordinates
   Future<List<JobLocation>> getInternshipsWithCoordinates() async {
-    final response = await _supabase
-        .from('internships')
-        .select('*, companies(*)')
-        .eq('is_public', true)
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null)
-        .order('created_at', ascending: false);
+    try {
+      final response = await _supabase
+          .from('internships')
+          .select('*, companies(*)')
+          .eq('is_public', true)
+          .not('latitude', 'is', null)
+          .not('longitude', 'is', null)
+          .order('created_at', ascending: false);
 
-    return List<Map<String, dynamic>>.from(response)
-        .map((json) => JobLocation.fromInternJson(json))
-        .where((job) => job.hasValidCoordinates)
-        .toList();
+      return List<Map<String, dynamic>>.from(response)
+          .map((json) => JobLocation.fromInternJson(json))
+          .where((job) => job.hasValidCoordinates)
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// Get jobs within a radius from a center point (client-side filtering)
@@ -153,16 +161,20 @@ class JobMapRepository {
 
   /// Get user's saved locations
   Future<List<UserSavedLocation>> getUserSavedLocations(String userId) async {
-    final response = await _supabase
-        .from('user_saved_locations')
-        .select()
-        .eq('user_id', userId)
-        .order('is_default', ascending: false)
-        .order('created_at', ascending: false);
+    try {
+      final response = await _supabase
+          .from('user_saved_locations')
+          .select()
+          .eq('user_id', userId)
+          .order('is_default', ascending: false)
+          .order('created_at', ascending: false);
 
-    return List<Map<String, dynamic>>.from(response)
-        .map((json) => UserSavedLocation.fromJson(json))
-        .toList();
+      return List<Map<String, dynamic>>.from(response)
+          .map((json) => UserSavedLocation.fromJson(json))
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// Save or update a user's location
@@ -174,30 +186,38 @@ class JobMapRepository {
     String? address,
     bool isDefault = false,
   }) async {
-    // If setting as default, unset other defaults first
-    if (isDefault) {
-      await _supabase
-          .from('user_saved_locations')
-          .update({'is_default': false})
-          .eq('user_id', userId);
-    }
+    try {
+      // If setting as default, unset other defaults first
+      if (isDefault) {
+        await _supabase
+            .from('user_saved_locations')
+            .update({'is_default': false})
+            .eq('user_id', userId);
+      }
 
-    await _supabase.from('user_saved_locations').upsert(
-      {
-        'user_id': userId,
-        'name': name,
-        'latitude': latitude,
-        'longitude': longitude,
-        'address': address,
-        'is_default': isDefault,
-      },
-      onConflict: 'user_id, name',
-    );
+      await _supabase.from('user_saved_locations').upsert(
+        {
+          'user_id': userId,
+          'name': name,
+          'latitude': latitude,
+          'longitude': longitude,
+          'address': address,
+          'is_default': isDefault,
+        },
+        onConflict: 'user_id, name',
+      );
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// Delete a user's saved location
   Future<void> deleteUserLocation(String locationId) async {
-    await _supabase.from('user_saved_locations').delete().eq('id', locationId);
+    try {
+      await _supabase.from('user_saved_locations').delete().eq('id', locationId);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// Calculate distance between two coordinates in kilometers (Haversine formula)
