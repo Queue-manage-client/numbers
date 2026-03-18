@@ -194,6 +194,12 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                     decoration: const InputDecoration(
                       hintText: 'ニックネームを入力',
                     ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'ニックネームを入力してください';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: SpacePalette.base),
 

@@ -39,15 +39,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
 
         if (result != null && result.files.isNotEmpty) {
           videoFile.value = result.files.first;
-          
-          // デバッグ: bytes が取得できているか確認
-          print('=== ファイル選択デバッグ ===');
-          print('File name: ${result.files.first.name}');
-          print('File size: ${result.files.first.size}');
-          print('Bytes length: ${result.files.first.bytes?.length}');
-          print('Bytes is null: ${result.files.first.bytes == null}');
-          print('==================');
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -60,12 +52,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
             ),
           );
         }
-      } catch (e, stackTrace) {
-        print('=== 動画ファイル選択エラー ===');
-        print('Error: $e');
-        print('Stack trace: $stackTrace');
-        print('==================');
-        
+      } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -138,12 +125,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
             );
           }
         }
-      } catch (e, stackTrace) {
-        print('=== サムネイル選択エラー ===');
-        print('Error: $e');
-        print('Stack trace: $stackTrace');
-        print('==================');
-        
+      } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -188,21 +170,10 @@ class CompanyVideoPostPage extends HookConsumerWidget {
           throw Exception('企業IDが設定されていません。user_profilesテーブルのcompany_idを設定してください。');
         }
 
-        // ===== デバッグコード =====
-        print('=== 動画投稿デバッグ ===');
-        print('Company ID: $companyId');
-        print('Video File: ${videoFile.value?.name}');
-        print('Video File size: ${videoFile.value?.size}');
-        print('Video File bytes length: ${videoFile.value?.bytes?.length}');
-        print('Video File bytes is null: ${videoFile.value?.bytes == null}');
-        print('Thumbnail File: ${thumbnailFile.value?.name ?? "なし"}');
-        print('==================');
-        
         // bytes が null の場合のエラー
         if (videoFile.value?.bytes == null) {
           throw Exception('動画ファイルのデータが読み込めませんでした。ファイルサイズが大きすぎるか、ブラウザのメモリ不足の可能性があります。');
         }
-        // ===== デバッグコード終了 =====
 
         final supabase = Supabase.instance.client;
         final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -233,12 +204,6 @@ class CompanyVideoPostPage extends HookConsumerWidget {
         final sanitizedVideoName = sanitizeFileName(videoFile.value!.name);
         final videoFileName = '${companyId}_${timestamp}_$sanitizedVideoName';
         final videoPath = 'companies/$companyId/$videoFileName';
-        
-        print('=== ファイル名サニタイズ ===');
-        print('Original: ${videoFile.value!.name}');
-        print('Sanitized: $sanitizedVideoName');
-        print('Final path: $videoPath');
-        print('==================');
         
         await supabase.storage.from('company-videos').uploadBinary(
           videoPath,
@@ -287,17 +252,11 @@ class CompanyVideoPostPage extends HookConsumerWidget {
 
         await ref.read(companyPortalRepositoryProvider).createVideo(videoData);
 
-        print('=== 動画投稿成功 ===');
-        print('Video ID created successfully');
-        print('==================');
-
         // 動画一覧を再取得
         ref.invalidate(companyVideosProvider);
         ref.invalidate(dashboardStatsProvider);
 
         if (context.mounted) {
-          print('Success: 動画を投稿しました');
-          
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -311,17 +270,10 @@ class CompanyVideoPostPage extends HookConsumerWidget {
           );
           context.go('/company-portal/videos');
         }
-      } catch (e, stackTrace) {
-        print('=== 投稿エラー詳細 ===');
-        print('Error type: ${e.runtimeType}');
-        print('Error message: $e');
-        print('Stack trace: $stackTrace');
-        print('==================');
-        
+      } catch (e) {
         if (context.mounted) {
           final errorMessage = '投稿エラー: $e';
-          print('Snackbar message: $errorMessage');
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(

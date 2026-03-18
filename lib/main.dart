@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/core/config/supabase_config.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:go_router/go_router.dart';
 import 'package:numbers/core/router/app_router.dart';
+import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,8 +29,30 @@ void main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late final AuthNotifier _authNotifier;
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _authNotifier = AuthNotifier();
+    _router = createAppRouter(_authNotifier);
+  }
+
+  @override
+  void dispose() {
+    _authNotifier.dispose();
+    _router.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +60,7 @@ class MyApp extends StatelessWidget {
       title: 'Numbers',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      routerConfig: appRouter,
+      routerConfig: _router,
     );
   }
 }

@@ -12,24 +12,32 @@ class JobRepository {
   // ========== 求人一覧・詳細 ==========
 
   Future<List<Job>> getJobs() async {
-    final response = await _supabase
-        .from('jobs')
-        .select('*, companies(*)')
-        .eq('status', 'open')
-        .order('created_at', ascending: false);
+    try {
+      final response = await _supabase
+          .from('jobs')
+          .select('*, companies(*)')
+          .eq('status', 'open')
+          .order('created_at', ascending: false);
 
-    return (response as List).map((json) => Job.fromJson(json)).toList();
+      return (response as List).map((json) => Job.fromJson(json)).toList();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<Job?> getJob(String jobId) async {
-    final response = await _supabase
-        .from('jobs')
-        .select('*, companies(*)')
-        .eq('id', jobId)
-        .maybeSingle();
+    try {
+      final response = await _supabase
+          .from('jobs')
+          .select('*, companies(*)')
+          .eq('id', jobId)
+          .maybeSingle();
 
-    if (response == null) return null;
-    return Job.fromJson(response);
+      if (response == null) return null;
+      return Job.fromJson(response);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // ========== 申し込み機能 ==========
@@ -44,19 +52,23 @@ class JobRepository {
       throw Exception('ログインが必要です');
     }
 
-    final response = await _supabase
-        .from('job_applications')
-        .insert({
-          'job_id': jobId,
-          'user_id': userId,
-          'status': 'applied',
-          'message': message,
-          'applied_at': DateTime.now().toIso8601String(),
-        })
-        .select()
-        .single();
+    try {
+      final response = await _supabase
+          .from('job_applications')
+          .insert({
+            'job_id': jobId,
+            'user_id': userId,
+            'status': 'applied',
+            'message': message,
+            'applied_at': DateTime.now().toIso8601String(),
+          })
+          .select()
+          .single();
 
-    return JobApplication.fromJson(response);
+      return JobApplication.fromJson(response);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// 申し込みをキャンセル
@@ -66,12 +78,16 @@ class JobRepository {
       throw Exception('ログインが必要です');
     }
 
-    await _supabase
-        .from('job_applications')
-        .update({'status': 'rejected'})
-        .eq('id', applicationId)
-        .eq('user_id', userId)
-        .eq('status', 'applied');
+    try {
+      await _supabase
+          .from('job_applications')
+          .update({'status': 'rejected'})
+          .eq('id', applicationId)
+          .eq('user_id', userId)
+          .eq('status', 'applied');
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// ユーザーの申し込み一覧を取得
@@ -81,15 +97,19 @@ class JobRepository {
       throw Exception('ログインが必要です');
     }
 
-    final response = await _supabase
-        .from('job_applications')
-        .select('*, jobs(*, companies(*))')
-        .eq('user_id', userId)
-        .order('created_at', ascending: false);
+    try {
+      final response = await _supabase
+          .from('job_applications')
+          .select('*, jobs(*, companies(*))')
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
 
-    return (response as List)
-        .map((json) => JobApplication.fromJson(json))
-        .toList();
+      return (response as List)
+          .map((json) => JobApplication.fromJson(json))
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// 特定求人の申し込み状態を確認
@@ -99,21 +119,29 @@ class JobRepository {
       return null;
     }
 
-    final response = await _supabase
-        .from('job_applications')
-        .select()
-        .eq('job_id', jobId)
-        .eq('user_id', userId)
-        .maybeSingle();
+    try {
+      final response = await _supabase
+          .from('job_applications')
+          .select()
+          .eq('job_id', jobId)
+          .eq('user_id', userId)
+          .maybeSingle();
 
-    if (response == null) return null;
-    return JobApplication.fromJson(response);
+      if (response == null) return null;
+      return JobApplication.fromJson(response);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// 申し込み済みかどうかを確認
   Future<bool> hasApplied(String jobId) async {
-    final application = await getApplicationStatus(jobId);
-    return application != null &&
-        application.status != ApplicationStatus.cancelled;
+    try {
+      final application = await getApplicationStatus(jobId);
+      return application != null &&
+          application.status != ApplicationStatus.cancelled;
+    } catch (e) {
+      rethrow;
+    }
   }
 }

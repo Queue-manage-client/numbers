@@ -20,7 +20,8 @@ class VideoDetailPage extends ConsumerStatefulWidget {
   ConsumerState<VideoDetailPage> createState() => _VideoDetailPageState();
 }
 
-class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
+class _VideoDetailPageState extends ConsumerState<VideoDetailPage>
+    with WidgetsBindingObserver {
   VideoPlayerController? _controller;
   bool _isLoading = true;
   String? _errorMessage;
@@ -33,13 +34,22 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadVideoData();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _controller?.pause();
+    }
   }
 
   Future<void> _loadVideoData() async {
@@ -84,9 +94,6 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
             .createSignedUrl(videoPath, 3600);
       }
 
-      // デバッグ用: 動画URLをログ出力
-      debugPrint('Video URL: $videoUrl');
-
       // 動画プレイヤーを初期化
       _controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
 
@@ -94,8 +101,6 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
         await _controller!.initialize();
       } catch (initError) {
         // 動画初期化エラー - ファイルが存在しないか、フォーマットがサポートされていない可能性
-        debugPrint('Video initialization error: $initError');
-        debugPrint('Attempted URL: $videoUrl');
         setState(() {
           _isLoading = false;
           _errorMessage = '動画を再生できません。\n\nファイルが存在しないか、サポートされていない形式です。';
@@ -139,7 +144,7 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
         _relatedVideos = List<Map<String, dynamic>>.from(response);
       });
     } catch (e) {
-      debugPrint('Related videos load error: $e');
+      // Related videos load error silently ignored
     }
   }
 
@@ -315,7 +320,7 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage> {
             ),
             const SizedBox(height: SpacePalette.sm),
             Text(
-              _errorMessage!,
+              _errorMessage ?? '不明なエラーが発生しました',
               style: TextStylePalette.subText,
               textAlign: TextAlign.center,
             ),

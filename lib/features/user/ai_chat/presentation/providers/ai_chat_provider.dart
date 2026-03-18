@@ -2,8 +2,8 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import '../../data/repositories/ai_chat_repository.dart';
 import '../../data/services/gemini_service.dart';
 import '../../domain/models/ai_conversation.dart';
@@ -11,14 +11,9 @@ import '../../domain/models/ai_message.dart';
 
 const _uuid = Uuid();
 
-// Supabaseクライアントプロバイダー
-final _supabaseProvider = Provider<SupabaseClient>((ref) {
-  return Supabase.instance.client;
-});
-
-// AI Chatリポジトリプロバイダー
+// AI Chatリポジトリプロバイダー（共通のsupabaseClientProviderを使用）
 final aiChatRepositoryProvider = Provider<AiChatRepository>((ref) {
-  return AiChatRepository(ref.watch(_supabaseProvider));
+  return AiChatRepository(ref.watch(supabaseClientProvider));
 });
 
 // Gemini service provider

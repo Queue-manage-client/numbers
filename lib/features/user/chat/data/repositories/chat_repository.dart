@@ -1,6 +1,5 @@
 // features/user/chat/data/repositories/chat_repository.dart
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatRepository {
@@ -18,8 +17,7 @@ class ChatRepository {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      debugPrint('Error getting chat rooms: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -34,8 +32,7 @@ class ChatRepository {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      debugPrint('Error getting all group chats: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -50,8 +47,7 @@ class ChatRepository {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      debugPrint('Error getting messages: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -66,20 +62,13 @@ class ChatRepository {
         'room_id': roomId,
         'profile_id': userId,
         'content': content,
-        'created_at': DateTime.now().toIso8601String(),
       });
 
-      // チャットルームの最終更新日時を更新（updated_atがある場合のみ）
-      try {
-        await _supabase.from('chat_rooms').update({
-          'updated_at': DateTime.now().toIso8601String(),
-        }).eq('id', roomId);
-      } catch (e) {
-        // updated_atカラムがない場合は無視
-        debugPrint('Note: updated_at column not found (this is OK): $e');
-      }
+      // チャットルームの最終更新日時を更新
+      await _supabase.from('chat_rooms').update({
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', roomId);
     } catch (e) {
-      debugPrint('Error sending message: $e');
       rethrow;
     }
   }
@@ -99,8 +88,6 @@ class ChatRepository {
         'company_id': null,
         'created_by': userId,
         'icon_url': iconUrl,
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
       };
 
       final roomResponse = await _supabase
@@ -119,7 +106,6 @@ class ChatRepository {
 
       return roomId;
     } catch (e) {
-      print('Error creating user group chat: $e');
       rethrow;
     }
   }
@@ -130,20 +116,24 @@ class ChatRepository {
     required Uint8List imageBytes,
     required String fileName,
   }) async {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final sanitizedName = fileName.replaceAll(RegExp(r'[^\w.]'), '_');
-    final path = '$userId/${timestamp}_$sanitizedName';
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final sanitizedName = fileName.replaceAll(RegExp(r'[^\w.]'), '_');
+      final path = '$userId/${timestamp}_$sanitizedName';
 
-    await _supabase.storage.from('chat-icons').uploadBinary(
-      path,
-      imageBytes,
-      fileOptions: const FileOptions(
-        contentType: 'image/jpeg',
-        upsert: false,
-      ),
-    );
+      await _supabase.storage.from('chat-icons').uploadBinary(
+        path,
+        imageBytes,
+        fileOptions: const FileOptions(
+          contentType: 'image/jpeg',
+          upsert: false,
+        ),
+      );
 
-    final publicUrl = _supabase.storage.from('chat-icons').getPublicUrl(path);
-    return publicUrl;
+      final signedUrl = await _supabase.storage.from('chat-icons').createSignedUrl(path, 60 * 60 * 24 * 365);
+      return signedUrl;
+    } catch (e) {
+      rethrow;
+    }
   }
 }

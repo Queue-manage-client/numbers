@@ -31,13 +31,47 @@ Widget _companyPlaceholder(String name) {
 // 選択中のホームタブインデックス
 final selectedHomeTabProvider = StateProvider<int>((ref) => 0);
 
-class FeedPage extends ConsumerWidget {
+class FeedPage extends ConsumerStatefulWidget {
   const FeedPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FeedPage> createState() => _FeedPageState();
+}
+
+class _FeedPageState extends ConsumerState<FeedPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialIndex = ref.read(selectedHomeTabProvider);
+    _tabController = TabController(length: 3, vsync: this, initialIndex: initialIndex);
+    _pageController = PageController(initialPage: initialIndex);
+
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        _pageController.animateToPage(
+          _tabController.index,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+      ref.read(selectedHomeTabProvider.notifier).state = _tabController.index;
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
-    final selectedTab = ref.watch(selectedHomeTabProvider);
 
     // 認証状態の変更を監視
     ref.listen<AsyncValue<AuthState>>(authStateProvider, (previous, next) {
@@ -83,87 +117,59 @@ class FeedPage extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // タブバー（特集・トップ・その他）
-            _buildTabBar(context, ref, selectedTab),
+            // タブバー（特集・トップ・その他）— スワイプ連動
+            Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: ColorPalette.neutral600,
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicatorColor: ColorPalette.primaryColor,
+                indicatorWeight: 3,
+                labelColor: ColorPalette.neutral0,
+                unselectedLabelColor: ColorPalette.neutral400,
+                labelStyle: const TextStyle(
+                  fontFamily: 'NotoSansJP',
+                  fontSize: FontSizePalette.size14,
+                  fontVariations: [FontVariation('wght', 800)],
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontFamily: 'NotoSansJP',
+                  fontSize: FontSizePalette.size14,
+                  fontVariations: [FontVariation('wght', 600)],
+                ),
+                dividerColor: Colors.transparent,
+                tabs: const [
+                  Tab(text: '特集'),
+                  Tab(text: 'トップ'),
+                  Tab(text: 'その他'),
+                ],
+              ),
+            ),
 
-            // メインコンテンツ
+            // メインコンテンツ — スワイプで切り替え
             Expanded(
-              child: _buildTabContent(context, ref, selectedTab),
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  _tabController.animateTo(index);
+                },
+                children: [
+                  _FeaturedTab(),
+                  const VerticalVideoFeed(),
+                  const _OthersTab(),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  Widget _buildTabBar(BuildContext context, WidgetRef ref, int selectedTab) {
-    final tabs = ['特集', 'トップ', 'その他'];
-
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: ColorPalette.neutral600,
-            width: 1,
-          ),
-        ),
-      ),
-      child: Row(
-        children: tabs.asMap().entries.map((entry) {
-          final index = entry.key;
-          final tab = entry.value;
-          final isSelected = selectedTab == index;
-
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                ref.read(selectedHomeTabProvider.notifier).state = index;
-              },
-              child: Container(
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: isSelected
-                          ? ColorPalette.primaryColor
-                          : Colors.transparent,
-                      width: 3,
-                    ),
-                  ),
-                ),
-                child: Text(
-                  tab,
-                  style: TextStyle(
-                    fontFamily: 'NotoSansJP',
-                    fontSize: FontSizePalette.size14,
-                    fontVariations: [
-                      FontVariation('wght', isSelected ? 800 : 600),
-                    ],
-                    color: isSelected
-                        ? ColorPalette.neutral0
-                        : ColorPalette.neutral400,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildTabContent(BuildContext context, WidgetRef ref, int selectedTab) {
-    switch (selectedTab) {
-      case 0:
-        return _FeaturedTab();
-      case 1:
-        return const VerticalVideoFeed();
-      case 2:
-        return const _OthersTab();
-      default:
-        return _FeaturedTab();
-    }
   }
 }
 

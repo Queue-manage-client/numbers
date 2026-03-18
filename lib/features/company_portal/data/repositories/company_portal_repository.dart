@@ -1,5 +1,4 @@
 // company_portal/data/repositories/company_portal_repository.dart
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CompanyPortalRepository {
@@ -21,8 +20,7 @@ class CompanyPortalRepository {
 
       return response;
     } catch (e) {
-      debugPrint('Error getting current user profile: $e');
-      return null;
+      rethrow;
     }
   }
 
@@ -37,8 +35,7 @@ class CompanyPortalRepository {
 
       return response;
     } catch (e) {
-      debugPrint('Error getting company: $e');
-      return null;
+      rethrow;
     }
   }
 
@@ -50,7 +47,6 @@ class CompanyPortalRepository {
           .update(updateData)
           .eq('id', companyId);
     } catch (e) {
-      debugPrint('Error updating company: $e');
       rethrow;
     }
   }
@@ -73,8 +69,7 @@ class CompanyPortalRepository {
         'chats': results[3].count,
       };
     } catch (e) {
-      debugPrint('Error getting dashboard stats: $e');
-      return {'videos': 0, 'jobs': 0, 'internships': 0, 'chats': 0};
+      rethrow;
     }
   }
 
@@ -93,8 +88,7 @@ class CompanyPortalRepository {
 
       return List<Map<String, dynamic>>.from(response as List);
     } catch (e) {
-      debugPrint('Error getting company videos: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -109,8 +103,7 @@ class CompanyPortalRepository {
 
       return response;
     } catch (e) {
-      debugPrint('Error getting video by id: $e');
-      return null;
+      rethrow;
     }
   }
 
@@ -119,7 +112,6 @@ class CompanyPortalRepository {
     try {
       await _supabase.from('company_videos').insert(videoData);
     } catch (e) {
-      debugPrint('Error creating video: $e');
       rethrow;
     }
   }
@@ -132,7 +124,6 @@ class CompanyPortalRepository {
           .update(updateData)
           .eq('id', videoId);
     } catch (e) {
-      debugPrint('Error updating video: $e');
       rethrow;
     }
   }
@@ -149,8 +140,8 @@ class CompanyPortalRepository {
         if (videoPath != null && videoPath.isNotEmpty) {
           try {
             await _supabase.storage.from('company-videos').remove([videoPath]);
-          } catch (e) {
-            debugPrint('Error deleting video file: $e');
+          } catch (_) {
+            // Storage削除失敗は致命的ではない
           }
         }
 
@@ -159,8 +150,8 @@ class CompanyPortalRepository {
         if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
           try {
             await _supabase.storage.from('company-thumbnails').remove([thumbnailPath]);
-          } catch (e) {
-            debugPrint('Error deleting thumbnail file: $e');
+          } catch (_) {
+            // Storage削除失敗は致命的ではない
           }
         }
       }
@@ -168,7 +159,6 @@ class CompanyPortalRepository {
       // データベースから動画レコードを削除
       await _supabase.from('company_videos').delete().eq('id', videoId);
     } catch (e) {
-      debugPrint('Error deleting video: $e');
       rethrow;
     }
   }
@@ -188,8 +178,7 @@ class CompanyPortalRepository {
 
       return List<Map<String, dynamic>>.from(response as List);
     } catch (e) {
-      debugPrint('Error getting company jobs: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -204,8 +193,7 @@ class CompanyPortalRepository {
 
       return response;
     } catch (e) {
-      debugPrint('Error getting job by id: $e');
-      return null;
+      rethrow;
     }
   }
 
@@ -214,7 +202,6 @@ class CompanyPortalRepository {
     try {
       await _supabase.from('jobs').insert(jobData);
     } catch (e) {
-      debugPrint('Error creating job: $e');
       rethrow;
     }
   }
@@ -227,7 +214,6 @@ class CompanyPortalRepository {
           .update(updateData)
           .eq('id', jobId);
     } catch (e) {
-      debugPrint('Error updating job: $e');
       rethrow;
     }
   }
@@ -237,7 +223,6 @@ class CompanyPortalRepository {
     try {
       await _supabase.from('jobs').delete().eq('id', jobId);
     } catch (e) {
-      debugPrint('Error deleting job: $e');
       rethrow;
     }
   }
@@ -257,8 +242,7 @@ class CompanyPortalRepository {
 
       return List<Map<String, dynamic>>.from(response as List);
     } catch (e) {
-      debugPrint('Error getting company internships: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -273,8 +257,7 @@ class CompanyPortalRepository {
 
       return response;
     } catch (e) {
-      debugPrint('Error getting internship by id: $e');
-      return null;
+      rethrow;
     }
   }
 
@@ -283,7 +266,6 @@ class CompanyPortalRepository {
     try {
       await _supabase.from('internships').insert(internshipData);
     } catch (e) {
-      debugPrint('Error creating internship: $e');
       rethrow;
     }
   }
@@ -296,7 +278,6 @@ class CompanyPortalRepository {
           .update(updateData)
           .eq('id', internshipId);
     } catch (e) {
-      debugPrint('Error updating internship: $e');
       rethrow;
     }
   }
@@ -306,7 +287,6 @@ class CompanyPortalRepository {
     try {
       await _supabase.from('internships').delete().eq('id', internshipId);
     } catch (e) {
-      debugPrint('Error deleting internship: $e');
       rethrow;
     }
   }
@@ -325,8 +305,7 @@ class CompanyPortalRepository {
           .order('updated_at', ascending: false);
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      debugPrint('Error getting company chat rooms: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -345,7 +324,6 @@ class CompanyPortalRepository {
       
       return response['id'] as String;
     } catch (e) {
-      debugPrint('Error creating company: $e');
       rethrow;
     }
   }
@@ -369,7 +347,6 @@ class CompanyPortalRepository {
           .update(updateData)
           .eq('id', userId);
     } catch (e) {
-      debugPrint('Error updating user profile: $e');
       rethrow;
     }
   }

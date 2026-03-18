@@ -7,9 +7,9 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 class GeminiService {
   static GeminiService? _instance;
   late final GenerativeModel _model;
-  final List<Content> _conversationHistory = [];
 
   static const _maxRetries = 3;
+  static const _maxHistoryLength = 50;
   static const _systemPrompt =
       '''あなたは就活支援AIアシスタントです。
 ユーザーの就職活動、インターンシップ、面接対策、自己PR、企業研究などの質問に対して、
@@ -36,10 +36,6 @@ class GeminiService {
   static GeminiService get instance {
     _instance ??= GeminiService._();
     return _instance!;
-  }
-
-  void clearHistory() {
-    _conversationHistory.clear();
   }
 
   Future<String> _sendWithRetry(ChatSession chat, Content message) async {
@@ -76,26 +72,17 @@ class GeminiService {
     return 'エラーが発生しました。しばらくしてからもう一度お試しください。';
   }
 
-  Future<String> generateResponse(String userMessage) async {
-    try {
-      _conversationHistory.add(Content.text(userMessage));
-      final chat = _model.startChat(history: _conversationHistory);
-      final responseText = await _sendWithRetry(chat, Content.text(userMessage));
-      _conversationHistory.add(Content.model([TextPart(responseText)]));
-      return responseText;
-    } catch (e) {
-      debugPrint('Gemini error: $e');
-      return _formatError(e);
-    }
-  }
-
   Future<String> generateResponseWithContext(
     String userMessage,
     List<Map<String, String>> previousMessages,
   ) async {
     try {
+      // 直近の履歴のみ使用してメモリを制限
+      final recentMessages = previousMessages.length > _maxHistoryLength
+          ? previousMessages.sublist(previousMessages.length - _maxHistoryLength)
+          : previousMessages;
       final history = <Content>[];
-      for (final msg in previousMessages) {
+      for (final msg in recentMessages) {
         if (msg['role'] == 'user') {
           history.add(Content.text(msg['content'] ?? ''));
         } else {

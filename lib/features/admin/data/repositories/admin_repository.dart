@@ -24,7 +24,7 @@ class AdminRepository {
 
       return response;
     } catch (e) {
-      print('Error getting current user profile: $e');
+      // Error getting current user profile
       return null;
     }
   }
@@ -35,7 +35,7 @@ class AdminRepository {
       final profile = await getCurrentUserProfile();
       return profile?['role'] == 'admin';
     } catch (e) {
-      print('Error checking admin status: $e');
+      // Error checking admin status
       return false;
     }
   }
@@ -49,16 +49,15 @@ class AdminRepository {
     // 各クエリを独立して実行（1つの失敗が他に影響しない）
     Future<int> countTable(String table, {Map<String, dynamic>? filter}) async {
       try {
-        var query = _supabase.from(table).select('id');
+        var query = _supabase.from(table).select();
         if (filter != null) {
           for (final entry in filter.entries) {
             query = query.eq(entry.key, entry.value);
           }
         }
-        final response = await query;
-        return (response as List).length;
+        final response = await query.count();
+        return response.count;
       } catch (e) {
-        print('Error counting $table: $e');
         return 0;
       }
     }
@@ -109,7 +108,7 @@ class AdminRepository {
           .range(offset, offset + limit - 1);
       return List<Map<String, dynamic>>.from(response as List);
     } catch (e) {
-      print('Error getting users: $e');
+      // Error getting users
       return [];
     }
   }
@@ -133,7 +132,7 @@ class AdminRepository {
       final response = await query.count();
       return response.count;
     } catch (e) {
-      print('Error getting user count: $e');
+      // Error getting user count
       return 0;
     }
   }
@@ -146,7 +145,7 @@ class AdminRepository {
           .update(updateData)
           .eq('id', userId);
     } catch (e) {
-      print('Error updating user: $e');
+      // Error updating user
       rethrow;
     }
   }
@@ -159,7 +158,7 @@ class AdminRepository {
           .update({'is_suspended': true})
           .eq('id', userId);
     } catch (e) {
-      print('Error suspending user: $e');
+      // Error suspending user
       rethrow;
     }
   }
@@ -172,7 +171,7 @@ class AdminRepository {
           .update({'is_suspended': false})
           .eq('id', userId);
     } catch (e) {
-      print('Error reactivating user: $e');
+      // Error reactivating user
       rethrow;
     }
   }
@@ -204,7 +203,7 @@ class AdminRepository {
           .range(offset, offset + limit - 1);
       return List<Map<String, dynamic>>.from(response as List);
     } catch (e) {
-      print('Error getting all videos: $e');
+      // Error getting all videos
       return [];
     }
   }
@@ -217,7 +216,7 @@ class AdminRepository {
           .update({'is_public': isPublic})
           .eq('id', videoId);
     } catch (e) {
-      print('Error updating video visibility: $e');
+      // Error updating video visibility
       rethrow;
     }
   }
@@ -239,7 +238,7 @@ class AdminRepository {
           try {
             await _supabase.storage.from('company-videos').remove([videoPath]);
           } catch (e) {
-            print('Error deleting video file: $e');
+            // Error deleting video file
           }
         }
 
@@ -249,7 +248,7 @@ class AdminRepository {
           try {
             await _supabase.storage.from('company-thumbnails').remove([thumbnailPath]);
           } catch (e) {
-            print('Error deleting thumbnail file: $e');
+            // Error deleting thumbnail file
           }
         }
       }
@@ -257,7 +256,7 @@ class AdminRepository {
       // データベースから動画レコードを削除
       await _supabase.from('company_videos').delete().eq('id', videoId);
     } catch (e) {
-      print('Error deleting video: $e');
+      // Error deleting video
       rethrow;
     }
   }
@@ -289,7 +288,7 @@ class AdminRepository {
           .range(offset, offset + limit - 1);
       return List<Map<String, dynamic>>.from(response as List);
     } catch (e) {
-      print('Error getting all jobs: $e');
+      // Error getting all jobs
       return [];
     }
   }
@@ -302,7 +301,7 @@ class AdminRepository {
           .update({'status': status})
           .eq('id', jobId);
     } catch (e) {
-      print('Error updating job status: $e');
+      // Error updating job status
       rethrow;
     }
   }
@@ -312,7 +311,7 @@ class AdminRepository {
     try {
       await _supabase.from('jobs').delete().eq('id', jobId);
     } catch (e) {
-      print('Error deleting job: $e');
+      // Error deleting job
       rethrow;
     }
   }
@@ -344,7 +343,7 @@ class AdminRepository {
           .range(offset, offset + limit - 1);
       return List<Map<String, dynamic>>.from(response as List);
     } catch (e) {
-      print('Error getting all internships: $e');
+      // Error getting all internships
       return [];
     }
   }
@@ -357,7 +356,7 @@ class AdminRepository {
           .update({'is_public': isPublic})
           .eq('id', internshipId);
     } catch (e) {
-      print('Error updating internship visibility: $e');
+      // Error updating internship visibility
       rethrow;
     }
   }
@@ -367,7 +366,7 @@ class AdminRepository {
     try {
       await _supabase.from('internships').delete().eq('id', internshipId);
     } catch (e) {
-      print('Error deleting internship: $e');
+      // Error deleting internship
       rethrow;
     }
   }
@@ -394,7 +393,7 @@ class AdminRepository {
           .range(offset, offset + limit - 1);
       return List<Map<String, dynamic>>.from(response as List);
     } catch (e) {
-      print('Error getting all inquiries: $e');
+      // Error getting all inquiries
       return [];
     }
   }
@@ -410,7 +409,7 @@ class AdminRepository {
 
       return response;
     } catch (e) {
-      print('Error getting inquiry by id: $e');
+      // Error getting inquiry by id
       return null;
     }
   }
@@ -423,7 +422,7 @@ class AdminRepository {
           .update({'status': status})
           .eq('id', inquiryId);
     } catch (e) {
-      print('Error updating inquiry status: $e');
+      // Error updating inquiry status
       rethrow;
     }
   }
@@ -442,7 +441,7 @@ class AdminRepository {
 
       return List<Map<String, dynamic>>.from(response as List);
     } catch (e) {
-      print('Error getting all companies: $e');
+      // Error getting all companies
       return [];
     }
   }

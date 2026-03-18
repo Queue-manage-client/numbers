@@ -63,13 +63,6 @@ class CompanyInternNotifier extends StateNotifier<AsyncValue<void>> {
   }) async {
     state = const AsyncValue.loading();
     try {
-      print('=== インターン投稿開始 ===');
-      print('タイトル: $title');
-      print('説明: $description');
-      print('開始日: $startDate');
-      print('終了日: $endDate');
-      print('タグ: $tags');
-
       final internship = await _repository.createInternship(
         title: title,
         description: description,
@@ -78,16 +71,10 @@ class CompanyInternNotifier extends StateNotifier<AsyncValue<void>> {
         tags: tags,
       );
 
-      print('=== インターン投稿成功 ===');
-      print('ID: ${internship.id}');
-
       state = const AsyncValue.data(null);
       _ref.invalidate(companyInternshipsProvider);
       return internship;
     } catch (e, st) {
-      print('=== インターン投稿エラー ===');
-      print('エラー: $e');
-      print('スタックトレース: $st');
       state = AsyncValue.error(e, st);
       return null;
     }

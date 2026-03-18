@@ -1,9 +1,7 @@
 // features/company_portal/dashboard/presentation/pages/company_dashboard_page.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
@@ -13,38 +11,6 @@ class CompanyDashboardPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // ===== デバッグコード =====
-    useEffect(() {
-      final user = Supabase.instance.client.auth.currentUser;
-      final session = Supabase.instance.client.auth.currentSession;
-      
-      print('=== 認証状態確認（ダッシュボード） ===');
-      print('User ID: ${user?.id}');
-      print('Email: ${user?.email}');
-      print('Logged in: ${user != null}');
-      print('Session exists: ${session != null}');
-      print('Session expires at: ${session?.expiresAt}');
-      print('==================');
-      
-      // profilesテーブルの確認
-      if (user != null) {
-        ref.read(currentUserProfileProvider.future).then((profile) {
-          print('=== プロフィール情報 ===');
-          print('Profile: $profile');
-          print('Role: ${profile?['role']}');
-          print('Company ID: ${profile?['company_id']}');
-          print('==================');
-        }).catchError((error) {
-          print('=== プロフィール取得エラー ===');
-          print('Error: $error');
-          print('==================');
-        });
-      }
-      
-      return null;
-    }, []);
-    // ===== デバッグコード終了 =====
-    
     final statsAsync = ref.watch(dashboardStatsProvider);
     final companyInfoAsync = ref.watch(companyInfoProvider);
 
