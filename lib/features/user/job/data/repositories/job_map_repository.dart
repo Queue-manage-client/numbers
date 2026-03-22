@@ -195,17 +195,33 @@ class JobMapRepository {
             .eq('user_id', userId);
       }
 
-      await _supabase.from('user_saved_locations').upsert(
-        {
-          'user_id': userId,
-          'name': name,
-          'latitude': latitude,
-          'longitude': longitude,
-          'address': address,
-          'is_default': isDefault,
-        },
-        onConflict: 'user_id, name',
-      );
+      // 同名の既存レコードを確認
+      final existing = await _supabase
+          .from('user_saved_locations')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('name', name)
+          .maybeSingle();
+
+      final data = {
+        'user_id': userId,
+        'name': name,
+        'latitude': latitude,
+        'longitude': longitude,
+        'address': address,
+        'is_default': isDefault,
+      };
+
+      if (existing != null) {
+        // 既存レコードを更新
+        await _supabase
+            .from('user_saved_locations')
+            .update(data)
+            .eq('id', existing['id']);
+      } else {
+        // 新規作成
+        await _supabase.from('user_saved_locations').insert(data);
+      }
     } catch (e) {
       rethrow;
     }

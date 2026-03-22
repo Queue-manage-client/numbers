@@ -298,7 +298,20 @@ class _AddLocationSheetState extends ConsumerState<_AddLocationSheet> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _addressController.addListener(_onFormChanged);
+    _nameController.addListener(_onFormChanged);
+  }
+
+  void _onFormChanged() {
+    setState(() {});
+  }
+
+  @override
   void dispose() {
+    _addressController.removeListener(_onFormChanged);
+    _nameController.removeListener(_onFormChanged);
     _nameController.dispose();
     _addressController.dispose();
     super.dispose();
@@ -508,10 +521,11 @@ class _AddLocationSheetState extends ConsumerState<_AddLocationSheet> {
         );
       }
     } catch (e) {
+      debugPrint('地点保存エラー: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('保存に失敗しました'),
+            content: Text('保存に失敗しました: $e'),
             backgroundColor: Colors.red,
           ),
         );
