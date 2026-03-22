@@ -15,6 +15,18 @@ class PasswordResetPage extends HookConsumerWidget {
     final emailController = useTextEditingController();
     final isLoading = useState(false);
 
+    // ログイン済みユーザーからのアクセスかどうか
+    final currentUser = ref.watch(currentUserProvider);
+    final isAuthenticated = currentUser != null;
+
+    // ログイン済みの場合、メールアドレスを自動入力
+    useEffect(() {
+      if (isAuthenticated && currentUser.email != null) {
+        emailController.text = currentUser.email!;
+      }
+      return null;
+    }, [isAuthenticated]);
+
     Future<void> sendResetEmail() async {
       if (!formKey.currentState!.validate()) return;
 
@@ -28,7 +40,11 @@ class PasswordResetPage extends HookConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('パスワードリセットメールを送信しました')),
           );
-          context.go('/login');
+          if (isAuthenticated) {
+            context.pop();
+          } else {
+            context.go('/login');
+          }
         }
       } catch (e) {
         if (context.mounted) {
@@ -43,29 +59,42 @@ class PasswordResetPage extends HookConsumerWidget {
 
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
+      appBar: isAuthenticated
+          ? AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: ColorPalette.neutral0),
+                onPressed: () => context.pop(),
+              ),
+              title: const Text('パスワード変更'),
+              backgroundColor: ColorPalette.neutral900,
+              elevation: 0,
+            )
+          : null,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(SpacePalette.base), // 全体padding
+            padding: const EdgeInsets.all(SpacePalette.base),
             child: Form(
               key: formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'パスワードリセット',
-                    style: TextStylePalette.header,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: SpacePalette.base), // 別機能間隔
+                  if (!isAuthenticated) ...[
+                    Text(
+                      'パスワードリセット',
+                      style: TextStylePalette.header,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: SpacePalette.base),
+                  ],
                   Text(
                     '登録したメールアドレスを入力してください。\nパスワードリセット用のリンクを送信します。',
                     style: TextStylePalette.smSubText,
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: SpacePalette.lg), // 別機能間隔（大きめ）
-                  
+                  const SizedBox(height: SpacePalette.lg),
+
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -80,6 +109,7 @@ class PasswordResetPage extends HookConsumerWidget {
                       hintText: 'example@example.com',
                     ),
                     keyboardType: TextInputType.emailAddress,
+                    readOnly: isAuthenticated,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'メールアドレスを入力してください';
@@ -90,8 +120,8 @@ class PasswordResetPage extends HookConsumerWidget {
                       return null;
                     },
                   ),
-                  const SizedBox(height: SpacePalette.base), // 別機能間隔
-                  
+                  const SizedBox(height: SpacePalette.base),
+
                   GradientButton(
                     text: 'リセットメールを送信',
                     onPressed: isLoading.value ? null : sendResetEmail,
@@ -105,19 +135,21 @@ class PasswordResetPage extends HookConsumerWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: SpacePalette.lg), // 別機能間隔
-                  Align(
-                    alignment: Alignment.center,
-                    child: GestureDetector(
-                      onTap: (){
-                        context.go('/login');
-                      },
-                      child: Text(
-                        'ログイン画面に戻る',
-                        style: TextStylePalette.guide
+
+                  // 未ログイン時のみ「ログイン画面に戻る」を表示
+                  if (!isAuthenticated) ...[
+                    const SizedBox(height: SpacePalette.lg),
+                    Align(
+                      alignment: Alignment.center,
+                      child: GestureDetector(
+                        onTap: () => context.go('/login'),
+                        child: Text(
+                          'ログイン画面に戻る',
+                          style: TextStylePalette.guide,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
