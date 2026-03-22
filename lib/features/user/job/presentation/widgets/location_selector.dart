@@ -436,7 +436,7 @@ class _AddLocationSheetState extends ConsumerState<_AddLocationSheet> {
             TextField(
               controller: _addressController,
               decoration: InputDecoration(
-                hintText: '例: 東京都渋谷区、茨城県つくば市 など',
+                hintText: '例: 東京都渋谷区 / 大阪府〇〇市△△1-2-3',
               ),
             ),
 
