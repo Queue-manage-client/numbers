@@ -50,6 +50,38 @@ class ChatListPage extends HookConsumerWidget {
     WidgetRef ref,
     AsyncValue<List<Map<String, dynamic>>> groupChatsAsync,
   ) {
+    return Stack(
+      children: [
+        _buildGroupChatContent(context, ref, groupChatsAsync),
+        Positioned(
+          right: SpacePalette.base,
+          bottom: SpacePalette.base,
+          child: FloatingActionButton(
+            heroTag: 'createGroupChat',
+            backgroundColor: ColorPalette.primaryColor,
+            onPressed: () async {
+              final result = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const GroupChatCreatePage(),
+                ),
+              );
+              if (result == true) {
+                ref.invalidate(allGroupChatsProvider);
+              }
+            },
+            child: const Icon(Icons.add, color: ColorPalette.neutral900),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGroupChatContent(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<Map<String, dynamic>>> groupChatsAsync,
+  ) {
     return groupChatsAsync.when(
       data: (groupChats) {
         if (groupChats.isEmpty) {

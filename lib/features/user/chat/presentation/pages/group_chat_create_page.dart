@@ -219,7 +219,7 @@ class GroupChatCreatePage extends HookConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
-          onPressed: () => context.go('/chats'),
+          onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text('グループ作成'),
       ),
