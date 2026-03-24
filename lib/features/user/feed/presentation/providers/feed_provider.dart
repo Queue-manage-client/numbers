@@ -27,20 +27,32 @@ final feedVideosProvider = FutureProvider<List<Map<String, dynamic>>>((ref) asyn
 
     final videos = List<Map<String, dynamic>>.from(response);
 
-    // 署名付きURLを事前に一括解決（各動画ページでの遅延を排除）
+    // 署名付きURLとサムネイルURLを事前に一括解決（各動画ページでの遅延を排除）
     await Future.wait(videos.map((video) async {
       final videoPath = video['video_path'] as String?;
       if (videoPath == null || videoPath.isEmpty) return;
       if (videoPath.startsWith('http')) {
         video['video_url'] = videoPath;
-        return;
+      } else {
+        try {
+          video['video_url'] = await supabase.storage
+              .from('company-videos')
+              .createSignedUrl(videoPath, 3600);
+        } catch (e) {
+          debugPrint('Error pre-resolving video URL: $e');
+        }
       }
-      try {
-        video['video_url'] = await supabase.storage
-            .from('company-videos')
-            .createSignedUrl(videoPath, 3600);
-      } catch (e) {
-        debugPrint('Error pre-resolving video URL: $e');
+
+      // サムネイルURLを事前解決（公開バケット、同期処理）
+      final thumbnailPath = video['thumbnail_path'] as String?;
+      if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+        if (thumbnailPath.startsWith('http')) {
+          video['thumbnail_url'] = thumbnailPath;
+        } else {
+          video['thumbnail_url'] = supabase.storage
+              .from('company-thumbnails')
+              .getPublicUrl(thumbnailPath);
+        }
       }
     }));
 

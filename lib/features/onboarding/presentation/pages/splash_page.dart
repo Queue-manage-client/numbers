@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:video_player/video_player.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
@@ -13,56 +14,67 @@ class SplashPage extends ConsumerStatefulWidget {
   ConsumerState<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends ConsumerState<SplashPage>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late List<Animation<double>> _scaleAnimations;
+class _SplashPageState extends ConsumerState<SplashPage> {
+  VideoPlayerController? _controller;
   bool _isNavigating = false;
+  bool _videoFinished = false;
+  AuthState? _pendingAuthState;
+
+  /// スプラッシュ動画の公開URL
+  static const _splashVideoUrl =
+      'https://fmwvqsrxauxkwtziakrd.supabase.co/storage/v1/object/public/app-assets/splash_video.mp4';
 
   @override
   void initState() {
     super.initState();
-    _setupAnimations();
+    _initVideo();
   }
 
-  void _setupAnimations() {
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    )..repeat();
-
-    _scaleAnimations = List.generate(4, (index) {
-      final startInterval = index * 0.15;
-      final endInterval = startInterval + 0.5;
-
-      return TweenSequence<double>([
-        TweenSequenceItem(
-          tween: Tween<double>(begin: 1.0, end: 1.6)
-              .chain(CurveTween(curve: Curves.easeOut)),
-          weight: 50,
-        ),
-        TweenSequenceItem(
-          tween: Tween<double>(begin: 1.6, end: 1.0)
-              .chain(CurveTween(curve: Curves.easeIn)),
-          weight: 50,
-        ),
-      ]).animate(
-        CurvedAnimation(
-          parent: _animationController,
-          curve: Interval(
-            startInterval.clamp(0.0, 1.0),
-            endInterval.clamp(0.0, 1.0),
-            curve: Curves.linear,
-          ),
-        ),
+  Future<void> _initVideo() async {
+    try {
+      _controller = VideoPlayerController.networkUrl(
+        Uri.parse(_splashVideoUrl),
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
       );
-    });
+
+      await _controller!.initialize();
+      _controller!.setVolume(1.0);
+
+      // 動画終了を検知
+      _controller!.addListener(_onVideoProgress);
+
+      if (mounted) {
+        setState(() {});
+        _controller!.play();
+      }
+    } catch (e) {
+      // 動画の読み込みに失敗した場合はスキップ
+      debugPrint('Splash video failed: $e');
+      _onVideoComplete();
+    }
   }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
+  void _onVideoProgress() {
+    final controller = _controller;
+    if (controller == null || _videoFinished) return;
+
+    final position = controller.value.position;
+    final duration = controller.value.duration;
+
+    // 動画終了 or エラー
+    if (duration > Duration.zero && position >= duration) {
+      _onVideoComplete();
+    }
+  }
+
+  void _onVideoComplete() {
+    if (_videoFinished) return;
+    _videoFinished = true;
+
+    // 認証状態が既に確定していればナビゲート
+    if (_pendingAuthState != null) {
+      _handleAuthState(_pendingAuthState!);
+    }
   }
 
   Future<void> _navigateByRole(String userId) async {
@@ -98,6 +110,12 @@ class _SplashPageState extends ConsumerState<SplashPage>
   void _handleAuthState(AuthState state) {
     if (_isNavigating) return;
 
+    // 動画がまだ終わっていなければ保留
+    if (!_videoFinished) {
+      _pendingAuthState = state;
+      return;
+    }
+
     if (state.session != null) {
       _navigateByRole(state.session!.user.id);
     } else {
@@ -107,20 +125,24 @@ class _SplashPageState extends ConsumerState<SplashPage>
   }
 
   @override
+  void dispose() {
+    _controller?.removeListener(_onVideoProgress);
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // 認証状態を監視し、状態が確定したらナビゲート
+    // 認証状態を監視
     ref.listen<AsyncValue<AuthState>>(authStateProvider, (previous, next) {
       next.whenData((state) {
-        if (mounted) {
-          _handleAuthState(state);
-        }
+        if (mounted) _handleAuthState(state);
       });
     });
 
     // 初回ビルド時に現在の状態をチェック
     final authState = ref.watch(authStateProvider);
     authState.whenData((state) {
-      // 次のフレームでナビゲート（ビルド中のナビゲートを避ける）
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && !_isNavigating) {
           _handleAuthState(state);
@@ -128,61 +150,24 @@ class _SplashPageState extends ConsumerState<SplashPage>
       });
     });
 
+    final controller = _controller;
+    final isReady =
+        controller != null && controller.value.isInitialized;
+
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'NBS',
-              style: TextStyle(
-                fontSize: 56,
-                fontWeight: FontWeight.w900,
-                color: ColorPalette.primaryColor,
-                letterSpacing: 8,
+      body: isReady
+          ? SizedBox.expand(
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: controller.value.size.width,
+                  height: controller.value.size.height,
+                  child: VideoPlayer(controller),
+                ),
               ),
-            ),
-            const SizedBox(height: 48),
-            AnimatedBuilder(
-              animation: _animationController,
-              builder: (context, child) {
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(4, (index) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: Transform.scale(
-                        scale: _scaleAnimations[index].value,
-                        child: Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: ColorPalette.primaryColor.withOpacity(
-                              0.4 + (_scaleAnimations[index].value - 1.0) * 0.6,
-                            ),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Loading...',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: ColorPalette.neutral400,
-                letterSpacing: 2,
-              ),
-            ),
-          ],
-        ),
-      ),
+            )
+          : const SizedBox.expand(),
     );
   }
 }
