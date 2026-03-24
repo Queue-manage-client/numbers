@@ -3,39 +3,78 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class GeminiService {
   static GeminiService? _instance;
-  late final GenerativeModel _model;
+  GenerativeModel? _model;
 
-  static const _maxRetries = 3;
-  static const _maxHistoryLength = 50;
-  static const _systemPrompt =
+  // フォールバック値（DB取得失敗時）
+  static const _fallbackModel = 'gemini-2.5-flash';
+  static const _fallbackTemperature = 0.7;
+  static const _fallbackMaxTokens = 1024;
+  static const _fallbackMaxRetries = 3;
+  static const _fallbackMaxHistory = 50;
+  static const _fallbackPrompt =
       '''あなたは就活支援AIアシスタントです。
 ユーザーの就職活動、インターンシップ、面接対策、自己PR、企業研究などの質問に対して、
 親切で的確なアドバイスを日本語で提供してください。
 回答は簡潔で分かりやすくしてください。''';
 
-  GeminiService._() {
+  int _maxRetries = _fallbackMaxRetries;
+  int _maxHistoryLength = _fallbackMaxHistory;
+
+  GeminiService._();
+
+  static GeminiService get instance {
+    _instance ??= GeminiService._();
+    return _instance!;
+  }
+
+  /// ai_configテーブルから設定を読み込みモデルを初期化
+  Future<void> _ensureInitialized() async {
+    if (_model != null) return;
+
     final apiKey = dotenv.env['GOOGLE_AI_API_KEY'];
     if (apiKey == null || apiKey.isEmpty) {
       throw Exception('GOOGLE_AI_API_KEY is not set in .env file');
     }
 
+    // DBから設定を取得（失敗時はフォールバック値を使用）
+    String modelName = _fallbackModel;
+    String systemPrompt = _fallbackPrompt;
+    double temperature = _fallbackTemperature;
+    int maxTokens = _fallbackMaxTokens;
+
+    try {
+      final response = await Supabase.instance.client
+          .from('ai_config')
+          .select()
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+
+      if (response != null) {
+        modelName = response['model_name'] as String? ?? _fallbackModel;
+        systemPrompt = response['system_prompt'] as String? ?? _fallbackPrompt;
+        temperature = (response['temperature'] as num?)?.toDouble() ?? _fallbackTemperature;
+        maxTokens = response['max_output_tokens'] as int? ?? _fallbackMaxTokens;
+        _maxRetries = response['max_retries'] as int? ?? _fallbackMaxRetries;
+        _maxHistoryLength = response['max_history_length'] as int? ?? _fallbackMaxHistory;
+      }
+    } catch (e) {
+      debugPrint('Failed to load ai_config, using fallback: $e');
+    }
+
     _model = GenerativeModel(
-      model: 'gemini-2.5-flash',
+      model: modelName,
       apiKey: apiKey,
-      systemInstruction: Content.text(_systemPrompt),
+      systemInstruction: Content.text(systemPrompt),
       generationConfig: GenerationConfig(
-        temperature: 0.7,
-        maxOutputTokens: 1024,
+        temperature: temperature,
+        maxOutputTokens: maxTokens,
       ),
     );
-  }
-
-  static GeminiService get instance {
-    _instance ??= GeminiService._();
-    return _instance!;
   }
 
   Future<String> _sendWithRetry(ChatSession chat, Content message) async {
@@ -77,7 +116,8 @@ class GeminiService {
     List<Map<String, String>> previousMessages,
   ) async {
     try {
-      // 直近の履歴のみ使用してメモリを制限
+      await _ensureInitialized();
+
       final recentMessages = previousMessages.length > _maxHistoryLength
           ? previousMessages.sublist(previousMessages.length - _maxHistoryLength)
           : previousMessages;
@@ -89,7 +129,7 @@ class GeminiService {
           history.add(Content.model([TextPart(msg['content'] ?? '')]));
         }
       }
-      final chat = _model.startChat(history: history);
+      final chat = _model!.startChat(history: history);
       return await _sendWithRetry(chat, Content.text(userMessage));
     } catch (e) {
       debugPrint('Gemini error: $e');

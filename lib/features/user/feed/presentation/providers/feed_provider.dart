@@ -2,6 +2,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:numbers/core/providers/app_config_provider.dart';
 
 // 業種フォールバックリスト（DBから取得できない場合に使用）
 const List<String> defaultIndustries = [
@@ -161,9 +162,20 @@ final topicSectionsProvider = Provider<AsyncValue<List<TopicSection>>>((ref) {
 
       final sections = <TopicSection>[];
       final sectionNames = ref.watch(feedSectionNamesProvider).valueOrNull ?? [];
-      final topicNames = sectionNames.isNotEmpty
-          ? sectionNames
-          : ['注目企業', '急募の企業', '今週のおすすめ企業', '若手が活躍できる企業', 'あなたが見た企業'];
+      // DB設定 → feed_sections → ハードコードフォールバックの優先順位
+      List<String> fallbackNames;
+      try {
+        final configValue =
+            ref.watch(appConfigProvider('feed_section_fallback_names')).valueOrNull;
+        if (configValue is List && (configValue).isNotEmpty) {
+          fallbackNames = configValue.cast<String>();
+        } else {
+          fallbackNames = ['注目企業', '急募の企業', '今週のおすすめ企業', '若手が活躍できる企業', 'あなたが見た企業'];
+        }
+      } catch (_) {
+        fallbackNames = ['注目企業', '急募の企業', '今週のおすすめ企業', '若手が活躍できる企業', 'あなたが見た企業'];
+      }
+      final topicNames = sectionNames.isNotEmpty ? sectionNames : fallbackNames;
       final sectionSize = (videos.length / topicNames.length).ceil().clamp(2, 10);
 
       for (int i = 0; i < topicNames.length; i++) {
