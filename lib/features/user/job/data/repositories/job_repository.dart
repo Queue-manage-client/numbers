@@ -58,7 +58,7 @@ class JobRepository {
           .insert({
             'job_id': jobId,
             'user_id': userId,
-            'status': 'applied',
+            'status': 'pending',
             'message': message,
             'applied_at': DateTime.now().toIso8601String(),
           })
@@ -81,10 +81,10 @@ class JobRepository {
     try {
       await _supabase
           .from('job_applications')
-          .update({'status': 'rejected'})
+          .update({'status': 'cancelled'})
           .eq('id', applicationId)
           .eq('user_id', userId)
-          .eq('status', 'applied');
+          .eq('status', 'pending');
     } catch (e) {
       rethrow;
     }

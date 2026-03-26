@@ -66,26 +66,49 @@ class ProfileRepository {
           .from('documents')
           .upload(storagePath, file, fileOptions: const FileOptions(upsert: true));
 
-      final url = _supabase.storage
-          .from('documents')
-          .getPublicUrl(storagePath);
-
-      // プロフィールに職務経歴書URLを保存
+      // プロフィールにストレージパスを保存（署名付きURLは取得時に生成）
       await _supabase.from('profiles').update({
-        'resume_url': url,
+        'resume_url': storagePath,
         'resume_file_name': fileName,
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', userId);
 
-      return url;
+      return storagePath;
     } catch (e) {
       rethrow;
+    }
+  }
+
+  /// 職務経歴書の署名付きURLを取得（1時間有効）
+  Future<String?> getResumeSignedUrl(String storagePath) async {
+    try {
+      final result = await _supabase.storage
+          .from('documents')
+          .createSignedUrl(storagePath, 3600);
+      return result;
+    } catch (e) {
+      return null;
     }
   }
 
   /// 職務経歴書を削除
   Future<void> deleteResume(String userId) async {
     try {
+      // プロフィールからストレージパスを取得
+      final profile = await getProfile(userId);
+      final storagePath = profile?['resume_url'] as String?;
+
+      // Storage上のファイルも削除
+      if (storagePath != null && storagePath.isNotEmpty) {
+        try {
+          await _supabase.storage
+              .from('documents')
+              .remove([storagePath]);
+        } catch (_) {
+          // Storage削除失敗は致命的ではない
+        }
+      }
+
       await _supabase.from('profiles').update({
         'resume_url': null,
         'resume_file_name': null,

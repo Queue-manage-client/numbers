@@ -284,34 +284,63 @@ class _SectionManagementTab extends ConsumerWidget {
 
   void _showAddSectionDialog(BuildContext context, WidgetRef ref) {
     final titleController = TextEditingController();
+    String selectedType = 'video';
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: ColorPalette.neutral800,
-        title: Text('セクション追加', style: TextStylePalette.smTitle),
-        content: TextField(
-          controller: titleController,
-          style: TextStylePalette.normalText,
-          decoration: const InputDecoration(hintText: 'セクションタイトル（例: おすすめ企業）'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: ColorPalette.neutral800,
+          title: Text('セクション追加', style: TextStylePalette.smTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                style: TextStylePalette.normalText,
+                decoration: const InputDecoration(hintText: 'セクションタイトル（例: おすすめ企業）'),
+              ),
+              const SizedBox(height: SpacePalette.base),
+              DropdownButtonFormField<String>(
+                value: selectedType,
+                dropdownColor: ColorPalette.neutral800,
+                style: TextStylePalette.normalText,
+                decoration: const InputDecoration(
+                  labelText: 'セクションタイプ',
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'video', child: Text('動画セクション')),
+                  DropdownMenuItem(value: 'company', child: Text('企業セクション')),
+                  DropdownMenuItem(value: 'watched_history', child: Text('視聴履歴セクション')),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setDialogState(() => selectedType = value);
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('キャンセル', style: TextStyle(color: ColorPalette.neutral400)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (titleController.text.trim().isEmpty) return;
+                Navigator.pop(context);
+                await _supabase.from('feed_sections').insert({
+                  'title': titleController.text.trim(),
+                  'section_type': selectedType,
+                  'sort_order': 999,
+                });
+                ref.invalidate(adminSectionsProvider);
+              },
+              child: const Text('追加'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('キャンセル', style: TextStyle(color: ColorPalette.neutral400)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (titleController.text.trim().isEmpty) return;
-              Navigator.pop(context);
-              await _supabase.from('feed_sections').insert({
-                'title': titleController.text.trim(),
-                'sort_order': 999,
-              });
-              ref.invalidate(adminSectionsProvider);
-            },
-            child: const Text('追加'),
-          ),
-        ],
       ),
     );
   }
@@ -337,7 +366,23 @@ class _SectionCard extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(section['title'] ?? '', style: TextStylePalette.smHeader),
+                  child: Row(
+                    children: [
+                      Text(section['title'] ?? '', style: TextStylePalette.smHeader),
+                      const SizedBox(width: SpacePalette.sm),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _sectionTypeColor(section['section_type'] as String?),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          _sectionTypeLabel(section['section_type'] as String?),
+                          style: const TextStyle(fontSize: 10, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.edit, size: 20, color: ColorPalette.neutral400),
@@ -413,6 +458,24 @@ class _SectionCard extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  static String _sectionTypeLabel(String? type) {
+    switch (type) {
+      case 'company': return '企業';
+      case 'watched_history': return '視聴履歴';
+      case 'video':
+      default: return '動画';
+    }
+  }
+
+  static Color _sectionTypeColor(String? type) {
+    switch (type) {
+      case 'company': return Colors.blue;
+      case 'watched_history': return Colors.orange;
+      case 'video':
+      default: return Colors.green;
+    }
   }
 
   void _editTitle(BuildContext context, WidgetRef ref) {

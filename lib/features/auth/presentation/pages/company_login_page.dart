@@ -55,8 +55,11 @@ class CompanyLoginPage extends HookConsumerWidget {
         }
       } catch (e) {
         if (context.mounted) {
+          final message = e.toString().contains('企業アカウント')
+              ? '企業アカウントでログインしてください'
+              : 'メールアドレスまたはパスワードが正しくありません';
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('ログインエラー: $e')),
+            SnackBar(content: Text(message)),
           );
         }
       } finally {

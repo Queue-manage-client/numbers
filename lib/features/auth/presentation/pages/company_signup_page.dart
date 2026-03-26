@@ -51,6 +51,8 @@ class CompanySignupPage extends HookConsumerWidget {
         final companyPortalRepository = ref.read(companyPortalRepositoryProvider);
         final companyData = {
           'name': companyNameController.text.trim(),
+          'representative_name': representativeNameController.text.trim(),
+          'phone': phoneController.text.trim(),
           'description': '', // 後で編集可能
           'address': '',
           'industry': '',
@@ -81,7 +83,7 @@ class CompanySignupPage extends HookConsumerWidget {
       } catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('登録エラー: $e')),
+            const SnackBar(content: Text('登録に失敗しました。入力内容をご確認ください。')),
           );
         }
       } finally {
@@ -251,6 +253,9 @@ class CompanySignupPage extends HookConsumerWidget {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'パスワード（確認）を入力してください';
+                      }
+                      if (value != passwordController.text) {
+                        return 'パスワードが一致しません';
                       }
                       return null;
                     },

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import '../../data/repositories/feed_repository.dart';
 import '../providers/feed_provider.dart';
 
 class VerticalVideoFeed extends ConsumerStatefulWidget {
@@ -71,9 +73,24 @@ class _VerticalVideoFeedState extends ConsumerState<VerticalVideoFeed>
       controller.play();
     }
 
+    // 視聴履歴を記録
+    _recordView(index);
+
     // 隣接動画をプリロード & 遠いコントローラーを破棄
     _preloadAdjacentVideos(index);
     _disposeDistantControllers(index);
+  }
+
+  /// 視聴履歴を記録
+  void _recordView(int index) {
+    if (index < 0 || index >= _videos.length) return;
+    final video = _videos[index];
+    final videoId = video['id'] as String?;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (videoId != null && userId != null) {
+      final repo = FeedRepository(Supabase.instance.client);
+      repo.recordView(videoId, userId);
+    }
   }
 
   /// 現在のページ ± _preloadRange のコントローラーを事前初期化

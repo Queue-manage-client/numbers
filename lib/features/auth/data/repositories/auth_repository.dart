@@ -9,12 +9,28 @@ class AuthRepository {
     required String email,
     required String password,
     String role = 'user',
+    String? nickname,
   }) async {
     final response = await _supabase.auth.signUp(
       email: email,
       password: password,
-      data: {'role': role},
+      data: {
+        'role': role,
+        if (nickname != null && nickname.isNotEmpty) 'nickname': nickname,
+      },
     );
+
+    // サインアップ成功後にprofilesのニックネームを更新
+    if (response.user != null && nickname != null && nickname.isNotEmpty) {
+      try {
+        await _supabase.from('profiles').update({
+          'nickname': nickname,
+        }).eq('id', response.user!.id);
+      } catch (_) {
+        // プロフィール更新失敗は致命的ではない（後から編集可能）
+      }
+    }
+
     return response;
   }
 

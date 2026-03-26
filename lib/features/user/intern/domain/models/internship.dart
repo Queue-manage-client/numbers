@@ -1,5 +1,10 @@
 // intern/domain/models/internship.dart
 
+// 共通Companyモデルをre-export（既存のimportとの互換性維持）
+export 'package:numbers/core/domain/models/company.dart';
+
+import 'package:numbers/core/domain/models/company.dart';
+
 class Internship {
   final String id;
   final String companyId;
@@ -99,46 +104,4 @@ class Internship {
   }
 }
 
-class Company {
-  final String id;
-  final String name;
-  final String? description;
-  final String? address;
-  final String? industry;
-  final String? website;
-  final bool isSuspended;
-
-  Company({
-    required this.id,
-    required this.name,
-    this.description,
-    this.address,
-    this.industry,
-    this.website,
-    this.isSuspended = false,
-  });
-
-  factory Company.fromJson(Map<String, dynamic> json) {
-    return Company(
-      id: json['id'] as String,
-      name: json['name'] as String? ?? '',
-      description: json['description'] as String?,
-      address: json['address'] as String?,
-      industry: json['industry'] as String?,
-      website: json['website'] as String?,
-      isSuspended: json['is_suspended'] as bool? ?? false,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'description': description,
-      'address': address,
-      'industry': industry,
-      'website': website,
-      'is_suspended': isSuspended,
-    };
-  }
-}
+// Company クラスは core/domain/models/company.dart から re-export 済み

@@ -173,11 +173,11 @@ class _FeedPageState extends ConsumerState<FeedPage>
   }
 }
 
-// 特集タブ - トピック別に動画を横並び表示
+// 特集タブ - DB駆動のセクション表示（管理者設定を反映）
 class _FeaturedTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sectionsAsync = ref.watch(topicSectionsProvider);
+    final sectionsAsync = ref.watch(feedSectionsProvider);
     final supabase = Supabase.instance.client;
 
     return sectionsAsync.when(
@@ -186,49 +186,41 @@ class _FeaturedTab extends ConsumerWidget {
           return _buildEmptyState(context);
         }
 
+        // watched_historyを除外（最後に固定表示するため）
+        final mainSections = sections
+            .where((s) => s.sectionType != 'watched_history')
+            .toList();
+
+        // スライドショー + DB管理セクション + 視聴履歴（固定末尾）
         return ListView.builder(
           padding: EdgeInsets.zero,
-          itemCount: sections.length + 5, // slideshow + 注目企業 + 急募 + 今週のおすすめ + 若手活躍 + あなたが見た企業 - sections[0]スキップ
+          itemCount: mainSections.length + 2, // +1 slideshow, +1 watched_history
           itemBuilder: (context, index) {
             if (index == 0) {
               return const _ImageSlideshow();
             }
 
-            // 注目企業セクション
-            if (index == 1) {
-              return const _FeaturedCompaniesSection();
-            }
-
-            // 急募の企業セクション
-            if (index == 2) {
-              return const _PopularCompaniesSection();
-            }
-
-            // 今週のおすすめ企業セクション
-            if (index == 3) {
-              return const _RecommendedCompaniesSection();
-            }
-
-            // 若手が活躍できる企業セクション
-            if (index == 4) {
-              return const _YoungActiveCompaniesSection();
-            }
-
-            // あなたが見た企業セクション
-            if (index == 5) {
+            // 最後のアイテム = 視聴履歴（固定）
+            if (index == mainSections.length + 1) {
               return const _WatchedVideosSection();
             }
 
-            // 残りのセクション
-            final sectionIndex = index - 5;
-            if (sectionIndex >= sections.length) return const SizedBox.shrink();
+            final section = mainSections[index - 1];
 
-            final section = sections[sectionIndex];
-            return _TopicVideoSection(
-              title: section.title,
-              videos: section.videos,
-              supabase: supabase,
-            );
+            switch (section.sectionType) {
+              case 'company':
+                return _DynamicCompanySection(
+                  title: section.title,
+                  companies: section.companies,
+                );
+              case 'video':
+              default:
+                return _TopicVideoSection(
+                  title: section.title,
+                  videos: section.videos,
+                  supabase: supabase,
+                );
+            }
           },
         );
       },
@@ -524,7 +516,158 @@ class SlideData {
   });
 }
 
-// 注目企業セクション（DB連携）
+// 汎用企業セクション（DB駆動 - 管理者が設定したセクション名と企業を表示）
+class _DynamicCompanySection extends StatelessWidget {
+  final String title;
+  final List<Map<String, dynamic>> companies;
+
+  const _DynamicCompanySection({
+    required this.title,
+    required this.companies,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (companies.isEmpty) return const SizedBox.shrink();
+
+    final cardWidth = 120.0;
+    final cardHeight = cardWidth * 1.6;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpacePalette.base,
+            vertical: SpacePalette.sm,
+          ),
+          child: Text(
+            title,
+            style: TextStylePalette.smHeader,
+          ),
+        ),
+        SizedBox(
+          height: cardHeight,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
+            itemCount: companies.length,
+            itemBuilder: (context, index) {
+              final company = companies[index];
+              final name = company['name'] as String? ?? '';
+              final companyId = company['id'] as String?;
+              final logoUrl = company['logo_url'] as String?;
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index < companies.length - 1 ? SpacePalette.sm : 0,
+                ),
+                child: GestureDetector(
+                  onTap: () {
+                    if (companyId != null) {
+                      context.push('/companies/$companyId');
+                    }
+                  },
+                  child: Container(
+                    width: cardWidth,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(RadiusPalette.base),
+                      color: ColorPalette.neutral800,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        (logoUrl != null && logoUrl.isNotEmpty)
+                            ? Image.network(
+                                logoUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => _companyPlaceholder(name),
+                              )
+                            : _companyPlaceholder(name),
+                        Positioned(
+                          left: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.7),
+                                  Colors.transparent,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: const BorderRadius.only(
+                                bottomRight: Radius.circular(RadiusPalette.base),
+                              ),
+                            ),
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                fontFamily: 'NotoSansJP',
+                                fontSize: 32,
+                                fontVariations: const [FontVariation('wght', 900)],
+                                color: ColorPalette.primaryColor,
+                                height: 1.0,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        // 下部に企業名
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.8),
+                                ],
+                              ),
+                            ),
+                            child: Text(
+                              name,
+                              style: const TextStyle(
+                                fontFamily: 'NotoSansJP',
+                                fontSize: FontSizePalette.size12,
+                                fontVariations: [FontVariation('wght', 700)],
+                                color: Colors.white,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: SpacePalette.base),
+      ],
+    );
+  }
+}
+
+// レガシー: 注目企業セクション（フォールバック互換用として残す）
 class _FeaturedCompaniesSection extends ConsumerWidget {
   const _FeaturedCompaniesSection();
 
