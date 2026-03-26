@@ -33,14 +33,13 @@ class IndividualSignupPage extends HookConsumerWidget {
       try {
         final repository = ref.read(authRepositoryProvider);
 
-        final response = await repository.signUp(
+        await repository.signUp(
           email: emailController.text.trim(),
           password: passwordController.text,
+          nickname: nameController.text.trim(),
         );
 
         if (context.mounted) {
-          await Future.delayed(const Duration(milliseconds: 500));
-
           final user = repository.currentUser;
           if (user != null) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -57,7 +56,7 @@ class IndividualSignupPage extends HookConsumerWidget {
       } catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('登録エラー: $e')),
+            const SnackBar(content: Text('登録に失敗しました。入力内容をご確認ください。')),
           );
         }
       } finally {
@@ -182,6 +181,9 @@ class IndividualSignupPage extends HookConsumerWidget {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'パスワード（確認）を入力してください';
+                      }
+                      if (value != passwordController.text) {
+                        return 'パスワードが一致しません';
                       }
                       return null;
                     },

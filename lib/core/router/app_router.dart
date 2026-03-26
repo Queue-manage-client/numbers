@@ -85,10 +85,22 @@ const _publicPaths = <String>[
   '/privacy',
 ];
 
+// ロールキャッシュ（セッション中のDBクエリを削減）
+String? _cachedRole;
+String? _cachedUserId;
+
+void clearRoleCache() {
+  _cachedRole = null;
+  _cachedUserId = null;
+}
+
 /// GoRouterインスタンスを生成する。
 /// [authNotifier] をrefreshListenableとして渡すことで、
 /// 認証状態変更時に自動でredirectが再評価される。
 GoRouter createAppRouter(AuthNotifier authNotifier) {
+  // 認証状態変更時にキャッシュをクリア
+  authNotifier.addListener(clearRoleCache);
+
   return GoRouter(
     initialLocation: '/',
     refreshListenable: authNotifier,
@@ -106,8 +118,9 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
         return '/login';
       }
 
-      // ログイン済みユーザーが /login にアクセスした場合 → /feed へ
-      if (isLoggedIn && currentPath == '/login') {
+      // ログイン済みユーザーが認証ページにアクセスした場合 → /feed へ
+      const authOnlyPaths = ['/login', '/signup', '/signup/individual', '/signup/company', '/onboarding'];
+      if (isLoggedIn && authOnlyPaths.contains(currentPath)) {
         return '/feed';
       }
 
@@ -122,13 +135,21 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
         if (isAdminRoute || isCompanyPortalRoute) {
           try {
             final userId = supabase.auth.currentUser!.id;
-            final profile = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', userId)
-                .maybeSingle();
 
-            final role = profile?['role'] as String?;
+            // キャッシュが有効ならDBクエリをスキップ
+            String? role;
+            if (_cachedUserId == userId && _cachedRole != null) {
+              role = _cachedRole;
+            } else {
+              final profile = await supabase
+                  .from('profiles')
+                  .select('role')
+                  .eq('id', userId)
+                  .maybeSingle();
+              role = profile?['role'] as String?;
+              _cachedUserId = userId;
+              _cachedRole = role;
+            }
 
             if (isAdminRoute && role != 'admin') {
               return '/feed';
@@ -353,7 +374,9 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       ),
       GoRoute(
         path: '/applications/:id',
-        builder: (context, state) => const ApplicationDetailPage(),
+        builder: (context, state) => ApplicationDetailPage(
+          applicationId: state.pathParameters['id'] ?? '',
+        ),
       ),
       GoRoute(
         path: '/settings',

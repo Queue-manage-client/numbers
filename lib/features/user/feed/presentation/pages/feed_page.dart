@@ -185,6 +185,12 @@ class _FeaturedTab extends ConsumerWidget {
         // バナー(1) + Adminセクション + 視聴履歴(1)
         final itemCount = 1 + adminSections.length + 1;
 
+        // watched_historyを除外（最後に固定表示するため）
+        final mainSections = sections
+            .where((s) => s.sectionType != 'watched_history')
+            .toList();
+
+        // スライドショー + DB管理セクション + 視聴履歴（固定末尾）
         return ListView.builder(
           padding: EdgeInsets.zero,
           itemCount: itemCount,

@@ -84,16 +84,8 @@ class InternDetailPage extends ConsumerWidget {
                               const SizedBox(width: SpacePalette.sm),
                               Expanded(
                                 child: Text(
-                                  '1日インターン',
+                                  internship['title'] ?? 'インターン詳細',
                                   style: TextStylePalette.header,
-                                ),
-                              ),
-                              Text(
-                                'One Day Intern',
-                                style: TextStyle(
-                                  fontSize: FontSizePalette.size16,
-                                  fontStyle: FontStyle.italic,
-                                  color: ColorPalette.neutral400,
                                 ),
                               ),
                             ],
@@ -140,7 +132,7 @@ class InternDetailPage extends ConsumerWidget {
                               border: Border.all(color: ColorPalette.neutral600),
                             ),
                             child: Text(
-                              '建築・土木',
+                              company?['industry'] ?? '業種未設定',
                               style: TextStylePalette.smText,
                             ),
                           ),
@@ -156,7 +148,7 @@ class InternDetailPage extends ConsumerWidget {
                               border: Border.all(color: ColorPalette.neutral600),
                             ),
                             child: Text(
-                              '関西',
+                              internship['location'] ?? company?['address'] ?? 'エリア未設定',
                               style: TextStylePalette.smText,
                             ),
                           ),
@@ -249,15 +241,37 @@ class InternDetailPage extends ConsumerWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    _buildInfoRow(
-                                      Icons.check_circle_outline,
-                                      '1日インターン｜やりがい学生と繋がりやすい',
-                                    ),
-                                    const SizedBox(height: SpacePalette.inner),
-                                    _buildInfoRow(
-                                      Icons.check_circle_outline,
-                                      '実際の建設現場で働くプロと直接交流できる説明体験',
-                                    ),
+                                    if (internship['description'] != null && (internship['description'] as String).isNotEmpty)
+                                      Text(
+                                        internship['description'],
+                                        style: TextStylePalette.normalText,
+                                      )
+                                    else
+                                      Text(
+                                        '募集内容の詳細はお問い合わせください',
+                                        style: TextStylePalette.subText,
+                                      ),
+                                    if (internship['start_date'] != null) ...[
+                                      const SizedBox(height: SpacePalette.inner),
+                                      _buildInfoRow(
+                                        Icons.calendar_today,
+                                        '開始日: ${internship['start_date']}',
+                                      ),
+                                    ],
+                                    if (internship['end_date'] != null) ...[
+                                      const SizedBox(height: SpacePalette.sm),
+                                      _buildInfoRow(
+                                        Icons.event,
+                                        '終了日: ${internship['end_date']}',
+                                      ),
+                                    ],
+                                    if (internship['requirements'] != null) ...[
+                                      const SizedBox(height: SpacePalette.sm),
+                                      _buildInfoRow(
+                                        Icons.assignment,
+                                        '応募条件: ${internship['requirements']}',
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -299,7 +313,7 @@ class InternDetailPage extends ConsumerWidget {
         ),
         error: (error, stack) => Center(
           child: Text(
-            'エラー: $error',
+            '読み込みに失敗しました',
             style: TextStylePalette.normalText,
           ),
         ),

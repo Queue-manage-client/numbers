@@ -18,6 +18,7 @@ class LoginPage extends HookConsumerWidget {
     final passwordController = useTextEditingController();
     // ローディングフラグ
     final isLoading = useState(false);
+    final obscurePassword = useState(true);
 
     Future<void> login() async {
       if (!formKey.currentState!.validate()) return;
@@ -61,7 +62,7 @@ class LoginPage extends HookConsumerWidget {
       } catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('ログインエラー: $e')),
+            const SnackBar(content: Text('メールアドレスまたはパスワードが正しくありません')),
           );
         }
       } finally {
@@ -131,8 +132,15 @@ class LoginPage extends HookConsumerWidget {
                     controller: passwordController,
                     decoration: InputDecoration(
                       hintText: '6文字以上で入力してください',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscurePassword.value ? Icons.visibility_off : Icons.visibility,
+                          color: ColorPalette.neutral400,
+                        ),
+                        onPressed: () => obscurePassword.value = !obscurePassword.value,
+                      ),
                     ),
-                    obscureText: true,
+                    obscureText: obscurePassword.value,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'パスワードを入力してください';

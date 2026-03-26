@@ -45,7 +45,7 @@ class CompanyJobListPage extends ConsumerWidget {
               final jobId = job['id'] as String? ?? '';
               final title = job['title'] as String? ?? 'タイトルなし';
               final salary = job['salary'] as String? ?? '給与未設定';
-              final location = job['location'] as String? ?? '勤務地未設定';
+              final location = (job['location_text'] ?? job['location']) as String? ?? '勤務地未設定';
               final description = job['description'] as String? ?? '';
 
               return Card(

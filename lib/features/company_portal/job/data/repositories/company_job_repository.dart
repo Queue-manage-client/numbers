@@ -322,7 +322,7 @@ class CompanyJobRepository {
       final appResponse = await _supabase
           .from('job_applications')
           .update({
-            'status': 'accepted',
+            'status': 'approved',
             'reviewed_at': DateTime.now().toIso8601String(),
             'reviewed_by': userId,
           })
@@ -516,11 +516,8 @@ class CompanyJobRepository {
 
       for (final app in response as List) {
         final status = app['status'] as String;
-        // DB値 → 表示用キーにマッピング
-        final key = (status == 'applied') ? 'pending'
-            : (status == 'accepted') ? 'approved'
-            : status;
-        counts[key] = (counts[key] ?? 0) + 1;
+        // DB値がそのままキーに対応（統一済み）
+        counts[status] = (counts[status] ?? 0) + 1;
         counts['total'] = (counts['total'] ?? 0) + 1;
       }
 

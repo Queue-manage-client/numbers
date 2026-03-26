@@ -5,7 +5,18 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ChatRepository {
   final SupabaseClient _supabase;
 
+  // 禁止ワードリスト（本番ではDBから取得すべき）
+  static const _bannedWords = [
+    '死ね', '殺す', 'バカ', 'アホ', 'クソ',
+  ];
+
   ChatRepository(this._supabase);
+
+  /// 禁止ワードチェック
+  bool containsBannedWord(String content) {
+    final lowerContent = content.toLowerCase();
+    return _bannedWords.any((word) => lowerContent.contains(word));
+  }
 
   /// ユーザーが参加しているチャットルーム一覧を取得
   Future<List<Map<String, dynamic>>> getChatRooms(String userId) async {
@@ -51,17 +62,52 @@ class ChatRepository {
     }
   }
 
+  /// メッセージのリアルタイムストリームを取得
+  Stream<List<Map<String, dynamic>>> messagesStream(String roomId) {
+    return _supabase
+        .from('chat_messages')
+        .stream(primaryKey: ['id'])
+        .eq('room_id', roomId)
+        .order('created_at', ascending: true);
+  }
+
+  /// 既読ステータスを更新
+  Future<void> markAsRead({
+    required String roomId,
+    required String userId,
+  }) async {
+    try {
+      await _supabase.from('chat_room_members').update({
+        'last_read_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('room_id', roomId).eq('profile_id', userId);
+    } catch (_) {
+      // 既読更新失敗は致命的ではない
+    }
+  }
+
   /// メッセージを送信
   Future<void> sendMessage({
     required String roomId,
     required String userId,
     required String content,
   }) async {
+    // 入力バリデーション
+    final trimmedContent = content.trim();
+    if (trimmedContent.isEmpty) {
+      throw Exception('メッセージを入力してください');
+    }
+    if (trimmedContent.length > 2000) {
+      throw Exception('メッセージは2000文字以内にしてください');
+    }
+    if (containsBannedWord(trimmedContent)) {
+      throw Exception('不適切な表現が含まれています');
+    }
+
     try {
       await _supabase.from('chat_messages').insert({
         'room_id': roomId,
         'profile_id': userId,
-        'content': content,
+        'content': trimmedContent,
       });
 
       // チャットルームの最終更新日時を更新

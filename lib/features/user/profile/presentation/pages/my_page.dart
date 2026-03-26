@@ -162,8 +162,30 @@ class MyPage extends ConsumerWidget {
               // ログアウトカード
               GestureDetector(
                 onTap: () async {
-                  final repository = ref.read(authRepositoryProvider);
-                  await repository.signOut();
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      backgroundColor: ColorPalette.neutral800,
+                      title: Text('ログアウト', style: TextStylePalette.smTitle),
+                      content: Text('ログアウトしますか？', style: TextStylePalette.normalText),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: Text('キャンセル', style: TextStyle(color: ColorPalette.neutral400)),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                          child: const Text('ログアウト'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirmed != true) return;
+                  try {
+                    final repository = ref.read(authRepositoryProvider);
+                    await repository.signOut();
+                  } catch (_) {}
                   if (context.mounted) {
                     context.go('/login');
                   }

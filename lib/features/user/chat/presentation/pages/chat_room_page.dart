@@ -22,7 +22,8 @@ class ChatRoomPage extends HookConsumerWidget {
     final scrollController = useScrollController();
     final isSending = useState(false);
 
-    final messagesAsync = ref.watch(messagesProvider(roomId));
+    final messagesAsync = ref.watch(messagesStreamProvider(roomId));
+    final prevMessageCount = useRef(0);
     final currentUser = ref.watch(currentUserProvider);
     final currentRoute = GoRouterState.of(context).uri.path;
 
@@ -40,11 +41,10 @@ class ChatRoomPage extends HookConsumerWidget {
             );
 
         messageController.clear();
-        ref.invalidate(messagesProvider(roomId));
 
-        // スクロールを一番下へ
+        // スクロールを一番下へ（Streamが自動更新するので少し待つ）
         if (scrollController.hasClients) {
-          await Future.delayed(const Duration(milliseconds: 100));
+          await Future.delayed(const Duration(milliseconds: 200));
           scrollController.animateTo(
             scrollController.position.maxScrollExtent,
             duration: const Duration(milliseconds: 300),
@@ -56,7 +56,7 @@ class ChatRoomPage extends HookConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '送信エラー: $e',
+                'メッセージの送信に失敗しました',
                 style: TextStylePalette.normalText.copyWith(
                   color: ColorPalette.neutral0,
                 ),
@@ -113,14 +113,17 @@ class ChatRoomPage extends HookConsumerWidget {
                   );
                 }
 
-                // メッセージ送信後に自動スクロール
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (scrollController.hasClients) {
-                    scrollController.jumpTo(
-                      scrollController.position.maxScrollExtent,
-                    );
-                  }
-                });
+                // 新着メッセージ到着時のみ自動スクロール
+                if (messages.length != prevMessageCount.value) {
+                  prevMessageCount.value = messages.length;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (scrollController.hasClients) {
+                      scrollController.jumpTo(
+                        scrollController.position.maxScrollExtent,
+                      );
+                    }
+                  });
+                }
 
                 return ListView.builder(
                   controller: scrollController,
@@ -204,7 +207,7 @@ class ChatRoomPage extends HookConsumerWidget {
                     ),
                     const SizedBox(height: SpacePalette.sm),
                     Text(
-                      '$error',
+                      'メッセージの読み込みに失敗しました',
                       style: TextStylePalette.subText,
                       textAlign: TextAlign.center,
                     ),
@@ -252,6 +255,7 @@ class ChatRoomPage extends HookConsumerWidget {
                       ),
                     ),
                     maxLines: null,
+                    maxLength: 2000,
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => sendMessage(),
                   ),
@@ -291,16 +295,18 @@ class ChatRoomPage extends HookConsumerWidget {
   String _formatTime(String? timestamp) {
     if (timestamp == null) return '';
     try {
-      final dateTime = DateTime.parse(timestamp);
+      final dateTime = DateTime.parse(timestamp).toLocal();
       final now = DateTime.now();
-      final difference = now.difference(dateTime);
+      final today = DateTime(now.year, now.month, now.day);
+      final messageDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+      final timeStr = '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
 
-      if (difference.inDays == 0) {
-        return '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-      } else if (difference.inDays == 1) {
-        return '昨日 ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+      if (messageDate == today) {
+        return timeStr;
+      } else if (messageDate == today.subtract(const Duration(days: 1))) {
+        return '昨日 $timeStr';
       } else {
-        return '${dateTime.month}/${dateTime.day} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+        return '${dateTime.month}/${dateTime.day} $timeStr';
       }
     } catch (e) {
       return '';

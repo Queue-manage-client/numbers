@@ -229,8 +229,27 @@ final feedBannersProvider = FutureProvider<List<Map<String, dynamic>>>((ref) asy
   }
 });
 
-// 特集セクション取得プロバイダー（セクション + 動画）
-final feedSectionsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+// セクションモデル（動画セクション or 企業セクション）
+class FeedSection {
+  final String id;
+  final String title;
+  final String sectionType; // 'video', 'company', 'watched_history'
+  final List<Map<String, dynamic>> videos;
+  final List<Map<String, dynamic>> companies;
+  final int sortOrder;
+
+  const FeedSection({
+    required this.id,
+    required this.title,
+    this.sectionType = 'video',
+    this.videos = const [],
+    this.companies = const [],
+    this.sortOrder = 0,
+  });
+}
+
+// 特集セクション取得プロバイダー（DB駆動、管理者設定を反映）
+final feedSectionsProvider = FutureProvider<List<FeedSection>>((ref) async {
   final supabase = ref.watch(supabaseClientProvider);
   try {
     final sections = await supabase
@@ -239,43 +258,109 @@ final feedSectionsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) as
         .eq('is_active', true)
         .order('sort_order', ascending: true);
 
-    final result = <Map<String, dynamic>>[];
+    if ((sections as List).isEmpty) {
+      // DB にセクションがない場合はフォールバック（全企業を均等分割）
+      return _buildFallbackSections(ref);
+    }
+
+    final result = <FeedSection>[];
+    final allCompanies = await ref.watch(feedCompaniesProvider.future);
+
     for (final section in sections) {
       final sectionId = section['id'] as String;
-      final videosResponse = await supabase
-          .from('feed_section_videos')
-          .select('*, company_videos(*, companies(*))')
-          .eq('section_id', sectionId)
-          .order('sort_order', ascending: true);
+      final sectionType = section['section_type'] as String? ?? 'video';
 
-      final videos = <Map<String, dynamic>>[];
-      for (final sv in videosResponse) {
-        final video = Map<String, dynamic>.from(sv['company_videos'] as Map);
-        final thumbnailPath = video['thumbnail_path'] as String?;
-        if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
-          try {
-            video['thumbnail_url'] = thumbnailPath.startsWith('http')
-                ? thumbnailPath
-                : await supabase.storage
-                    .from('company-thumbnails')
-                    .createSignedUrl(thumbnailPath, 3600);
-          } catch (_) {
-            video['thumbnail_url'] = '';
+      if (sectionType == 'company') {
+        // 企業セクション: 企業データを使う（将来feed_section_companiesテーブルで紐付け可能）
+        // 現状はsort_orderに基づいてallCompaniesをスライス
+        final offset = (section['company_offset'] as int?) ?? 0;
+        final limit = (section['company_limit'] as int?) ?? 5;
+        final sliceStart = offset.clamp(0, allCompanies.length);
+        final sliceEnd = (offset + limit).clamp(0, allCompanies.length);
+        result.add(FeedSection(
+          id: sectionId,
+          title: section['title'] as String? ?? '',
+          sectionType: 'company',
+          companies: allCompanies.sublist(sliceStart, sliceEnd),
+          sortOrder: section['sort_order'] as int? ?? 0,
+        ));
+      } else if (sectionType == 'watched_history') {
+        // 視聴履歴セクション
+        result.add(FeedSection(
+          id: sectionId,
+          title: section['title'] as String? ?? 'あなたが見た企業',
+          sectionType: 'watched_history',
+          sortOrder: section['sort_order'] as int? ?? 0,
+        ));
+      } else {
+        // 動画セクション: feed_section_videosから取得
+        final videosResponse = await supabase
+            .from('feed_section_videos')
+            .select('*, company_videos(*, companies(*))')
+            .eq('section_id', sectionId)
+            .order('sort_order', ascending: true);
+
+        final videos = <Map<String, dynamic>>[];
+        for (final sv in videosResponse) {
+          final videoData = sv['company_videos'];
+          if (videoData == null) continue;
+          final video = Map<String, dynamic>.from(videoData as Map);
+          final thumbnailPath = video['thumbnail_path'] as String?;
+          if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+            try {
+              video['thumbnail_url'] = thumbnailPath.startsWith('http')
+                  ? thumbnailPath
+                  : supabase.storage
+                      .from('company-thumbnails')
+                      .getPublicUrl(thumbnailPath);
+            } catch (_) {
+              video['thumbnail_url'] = '';
+            }
           }
+          videos.add(video);
         }
-        videos.add(video);
-      }
 
-      result.add({
-        ...section,
-        'videos': videos,
-      });
+        result.add(FeedSection(
+          id: sectionId,
+          title: section['title'] as String? ?? '',
+          sectionType: 'video',
+          videos: videos,
+          sortOrder: section['sort_order'] as int? ?? 0,
+        ));
+      }
     }
     return result;
   } catch (e) {
-    return [];
+    debugPrint('Error fetching feed sections: $e');
+    return _buildFallbackSections(ref);
   }
 });
+
+// DBにセクションがない場合のフォールバック
+Future<List<FeedSection>> _buildFallbackSections(Ref ref) async {
+  try {
+    final allCompanies = await ref.watch(feedCompaniesProvider.future);
+    return [
+      FeedSection(
+        id: 'fallback_featured',
+        title: '注目企業',
+        sectionType: 'company',
+        companies: allCompanies.take(5).toList(),
+      ),
+      FeedSection(
+        id: 'fallback_popular',
+        title: '急募の企業',
+        sectionType: 'company',
+        companies: allCompanies.length > 5
+            ? allCompanies.sublist(5, (allCompanies.length).clamp(5, 10))
+            : [],
+      ),
+      // 「あなたが見た企業」はUI側で常に末尾に固定表示されるためここには含めない
+    ];
+  } catch (_) {
+    return [];
+  }
+}
 
 // companiesテーブルから企業一覧取得（フィードセクション用）
 final feedCompaniesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {

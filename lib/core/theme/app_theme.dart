@@ -223,20 +223,23 @@ class TextStylePalette {
     fontSize: FontSizePalette.size16,
     fontVariations: const [FontVariation('wght', 700)],
   );
-  // ボタン内テキスト（黒）
-  static TextStyle get buttonTextWhite => TextStyle(
+  // ボタン内テキスト（黒文字 - ゴールドボタン等で使用）
+  static TextStyle get buttonTextDark => TextStyle(
     fontFamily: _fontFamily,
     color: ColorPalette.neutral900,
     fontSize: FontSizePalette.size16,
     fontVariations: const [FontVariation('wght', 900)],
   );
-  // ボタン内テキスト（白）
-  static TextStyle get buttonTextBlack => TextStyle(
+  // ボタン内テキスト（白文字 - ダークボタン等で使用）
+  static TextStyle get buttonTextLight => TextStyle(
     fontFamily: _fontFamily,
     color: ColorPalette.neutral0,
     fontSize: FontSizePalette.size16,
     fontVariations: const [FontVariation('wght', 900)],
   );
+  // レガシー互換エイリアス
+  static TextStyle get buttonTextWhite => buttonTextDark;
+  static TextStyle get buttonTextBlack => buttonTextLight;
   // AppBar/セクションタイトル
   static TextStyle get title => TextStyle(
     fontFamily: _fontFamily,
