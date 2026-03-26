@@ -1,5 +1,8 @@
 // core/router/app_router.dart
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showcaseview/showcaseview.dart';
+import 'package:numbers/core/services/app_tour_service.dart';
 import 'package:numbers/features/onboarding/presentation/pages/splash_page.dart';
 import 'package:numbers/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:numbers/features/auth/presentation/pages/login_page.dart';
@@ -61,7 +64,6 @@ import 'package:numbers/features/admin/presentation/pages/admin_inquiry_manageme
 import 'package:numbers/features/admin/presentation/pages/admin_inquiry_detail_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_feed_management_page.dart';
 import 'package:numbers/features/company_portal/job/presentation/pages/company_job_applications_page.dart';
-import 'package:flutter/material.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/features/user/feed/presentation/pages/feature_detail_page.dart';
 import 'package:numbers/features/user/feed/presentation/pages/watch_history_page.dart';
@@ -199,9 +201,9 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       // User - Main Tabs (persistent footer)
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
-          return Scaffold(
-            body: navigationShell,
-            bottomNavigationBar: ShellFooter(navigationShell: navigationShell),
+          return ShowCaseWidget(
+            onComplete: (_, __) => AppTourService.markTourSeen(),
+            builder: (context) => _ShellWithTour(navigationShell: navigationShell),
           );
         },
         branches: [
@@ -509,4 +511,47 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       ),
     ],
   );
+}
+
+/// ShowCaseWidget内で使用するShell（初回ツアー自動開始）
+class _ShellWithTour extends StatefulWidget {
+  final StatefulNavigationShell navigationShell;
+
+  const _ShellWithTour({required this.navigationShell});
+
+  @override
+  State<_ShellWithTour> createState() => _ShellWithTourState();
+}
+
+class _ShellWithTourState extends State<_ShellWithTour> {
+  bool _tourChecked = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_tourChecked) {
+      _tourChecked = true;
+      _checkAndStartTour();
+    }
+  }
+
+  Future<void> _checkAndStartTour() async {
+    final hasSeen = await AppTourService.hasSeenTour();
+    if (!hasSeen && mounted) {
+      // フレーム描画後にツアー開始
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          AppTourService.startTour(context);
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: widget.navigationShell,
+      bottomNavigationBar: ShellFooter(navigationShell: widget.navigationShell),
+    );
+  }
 }
