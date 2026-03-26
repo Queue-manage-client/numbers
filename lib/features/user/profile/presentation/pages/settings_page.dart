@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/services/app_tour_service.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -60,6 +61,38 @@ class SettingsPage extends StatelessWidget {
                   onTap: () => context.push('/password-reset'),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: SpacePalette.base),
+
+          // ツアーカード
+          Container(
+            decoration: BoxDecoration(
+              color: ColorPalette.neutral800,
+              borderRadius: BorderRadius.circular(RadiusPalette.lg),
+              border: Border.all(color: ColorPalette.neutral600),
+            ),
+            child: ListTile(
+              leading: const Icon(
+                Icons.help_outline,
+                color: ColorPalette.neutral0,
+              ),
+              title: Text(
+                '操作ガイドを再表示',
+                style: TextStylePalette.normalText,
+              ),
+              trailing: const Icon(
+                Icons.chevron_right,
+                color: ColorPalette.neutral400,
+              ),
+              onTap: () async {
+                await AppTourService.resetTour();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('ホームに戻ると操作ガイドが表示されます')),
+                  );
+                }
+              },
             ),
           ),
           const SizedBox(height: SpacePalette.base),

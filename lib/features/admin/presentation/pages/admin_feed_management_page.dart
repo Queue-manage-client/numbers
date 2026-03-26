@@ -265,12 +265,17 @@ class _SectionManagementTab extends ConsumerWidget {
               if (sections.isEmpty) {
                 return Center(child: Text('セクションがありません', style: TextStylePalette.subText));
               }
-              return ListView.builder(
+              return ReorderableListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
                 itemCount: sections.length,
+                onReorder: (oldIndex, newIndex) => _reorderSections(ref, sections, oldIndex, newIndex),
                 itemBuilder: (context, index) {
                   final section = sections[index];
-                  return _SectionCard(section: section);
+                  return _SectionCard(
+                    key: ValueKey(section['id']),
+                    section: section,
+                    isHighlight: index == 0,
+                  );
                 },
               );
             },
@@ -280,6 +285,16 @@ class _SectionManagementTab extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _reorderSections(WidgetRef ref, List<Map<String, dynamic>> sections, int oldIndex, int newIndex) async {
+    if (newIndex > oldIndex) newIndex--;
+    final item = sections.removeAt(oldIndex);
+    sections.insert(newIndex, item);
+    for (int i = 0; i < sections.length; i++) {
+      await _supabase.from('feed_sections').update({'sort_order': i}).eq('id', sections[i]['id']);
+    }
+    ref.invalidate(adminSectionsProvider);
   }
 
   void _showAddSectionDialog(BuildContext context, WidgetRef ref) {
@@ -348,8 +363,9 @@ class _SectionManagementTab extends ConsumerWidget {
 
 class _SectionCard extends ConsumerWidget {
   final Map<String, dynamic> section;
+  final bool isHighlight;
 
-  const _SectionCard({required this.section});
+  const _SectionCard({super.key, required this.section, this.isHighlight = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -363,8 +379,39 @@ class _SectionCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (isHighlight)
+              Container(
+                margin: const EdgeInsets.only(bottom: SpacePalette.sm),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpacePalette.sm,
+                  vertical: SpacePalette.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: ColorPalette.primaryColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(RadiusPalette.mini),
+                  border: Border.all(color: ColorPalette.primaryColor),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.star, size: 14, color: ColorPalette.primaryColor),
+                    const SizedBox(width: 4),
+                    Text(
+                      '注目セクション（縦長カードで表示）',
+                      style: TextStyle(
+                        fontFamily: 'NotoSansJP',
+                        fontSize: FontSizePalette.size12,
+                        fontVariations: const [FontVariation('wght', 700)],
+                        color: ColorPalette.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             Row(
               children: [
+                Icon(Icons.drag_handle, size: 20, color: ColorPalette.neutral500),
+                const SizedBox(width: SpacePalette.sm),
                 Expanded(
                   child: Row(
                     children: [

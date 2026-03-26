@@ -1,7 +1,23 @@
 // core/widgets/app_footer.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showcaseview/showcaseview.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/services/app_tour_service.dart';
+
+const _tourTitleStyle = TextStyle(
+  fontFamily: 'NotoSansJP',
+  fontSize: 16,
+  fontVariations: [FontVariation('wght', 800)],
+  color: ColorPalette.primaryColor,
+);
+
+const _tourDescStyle = TextStyle(
+  fontFamily: 'NotoSansJP',
+  fontSize: 14,
+  fontVariations: [FontVariation('wght', 500)],
+  color: Colors.white,
+);
 
 const _activeGradient = LinearGradient(
   begin: Alignment.topCenter,
@@ -37,42 +53,87 @@ class ShellFooter extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          _buildNavItem(
-            context,
-            icon: Icons.home_outlined,
-            activeIcon: Icons.home,
-            label: 'ホーム',
-            index: 0,
-            isActive: currentIndex == 0,
+          Showcase(
+            key: AppTourKeys.homeTab,
+            title: 'ホーム',
+            description: '企業の動画フィードや特集をチェックできます。',
+            titleTextStyle: _tourTitleStyle,
+            descTextStyle: _tourDescStyle,
+            tooltipBackgroundColor: const Color(0xFF3A3A3A),
+            overlayOpacity: 0.7,
+            child: _buildNavItem(
+              context,
+              icon: Icons.home_outlined,
+              activeIcon: Icons.home,
+              label: 'ホーム',
+              index: 0,
+              isActive: currentIndex == 0,
+            ),
           ),
-          _buildNavItem(
-            context,
-            icon: Icons.search,
-            activeIcon: Icons.search,
-            label: '探す',
-            index: 1,
-            isActive: currentIndex == 1,
+          Showcase(
+            key: AppTourKeys.searchTab,
+            title: '探す',
+            description: 'マップで近くの求人やインターンを探せます。',
+            titleTextStyle: _tourTitleStyle,
+            descTextStyle: _tourDescStyle,
+            tooltipBackgroundColor: const Color(0xFF3A3A3A),
+            overlayOpacity: 0.7,
+            child: _buildNavItem(
+              context,
+              icon: Icons.search,
+              activeIcon: Icons.search,
+              label: '探す',
+              index: 1,
+              isActive: currentIndex == 1,
+            ),
           ),
-          _buildImageNavItem(
-            context,
-            imagePath: 'assets/images/ai_button.png',
-            label: 'AI',
-            index: 2,
-            isActive: currentIndex == 2,
+          Showcase(
+            key: AppTourKeys.aiTab,
+            title: 'AI相談',
+            description: 'AIに就活やインターンについて相談できます。',
+            titleTextStyle: _tourTitleStyle,
+            descTextStyle: _tourDescStyle,
+            tooltipBackgroundColor: const Color(0xFF3A3A3A),
+            overlayOpacity: 0.7,
+            child: _buildImageNavItem(
+              context,
+              imagePath: 'assets/images/ai_button.png',
+              label: 'AI',
+              index: 2,
+              isActive: currentIndex == 2,
+            ),
           ),
-          _buildNavItem(
-            context,
-            imagePath: 'assets/images/8.png',
-            label: 'チャット',
-            index: 3,
-            isActive: currentIndex == 3,
+          Showcase(
+            key: AppTourKeys.chatTab,
+            title: 'チャット',
+            description: '企業とのDMやグループチャットができます。',
+            titleTextStyle: _tourTitleStyle,
+            descTextStyle: _tourDescStyle,
+            tooltipBackgroundColor: const Color(0xFF3A3A3A),
+            overlayOpacity: 0.7,
+            child: _buildNavItem(
+              context,
+              imagePath: 'assets/images/8.png',
+              label: 'チャット',
+              index: 3,
+              isActive: currentIndex == 3,
+            ),
           ),
-          _buildNavItem(
-            context,
-            imagePath: 'assets/images/7.png',
-            label: 'インターン',
-            index: 4,
-            isActive: currentIndex == 4,
+          Showcase(
+            key: AppTourKeys.internTab,
+            title: 'インターン',
+            description: 'インターンを探して応募できます。',
+            titleTextStyle: _tourTitleStyle,
+            descTextStyle: _tourDescStyle,
+            tooltipBackgroundColor: const Color(0xFF3A3A3A),
+            overlayOpacity: 0.7,
+            child: _buildNavItem(
+              context,
+              imagePath: 'assets/images/7.png',
+              label: 'インターン',
+              index: 4,
+              isActive: currentIndex == 4,
+            ),
           ),
         ],
       ),
