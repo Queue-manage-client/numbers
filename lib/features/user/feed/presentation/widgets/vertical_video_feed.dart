@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import '../providers/feed_provider.dart';
 
@@ -15,13 +14,30 @@ class VerticalVideoFeed extends ConsumerStatefulWidget {
   ConsumerState<VerticalVideoFeed> createState() => _VerticalVideoFeedState();
 }
 
-class _VerticalVideoFeedState extends ConsumerState<VerticalVideoFeed> {
+class _VerticalVideoFeedState extends ConsumerState<VerticalVideoFeed>
+    with WidgetsBindingObserver {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
   final Map<int, VideoPlayerController> _controllers = {};
+  final Set<int> _initializing = {};
+  List<Map<String, dynamic>> _videos = [];
+  bool _initialPreloadDone = false;
+
+  /// プリロード範囲: 現在のページ ± 1
+  static const int _preloadRange = 1;
+
+  /// メモリ保持範囲: 現在のページ ± 2（それ以外は破棄）
+  static const int _cacheRange = 2;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     for (final controller in _controllers.values) {
       controller.dispose();
@@ -29,16 +45,100 @@ class _VerticalVideoFeedState extends ConsumerState<VerticalVideoFeed> {
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _controllers[_currentIndex]?.pause();
+    } else if (state == AppLifecycleState.resumed) {
+      final controller = _controllers[_currentIndex];
+      if (controller != null && controller.value.isInitialized) {
+        controller.play();
+      }
+    }
+  }
+
   void _onPageChanged(int index) {
-    // 前のページの動画を一時停止
+    // 前のページを一時停止
     _controllers[_currentIndex]?.pause();
 
     setState(() {
       _currentIndex = index;
     });
 
-    // 新しいページの動画を再生
-    _controllers[index]?.play();
+    // 新しいページを再生
+    final controller = _controllers[index];
+    if (controller != null && controller.value.isInitialized) {
+      controller.play();
+    }
+
+    // 隣接動画をプリロード & 遠いコントローラーを破棄
+    _preloadAdjacentVideos(index);
+    _disposeDistantControllers(index);
+  }
+
+  /// 現在のページ ± _preloadRange のコントローラーを事前初期化
+  void _preloadAdjacentVideos(int centerIndex) {
+    for (int offset = -_preloadRange; offset <= _preloadRange; offset++) {
+      final i = centerIndex + offset;
+      if (i >= 0 &&
+          i < _videos.length &&
+          !_controllers.containsKey(i) &&
+          !_initializing.contains(i)) {
+        _initializeController(i);
+      }
+    }
+  }
+
+  /// _cacheRange 外のコントローラーを破棄してメモリ解放
+  void _disposeDistantControllers(int centerIndex) {
+    final toRemove = _controllers.keys
+        .where((i) => (i - centerIndex).abs() > _cacheRange)
+        .toList();
+    for (final key in toRemove) {
+      _controllers[key]?.dispose();
+      _controllers.remove(key);
+    }
+  }
+
+  /// 指定インデックスの動画コントローラーを初期化
+  Future<void> _initializeController(int index) async {
+    if (_initializing.contains(index)) return;
+    _initializing.add(index);
+
+    final video = _videos[index];
+    final videoUrl = video['video_url'] as String?;
+    if (videoUrl == null || videoUrl.isEmpty) {
+      _initializing.remove(index);
+      return;
+    }
+
+    try {
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(videoUrl),
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
+      await controller.initialize();
+      controller.setLooping(true);
+
+      if (!mounted) {
+        controller.dispose();
+        _initializing.remove(index);
+        return;
+      }
+
+      _controllers[index] = controller;
+      _initializing.remove(index);
+
+      // 現在のページなら自動再生
+      if (index == _currentIndex) {
+        controller.play();
+      }
+
+      if (mounted) setState(() {});
+    } catch (e) {
+      _initializing.remove(index);
+      debugPrint('Error initializing video at index $index: $e');
+    }
   }
 
   @override
@@ -56,26 +156,28 @@ class _VerticalVideoFeedState extends ConsumerState<VerticalVideoFeed> {
           );
         }
 
+        _videos = videos;
+
+        // 初回のみプリロードをトリガー
+        if (!_initialPreloadDone) {
+          _initialPreloadDone = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _preloadAdjacentVideos(_currentIndex);
+          });
+        }
+
         return PageView.builder(
           controller: _pageController,
           scrollDirection: Axis.vertical,
-          allowImplicitScrolling: true, // 隣接ページを事前にビルド
+          allowImplicitScrolling: true,
           itemCount: videos.length,
           onPageChanged: _onPageChanged,
           itemBuilder: (context, index) {
             final video = videos[index];
             return _VerticalVideoPage(
               video: video,
+              controller: _controllers[index],
               isActive: index == _currentIndex,
-              onControllerCreated: (controller) {
-                _controllers[index] = controller;
-                if (index == _currentIndex) {
-                  controller.play();
-                }
-              },
-              onControllerDisposed: () {
-                _controllers.remove(index);
-              },
             );
           },
         );
@@ -93,17 +195,19 @@ class _VerticalVideoFeedState extends ConsumerState<VerticalVideoFeed> {
   }
 }
 
+// =============================================================================
+// 個別動画ページ（コントローラーは親から受け取る）
+// =============================================================================
+
 class _VerticalVideoPage extends StatefulWidget {
   final Map<String, dynamic> video;
+  final VideoPlayerController? controller;
   final bool isActive;
-  final Function(VideoPlayerController) onControllerCreated;
-  final VoidCallback onControllerDisposed;
 
   const _VerticalVideoPage({
     required this.video,
+    required this.controller,
     required this.isActive,
-    required this.onControllerCreated,
-    required this.onControllerDisposed,
   });
 
   @override
@@ -111,125 +215,122 @@ class _VerticalVideoPage extends StatefulWidget {
 }
 
 class _VerticalVideoPageState extends State<_VerticalVideoPage> {
-  VideoPlayerController? _controller;
-  bool _isInitialized = false;
   bool _isPlaying = false;
+  bool _isBuffering = false;
+  VoidCallback? _listener;
 
   @override
   void initState() {
     super.initState();
-    _initializeVideo();
+    _attachListener(widget.controller);
   }
 
   @override
   void didUpdateWidget(_VerticalVideoPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isActive != oldWidget.isActive) {
-      if (widget.isActive) {
-        _controller?.play();
-      } else {
-        _controller?.pause();
-      }
+    // コントローラーが変わったらリスナーを再接続
+    if (widget.controller != oldWidget.controller) {
+      _detachListener(oldWidget.controller);
+      _attachListener(widget.controller);
     }
   }
 
-  Future<void> _initializeVideo() async {
-    final videoPath = widget.video['video_path'] as String?;
-    if (videoPath == null || videoPath.isEmpty) return;
-
-    // Use pre-resolved signed URL if available, otherwise generate one
-    String videoUrl;
-    final preResolved = widget.video['video_url'] as String?;
-    if (preResolved != null && preResolved.isNotEmpty) {
-      videoUrl = preResolved;
-    } else {
-      final supabase = Supabase.instance.client;
-      try {
-        videoUrl = videoPath.startsWith('http')
-            ? videoPath
-            : await supabase.storage
-                .from('company-videos')
-                .createSignedUrl(videoPath, 3600);
-      } catch (e) {
-        debugPrint('Error creating signed URL: $e');
-        return;
-      }
-    }
-
-    try {
-      _controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
-      await _controller!.initialize();
-      _controller!.setLooping(true);
-
-      _controller!.addListener(() {
-        if (mounted) {
-          setState(() {
-            _isPlaying = _controller!.value.isPlaying;
-          });
-        }
-      });
-
-      widget.onControllerCreated(_controller!);
-
-      if (mounted) {
+  /// 再生状態・バッファリング状態の変化のみ検知するリスナーを接続
+  void _attachListener(VideoPlayerController? controller) {
+    if (controller == null) return;
+    _isPlaying = controller.value.isPlaying;
+    _isBuffering = controller.value.isBuffering;
+    _listener = () {
+      if (!mounted) return;
+      final playing = controller.value.isPlaying;
+      final buffering = controller.value.isBuffering;
+      // 状態が実際に変わった時だけsetState（毎フレーム再描画を防止）
+      if (playing != _isPlaying || buffering != _isBuffering) {
         setState(() {
-          _isInitialized = true;
+          _isPlaying = playing;
+          _isBuffering = buffering;
         });
       }
-    } catch (e) {
-      debugPrint('Error initializing video: $e');
+    };
+    controller.addListener(_listener!);
+  }
+
+  void _detachListener(VideoPlayerController? controller) {
+    if (_listener != null && controller != null) {
+      controller.removeListener(_listener!);
     }
+    _listener = null;
   }
 
   @override
   void dispose() {
-    widget.onControllerDisposed();
-    _controller?.dispose();
+    _detachListener(widget.controller);
     super.dispose();
   }
 
   void _onTapVideo() {
-    if (_controller == null) return;
-    if (_isPlaying) {
-      _controller!.pause();
+    final controller = widget.controller;
+    if (controller == null || !controller.value.isInitialized) return;
+    if (controller.value.isPlaying) {
+      controller.pause();
     } else {
-      _controller!.play();
+      controller.play();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
+    final isInitialized = controller != null && controller.value.isInitialized;
+    final thumbnailUrl = widget.video['thumbnail_url'] as String?;
+
     final company = widget.video['companies'] as Map<String, dynamic>?;
     final companyName = company?['name'] as String? ?? '不明';
     final companyId = company?['id'] as String? ?? '';
     final title = widget.video['title'] as String? ?? '';
-    final tags = (widget.video['tags'] as List<dynamic>?)?.cast<String>() ?? [];
+    final tags =
+        (widget.video['tags'] as List<dynamic>?)?.cast<String>() ?? [];
 
     return GestureDetector(
       onTap: _onTapVideo,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // 動画または読み込み中表示
+          // 動画 or サムネイル/プレースホルダー
           Container(
             color: ColorPalette.neutral900,
-            child: _isInitialized && _controller != null
+            child: isInitialized
                 ? Center(
                     child: AspectRatio(
-                      aspectRatio: _controller!.value.aspectRatio,
-                      child: VideoPlayer(_controller!),
+                      aspectRatio: controller.value.aspectRatio,
+                      child: VideoPlayer(controller),
                     ),
                   )
-                : Image.asset(
-                    'assets/images/tiktok.png',
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                  ),
+                : _buildPlaceholder(thumbnailUrl),
           ),
 
+          // バッファリング中インジケーター（再生中にバッファが追いつかない場合）
+          if (isInitialized && _isBuffering)
+            Center(
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: ColorPalette.neutral900.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                ),
+              ),
+            ),
+
           // 一時停止中のみアイコン表示
-          if (_isInitialized && !_isPlaying)
+          if (isInitialized && !_isPlaying && !_isBuffering)
             Center(
               child: Container(
                 width: 64,
@@ -319,7 +420,8 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
                               vertical: SpacePalette.xs,
                             ),
                             decoration: BoxDecoration(
-                              color: ColorPalette.neutral400.withValues(alpha: 0.3),
+                              color: ColorPalette.neutral400
+                                  .withValues(alpha: 0.3),
                               borderRadius:
                                   BorderRadius.circular(RadiusPalette.mini),
                             ),
@@ -370,6 +472,52 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
           ),
         ],
       ),
+    );
+  }
+
+  /// 動画読み込み中のプレースホルダー（サムネイル優先表示）
+  Widget _buildPlaceholder(String? thumbnailUrl) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // サムネイルがあれば表示、なければデフォルト画像
+        if (thumbnailUrl != null && thumbnailUrl.isNotEmpty)
+          Image.network(
+            thumbnailUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Image.asset(
+              'assets/images/tiktok.png',
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            ),
+          )
+        else
+          Image.asset(
+            'assets/images/tiktok.png',
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+        // ローディングインジケーター
+        Center(
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: ColorPalette.neutral900.withValues(alpha: 0.5),
+              shape: BoxShape.circle,
+            ),
+            child: const Padding(
+              padding: EdgeInsets.all(12),
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

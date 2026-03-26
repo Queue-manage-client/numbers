@@ -2,6 +2,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:numbers/core/providers/app_config_provider.dart';
 
 // 業種フォールバックリスト（DBから取得できない場合に使用）
 const List<String> defaultIndustries = [
@@ -27,20 +28,32 @@ final feedVideosProvider = FutureProvider<List<Map<String, dynamic>>>((ref) asyn
 
     final videos = List<Map<String, dynamic>>.from(response);
 
-    // 署名付きURLを事前に一括解決（各動画ページでの遅延を排除）
+    // 署名付きURLとサムネイルURLを事前に一括解決（各動画ページでの遅延を排除）
     await Future.wait(videos.map((video) async {
       final videoPath = video['video_path'] as String?;
       if (videoPath == null || videoPath.isEmpty) return;
       if (videoPath.startsWith('http')) {
         video['video_url'] = videoPath;
-        return;
+      } else {
+        try {
+          video['video_url'] = await supabase.storage
+              .from('company-videos')
+              .createSignedUrl(videoPath, 3600);
+        } catch (e) {
+          debugPrint('Error pre-resolving video URL: $e');
+        }
       }
-      try {
-        video['video_url'] = await supabase.storage
-            .from('company-videos')
-            .createSignedUrl(videoPath, 3600);
-      } catch (e) {
-        debugPrint('Error pre-resolving video URL: $e');
+
+      // サムネイルURLを事前解決（公開バケット、同期処理）
+      final thumbnailPath = video['thumbnail_path'] as String?;
+      if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+        if (thumbnailPath.startsWith('http')) {
+          video['thumbnail_url'] = thumbnailPath;
+        } else {
+          video['thumbnail_url'] = supabase.storage
+              .from('company-thumbnails')
+              .getPublicUrl(thumbnailPath);
+        }
       }
     }));
 
@@ -149,9 +162,20 @@ final topicSectionsProvider = Provider<AsyncValue<List<TopicSection>>>((ref) {
 
       final sections = <TopicSection>[];
       final sectionNames = ref.watch(feedSectionNamesProvider).valueOrNull ?? [];
-      final topicNames = sectionNames.isNotEmpty
-          ? sectionNames
-          : ['注目企業', '急募の企業', '今週のおすすめ企業', '若手が活躍できる企業', 'あなたが見た企業'];
+      // DB設定 → feed_sections → ハードコードフォールバックの優先順位
+      List<String> fallbackNames;
+      try {
+        final configValue =
+            ref.watch(appConfigProvider('feed_section_fallback_names')).valueOrNull;
+        if (configValue is List && (configValue).isNotEmpty) {
+          fallbackNames = configValue.cast<String>();
+        } else {
+          fallbackNames = ['注目企業', '急募の企業', '今週のおすすめ企業', '若手が活躍できる企業', 'あなたが見た企業'];
+        }
+      } catch (_) {
+        fallbackNames = ['注目企業', '急募の企業', '今週のおすすめ企業', '若手が活躍できる企業', 'あなたが見た企業'];
+      }
+      final topicNames = sectionNames.isNotEmpty ? sectionNames : fallbackNames;
       final sectionSize = (videos.length / topicNames.length).ceil().clamp(2, 10);
 
       for (int i = 0; i < topicNames.length; i++) {
