@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
@@ -456,7 +457,7 @@ class _SectionCard extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: SpacePalette.sm),
-            // 動画一覧
+            // 動画一覧（並び替え可能）
             videosAsync.when(
               data: (videos) {
                 return Column(
@@ -464,31 +465,17 @@ class _SectionCard extends ConsumerWidget {
                   children: [
                     Text('動画: ${videos.length}件', style: TextStylePalette.subText),
                     const SizedBox(height: SpacePalette.sm),
-                    ...videos.map((sv) {
-                      final video = sv['company_videos'] as Map<String, dynamic>?;
-                      final company = video?['companies'] as Map<String, dynamic>?;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: SpacePalette.xs),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '${company?['name'] ?? '?'} - ${video?['title'] ?? '?'}',
-                                style: TextStylePalette.smText,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.remove_circle, size: 18, color: Colors.red),
-                              onPressed: () async {
-                                await _supabase.from('feed_section_videos').delete().eq('id', sv['id']);
-                                ref.invalidate(adminSectionVideosProvider(sectionId));
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
+                    if (videos.isNotEmpty)
+                      ReorderableListView(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        onReorder: (oldIndex, newIndex) =>
+                            _reorderVideos(ref, sectionId, videos, oldIndex, newIndex),
+                        children: [
+                          for (int i = 0; i < videos.length; i++)
+                            _buildVideoItem(context, ref, sectionId, videos[i], i, isHighlight),
+                        ],
+                      ),
                   ],
                 );
               },
@@ -522,6 +509,159 @@ class _SectionCard extends ConsumerWidget {
       case 'watched_history': return Colors.orange;
       case 'video':
       default: return Colors.green;
+    }
+  }
+
+  Widget _buildVideoItem(
+    BuildContext context,
+    WidgetRef ref,
+    String sectionId,
+    Map<String, dynamic> sv,
+    int index,
+    bool isHighlight,
+  ) {
+    final video = sv['company_videos'] as Map<String, dynamic>?;
+    final company = video?['companies'] as Map<String, dynamic>?;
+    final svId = sv['id'] as String;
+    final thumbUrl = sv['thumbnail_url'] as String?;
+    final highlightThumbUrl = sv['highlight_thumbnail_url'] as String?;
+
+    return Container(
+      key: ValueKey(svId),
+      margin: const EdgeInsets.only(bottom: SpacePalette.sm),
+      padding: const EdgeInsets.all(SpacePalette.sm),
+      decoration: BoxDecoration(
+        color: ColorPalette.neutral800,
+        borderRadius: BorderRadius.circular(RadiusPalette.base),
+        border: Border.all(color: ColorPalette.neutral600),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // タイトル行
+          Row(
+            children: [
+              Icon(Icons.drag_handle, size: 18, color: ColorPalette.neutral500),
+              const SizedBox(width: SpacePalette.sm),
+              Expanded(
+                child: Text(
+                  '${company?['name'] ?? '?'} - ${video?['title'] ?? '?'}',
+                  style: TextStylePalette.smText,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.remove_circle, size: 18, color: Colors.red),
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+                onPressed: () async {
+                  await _supabase.from('feed_section_videos').delete().eq('id', svId);
+                  ref.invalidate(adminSectionVideosProvider(sectionId));
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: SpacePalette.sm),
+          // サムネイル設定行
+          Row(
+            children: [
+              if (isHighlight)
+                // 注目セクション: 縦長サムネイルのみ
+                _ThumbnailSlot(
+                  label: '縦長',
+                  url: highlightThumbUrl,
+                  width: 52,
+                  height: 80,
+                  onUpload: () => _uploadThumbnail(
+                    context, ref, sectionId, svId, 'highlight_thumbnail_url',
+                  ),
+                )
+              else
+                // 通常セクション: 横長サムネイルのみ
+                _ThumbnailSlot(
+                  label: '横長',
+                  url: thumbUrl,
+                  width: 80,
+                  height: 52,
+                  onUpload: () => _uploadThumbnail(
+                    context, ref, sectionId, svId, 'thumbnail_url',
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _reorderVideos(
+    WidgetRef ref,
+    String sectionId,
+    List<Map<String, dynamic>> videos,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    if (newIndex > oldIndex) newIndex--;
+    final item = videos.removeAt(oldIndex);
+    videos.insert(newIndex, item);
+    for (int i = 0; i < videos.length; i++) {
+      await _supabase
+          .from('feed_section_videos')
+          .update({'sort_order': i})
+          .eq('id', videos[i]['id']);
+    }
+    ref.invalidate(adminSectionVideosProvider(sectionId));
+  }
+
+  Future<void> _uploadThumbnail(
+    BuildContext context,
+    WidgetRef ref,
+    String sectionId,
+    String svId,
+    String column,
+  ) async {
+    try {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (image == null) return;
+
+      final bytes = await image.readAsBytes();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final path = '$sectionId/${timestamp}_${image.name}';
+
+      await _supabase.storage.from('section-thumbnails').uploadBinary(
+        path,
+        bytes,
+        fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+      );
+
+      final publicUrl = _supabase.storage
+          .from('section-thumbnails')
+          .getPublicUrl(path);
+
+      await _supabase
+          .from('feed_section_videos')
+          .update({column: publicUrl})
+          .eq('id', svId);
+
+      ref.invalidate(adminSectionVideosProvider(sectionId));
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('サムネイルを設定しました')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('アップロード失敗: $e')),
+        );
+      }
     }
   }
 
@@ -624,5 +764,69 @@ class _SectionCard extends ConsumerWidget {
         ),
       );
     });
+  }
+}
+
+/// サムネイルスロット（プレビュー + アップロードボタン）
+class _ThumbnailSlot extends StatelessWidget {
+  final String label;
+  final String? url;
+  final double width;
+  final double height;
+  final VoidCallback onUpload;
+
+  const _ThumbnailSlot({
+    required this.label,
+    required this.url,
+    required this.width,
+    required this.height,
+    required this.onUpload,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onUpload,
+      child: Column(
+        children: [
+          Container(
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              color: ColorPalette.neutral600,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: url != null ? ColorPalette.primaryColor : ColorPalette.neutral500,
+                width: url != null ? 1.5 : 1,
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: url != null && url!.isNotEmpty
+                ? Image.network(
+                    url!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.broken_image,
+                      size: 20,
+                      color: ColorPalette.neutral400,
+                    ),
+                  )
+                : const Icon(
+                    Icons.add_photo_alternate,
+                    size: 20,
+                    color: ColorPalette.neutral400,
+                  ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              color: ColorPalette.neutral400,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

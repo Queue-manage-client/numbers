@@ -181,16 +181,17 @@ class _FeaturedTab extends ConsumerWidget {
     final supabase = Supabase.instance.client;
 
     return adminSectionsAsync.when(
-      data: (adminSections) {
-        // バナー(1) + Adminセクション + 視聴履歴(1)
-        final itemCount = 1 + adminSections.length + 1;
-
-        // watched_historyを除外（最後に固定表示するため）
-        final mainSections = sections
+      data: (allSections) {
+        // watched_history以外のセクション
+        final mainSections = allSections
             .where((s) => s.sectionType != 'watched_history')
             .toList();
+        // watched_historyセクションがあるか
+        final hasWatchedHistory = allSections.any((s) => s.sectionType == 'watched_history');
 
-        // スライドショー + DB管理セクション + 視聴履歴（固定末尾）
+        // スライドショー(1) + メインセクション + 視聴履歴(1)
+        final itemCount = 1 + mainSections.length + (hasWatchedHistory ? 1 : 0);
+
         return ListView.builder(
           padding: EdgeInsets.zero,
           itemCount: itemCount,
@@ -201,26 +202,33 @@ class _FeaturedTab extends ConsumerWidget {
             }
 
             // Adminで作成したセクション
-            if (index <= adminSections.length) {
-              final section = adminSections[index - 1];
-              final title = section['title'] as String? ?? '';
-              final videos = (section['videos'] as List<dynamic>?)
-                      ?.cast<Map<String, dynamic>>() ??
-                  [];
-              if (videos.isEmpty) return const SizedBox.shrink();
+            if (index <= mainSections.length) {
+              final section = mainSections[index - 1];
+
+              // 企業セクション
+              if (section.sectionType == 'company') {
+                if (section.companies.isEmpty) return const SizedBox.shrink();
+                return _CompanySection(
+                  title: section.title,
+                  companies: section.companies,
+                );
+              }
+
+              // 動画セクション
+              if (section.videos.isEmpty) return const SizedBox.shrink();
 
               // 1番目のセクションは縦長カードで特別表示
               if (index == 1) {
                 return _HighlightVideoSection(
-                  title: title,
-                  videos: videos,
+                  title: section.title,
+                  videos: section.videos,
                   supabase: supabase,
                 );
               }
 
               return _TopicVideoSection(
-                title: title,
-                videos: videos,
+                title: section.title,
+                videos: section.videos,
                 supabase: supabase,
               );
             }
@@ -493,6 +501,71 @@ class SlideData {
   });
 }
 
+// 企業セクション（横スクロール、ロゴ + 企業名）
+class _CompanySection extends StatelessWidget {
+  final String title;
+  final List<Map<String, dynamic>> companies;
+
+  const _CompanySection({required this.title, required this.companies});
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.42;
+    final cardHeight = cardWidth * 0.65;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpacePalette.base,
+            vertical: SpacePalette.sm,
+          ),
+          child: Text(title, style: TextStylePalette.smHeader),
+        ),
+        SizedBox(
+          height: cardHeight,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: SpacePalette.base),
+            itemCount: companies.length,
+            itemBuilder: (context, index) {
+              final company = companies[index];
+              final companyId = company['id'] as String?;
+              final name = company['name'] as String? ?? '';
+              final logoUrl = company['logo_url'] as String?;
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index < companies.length - 1 ? SpacePalette.sm : 0,
+                ),
+                child: GestureDetector(
+                  onTap: () {
+                    if (companyId != null) context.push('/companies/$companyId');
+                  },
+                  child: Container(
+                    width: cardWidth,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(RadiusPalette.base),
+                      color: ColorPalette.neutral800,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: (logoUrl != null && logoUrl.isNotEmpty)
+                        ? Image.network(logoUrl, fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _companyPlaceholder(name))
+                        : _companyPlaceholder(name),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: SpacePalette.base),
+      ],
+    );
+  }
+}
+
 // 1番目のセクション専用 — 縦長カードで表示
 class _HighlightVideoSection extends StatelessWidget {
   final String title;
@@ -573,8 +646,12 @@ class _HighlightVideoCard extends StatelessWidget {
     final companyName = company?['name'] as String? ?? '';
     final videoTitle = video['title'] as String? ?? companyName;
 
-    // プロバイダーで事前解決済みのthumbnail_urlを優先
-    final thumbnailUrl = video['thumbnail_url'] as String?;
+    // 縦長サムネイルを優先、なければ通常サムネイル
+    final highlightThumb = video['highlight_thumbnail_url'] as String?;
+    final normalThumb = video['thumbnail_url'] as String?;
+    final thumbnailUrl = (highlightThumb != null && highlightThumb.isNotEmpty)
+        ? highlightThumb
+        : normalThumb;
 
     return GestureDetector(
       onTap: () {

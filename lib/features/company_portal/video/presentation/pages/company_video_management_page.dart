@@ -139,7 +139,7 @@ class CompanyVideoManagementPage extends ConsumerWidget {
                                     Icon(
                                       Icons.edit,
                                       size: 20,
-                                      color: ColorPalette.neutral800,
+                                      color: ColorPalette.neutral400,
                                     ),
                                     const SizedBox(width: SpacePalette.sm),
                                     Text(

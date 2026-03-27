@@ -122,7 +122,7 @@ class CompanyChatRoomListPage extends ConsumerWidget {
                   trailing: PopupMenuButton(
                     icon: Icon(
                       Icons.more_vert,
-                      color: ColorPalette.neutral800,
+                      color: ColorPalette.neutral400,
                     ),
                     itemBuilder: (context) => [
                       PopupMenuItem(
@@ -132,7 +132,7 @@ class CompanyChatRoomListPage extends ConsumerWidget {
                             Icon(
                               Icons.chat,
                               size: 20,
-                              color: ColorPalette.neutral800,
+                              color: ColorPalette.neutral400,
                             ),
                             const SizedBox(width: SpacePalette.sm),
                             Text(

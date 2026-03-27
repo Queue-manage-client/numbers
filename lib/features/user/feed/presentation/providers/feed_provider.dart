@@ -305,18 +305,34 @@ final feedSectionsProvider = FutureProvider<List<FeedSection>>((ref) async {
           final videoData = sv['company_videos'];
           if (videoData == null) continue;
           final video = Map<String, dynamic>.from(videoData as Map);
-          final thumbnailPath = video['thumbnail_path'] as String?;
-          if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
-            try {
-              video['thumbnail_url'] = thumbnailPath.startsWith('http')
-                  ? thumbnailPath
-                  : supabase.storage
-                      .from('company-thumbnails')
-                      .getPublicUrl(thumbnailPath);
-            } catch (_) {
-              video['thumbnail_url'] = '';
+
+          // セクション固有のサムネイルを優先
+          final sectionThumb = sv['thumbnail_url'] as String?;
+          final sectionHighlightThumb = sv['highlight_thumbnail_url'] as String?;
+
+          if (sectionThumb != null && sectionThumb.isNotEmpty) {
+            video['thumbnail_url'] = sectionThumb;
+          } else {
+            // フォールバック: 動画自体のサムネイル
+            final thumbnailPath = video['thumbnail_path'] as String?;
+            if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+              try {
+                video['thumbnail_url'] = thumbnailPath.startsWith('http')
+                    ? thumbnailPath
+                    : supabase.storage
+                        .from('company-thumbnails')
+                        .getPublicUrl(thumbnailPath);
+              } catch (_) {
+                video['thumbnail_url'] = '';
+              }
             }
           }
+
+          // 注目セクション用の縦長サムネイル
+          if (sectionHighlightThumb != null && sectionHighlightThumb.isNotEmpty) {
+            video['highlight_thumbnail_url'] = sectionHighlightThumb;
+          }
+
           videos.add(video);
         }
 

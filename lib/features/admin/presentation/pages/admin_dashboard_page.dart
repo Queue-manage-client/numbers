@@ -19,15 +19,15 @@ class AdminDashboardPage extends HookConsumerWidget {
         title: const Text('管理者ダッシュボード'),
         actions: [
           IconButton(
-            icon: Icon(
+            icon: const Icon(
               Icons.logout,
-              color: ColorPalette.neutral800,
+              color: ColorPalette.neutral0,
             ),
             onPressed: () async {
               final repository = ref.read(authRepositoryProvider);
               await repository.signOut();
               if (context.mounted) {
-                context.go('/admin/login');
+                context.go('/login');
               }
             },
           ),
