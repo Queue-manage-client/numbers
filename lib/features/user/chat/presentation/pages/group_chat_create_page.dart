@@ -174,7 +174,8 @@ class GroupChatCreatePage extends HookConsumerWidget {
               backgroundColor: ColorPalette.systemGreen,
             ),
           );
-          context.go('/chats/$roomId');
+          Navigator.of(context).pop(true);
+          context.push('/chats/$roomId');
         }
       } catch (e) {
         if (context.mounted) {

@@ -78,7 +78,13 @@ class ChatRoomPage extends HookConsumerWidget {
             Icons.arrow_back,
             color: ColorPalette.neutral0,
           ),
-          onPressed: () => context.go('/chats'),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              context.pop();
+            } else {
+              context.go('/chats');
+            }
+          },
         ),
         title: const Text('チャット'),
       ),

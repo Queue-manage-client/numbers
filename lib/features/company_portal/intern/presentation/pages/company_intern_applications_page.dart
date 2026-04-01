@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import 'package:numbers/features/company_portal/intern/presentation/providers/company_intern_provider.dart';
 import 'package:numbers/features/user/intern/domain/models/internship_application.dart';
@@ -26,7 +27,13 @@ class CompanyInternApplicationsPage extends ConsumerWidget {
         foregroundColor: ColorPalette.neutral0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              context.pop();
+            } else {
+              context.go('/company-portal/interns');
+            }
+          },
         ),
         title: internshipAsync.when(
           data: (intern) => Text(intern?.title ?? '申し込み一覧'),
@@ -272,6 +279,29 @@ class _ApplicationCard extends ConsumerWidget {
                       style: TextStylePalette.normalText,
                     ),
                   ],
+                ),
+              ),
+            ],
+
+            // 職務経歴書
+            if (application.userProfile?.resumeUrl != null &&
+                application.userProfile!.resumeUrl!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final url = Uri.parse(application.userProfile!.resumeUrl!);
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                },
+                icon: const Icon(Icons.description, size: 16),
+                label: Text(
+                  application.userProfile!.resumeFileName ?? '職務経歴書を表示',
+                  overflow: TextOverflow.ellipsis,
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: ColorPalette.primaryColor,
+                  side: const BorderSide(color: ColorPalette.primaryColor),
                 ),
               ),
             ],

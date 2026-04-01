@@ -42,6 +42,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   late final PageController _pageController;
+  bool _isSyncingFromTab = false;
 
   @override
   void initState() {
@@ -52,11 +53,12 @@ class _FeedPageState extends ConsumerState<FeedPage>
 
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
+        _isSyncingFromTab = true;
         _pageController.animateToPage(
           _tabController.index,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-        );
+        ).then((_) => _isSyncingFromTab = false);
       }
       ref.read(selectedHomeTabProvider.notifier).state = _tabController.index;
     });
@@ -157,7 +159,9 @@ class _FeedPageState extends ConsumerState<FeedPage>
               child: PageView(
                 controller: _pageController,
                 onPageChanged: (index) {
-                  _tabController.animateTo(index);
+                  if (!_isSyncingFromTab) {
+                    _tabController.animateTo(index);
+                  }
                 },
                 children: [
                   _FeaturedTab(),

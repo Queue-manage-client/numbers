@@ -143,7 +143,6 @@ class ApplicationManagementNotifier extends StateNotifier<AsyncValue<void>> {
     try {
       await _repository.approveApplication(applicationId);
       state = const AsyncValue.data(null);
-      _ref.invalidate(companyAllApplicationsProvider);
       _ref.invalidate(internshipApplicationsProvider(internshipId));
       _ref.invalidate(applicationCountsProvider(internshipId));
       return true;
@@ -162,7 +161,6 @@ class ApplicationManagementNotifier extends StateNotifier<AsyncValue<void>> {
     try {
       await _repository.rejectApplication(applicationId, reason: reason);
       state = const AsyncValue.data(null);
-      _ref.invalidate(companyAllApplicationsProvider);
       _ref.invalidate(internshipApplicationsProvider(internshipId));
       _ref.invalidate(applicationCountsProvider(internshipId));
       return true;

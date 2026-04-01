@@ -156,6 +156,8 @@ class UserProfile {
   final String? location;
   final String? university;
   final List<String> skills;
+  final String? resumeUrl;
+  final String? resumeFileName;
 
   UserProfile({
     required this.id,
@@ -165,6 +167,8 @@ class UserProfile {
     this.location,
     this.university,
     this.skills = const [],
+    this.resumeUrl,
+    this.resumeFileName,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -180,6 +184,8 @@ class UserProfile {
       skills: json['skills'] != null
           ? List<String>.from(json['skills'] as List)
           : [],
+      resumeUrl: json['resume_url'] as String?,
+      resumeFileName: json['resume_file_name'] as String?,
     );
   }
 }
