@@ -9,37 +9,25 @@ import 'package:numbers/features/user/chat/presentation/providers/chat_provider.
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
-/// デフォルトチャットアイコンの定義
-class DefaultChatIcon {
-  final String key;
-  final IconData icon;
-  final Color color;
-
-  const DefaultChatIcon({
-    required this.key,
-    required this.icon,
-    required this.color,
-  });
-}
-
-const List<DefaultChatIcon> defaultChatIcons = [
-  DefaultChatIcon(key: 'default_01', icon: Icons.groups, color: Color(0xFF4CAF50)),
-  DefaultChatIcon(key: 'default_02', icon: Icons.chat_bubble, color: Color(0xFF2196F3)),
-  DefaultChatIcon(key: 'default_03', icon: Icons.star, color: Color(0xFFFF9800)),
-  DefaultChatIcon(key: 'default_04', icon: Icons.favorite, color: Color(0xFFE91E63)),
-  DefaultChatIcon(key: 'default_05', icon: Icons.local_cafe, color: Color(0xFF795548)),
-  DefaultChatIcon(key: 'default_06', icon: Icons.music_note, color: Color(0xFF9C27B0)),
-  DefaultChatIcon(key: 'default_07', icon: Icons.sports_soccer, color: Color(0xFF00BCD4)),
-  DefaultChatIcon(key: 'default_08', icon: Icons.school, color: Color(0xFF607D8B)),
+/// デフォルトチャットアイコンのアセットパス一覧
+const List<String> defaultChatIconAssets = [
+  'assets/images/chat11.png',
+  'assets/images/chat12.png',
+  'assets/images/chat13.png',
+  'assets/images/chat14.png',
+  'assets/images/chat15.png',
+  'assets/images/chat16.png',
+  'assets/images/chat17.png',
+  'assets/images/chat18.png',
+  'assets/images/chat19.png',
+  'assets/images/chat20.png',
 ];
 
-/// デフォルトアイコンキーからDefaultChatIconを取得するヘルパー
-DefaultChatIcon? getDefaultChatIcon(String key) {
-  try {
-    return defaultChatIcons.firstWhere((icon) => icon.key == key);
-  } catch (_) {
-    return null;
-  }
+/// デフォルトアイコンキー（chat11～chat20）からアセットパスを取得
+String? getDefaultChatIconAsset(String key) {
+  final path = 'assets/images/$key.png';
+  if (defaultChatIconAssets.contains(path)) return path;
+  return null;
 }
 
 /// アイコンURLに基づいてチャットアイコンWidgetを生成するヘルパー
@@ -51,15 +39,22 @@ Widget buildChatIconWidget(String? iconUrl, {double radius = 20}) {
       child: Icon(Icons.group, color: ColorPalette.neutral0, size: radius),
     );
   }
+  // デフォルトアセット画像（chat11～chat20）
+  final assetPath = getDefaultChatIconAsset(iconUrl);
+  if (assetPath != null) {
+    return CircleAvatar(
+      radius: radius,
+      backgroundImage: AssetImage(assetPath),
+      backgroundColor: ColorPalette.neutral600,
+    );
+  }
+  // 旧形式のdefault_XX（後方互換）
   if (iconUrl.startsWith('default_')) {
-    final defaultIcon = getDefaultChatIcon(iconUrl);
-    if (defaultIcon != null) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: defaultIcon.color,
-        child: Icon(defaultIcon.icon, color: Colors.white, size: radius),
-      );
-    }
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: ColorPalette.primaryColor,
+      child: Icon(Icons.group, color: ColorPalette.neutral0, size: radius),
+    );
   }
   // カスタムアップロード画像（ネットワークURL）
   return CircleAvatar(
@@ -79,7 +74,7 @@ class GroupChatCreatePage extends HookConsumerWidget {
     final nameController = useTextEditingController();
     final descriptionController = useTextEditingController();
     final isLoading = useState(false);
-    final selectedDefaultIcon = useState<String>('default_01');
+    final selectedDefaultIcon = useState<String>('chat11');
     final customIconBytes = useState<Uint8List?>(null);
     final customIconFileName = useState<String?>(null);
 
@@ -281,19 +276,21 @@ class GroupChatCreatePage extends HookConsumerWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
+                  crossAxisCount: 5,
                   mainAxisSpacing: SpacePalette.sm,
                   crossAxisSpacing: SpacePalette.sm,
                 ),
-                itemCount: defaultChatIcons.length,
+                itemCount: defaultChatIconAssets.length,
                 itemBuilder: (context, index) {
-                  final iconDef = defaultChatIcons[index];
+                  final assetPath = defaultChatIconAssets[index];
+                  // "assets/images/chat11.png" → "chat11"
+                  final key = assetPath.split('/').last.replaceAll('.png', '');
                   final isSelected = customIconBytes.value == null &&
-                      selectedDefaultIcon.value == iconDef.key;
+                      selectedDefaultIcon.value == key;
 
                   return GestureDetector(
                     onTap: () {
-                      selectedDefaultIcon.value = iconDef.key;
+                      selectedDefaultIcon.value = key;
                       customIconBytes.value = null;
                       customIconFileName.value = null;
                     },
@@ -307,14 +304,10 @@ class GroupChatCreatePage extends HookConsumerWidget {
                               )
                             : null,
                       ),
-                      padding: const EdgeInsets.all(4),
+                      padding: const EdgeInsets.all(2),
                       child: CircleAvatar(
-                        backgroundColor: iconDef.color,
-                        child: Icon(
-                          iconDef.icon,
-                          color: Colors.white,
-                          size: 24,
-                        ),
+                        backgroundImage: AssetImage(assetPath),
+                        backgroundColor: ColorPalette.neutral600,
                       ),
                     ),
                   );
