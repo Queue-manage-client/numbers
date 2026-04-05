@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
-import 'package:numbers/core/providers/app_config_provider.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
@@ -21,36 +20,15 @@ class _SplashPageState extends ConsumerState<SplashPage> {
   bool _videoFinished = false;
   AuthState? _pendingAuthState;
 
-  /// DB取得失敗時のフォールバックURL
-  static const _fallbackSplashUrl =
-      'https://fmwvqsrxauxkwtziakrd.supabase.co/storage/v1/object/public/app-assets/splash_video.mp4';
-
   @override
   void initState() {
     super.initState();
-    _loadAndInitVideo();
+    _initVideo();
   }
 
-  Future<void> _loadAndInitVideo() async {
-    // app_configからスプラッシュ動画URLを取得
-    String videoUrl = _fallbackSplashUrl;
+  Future<void> _initVideo() async {
     try {
-      final configValue =
-          await ref.read(appConfigProvider('splash_video_url').future);
-      if (configValue is String && configValue.isNotEmpty) {
-        videoUrl = configValue;
-      }
-    } catch (_) {}
-
-    await _initVideo(videoUrl);
-  }
-
-  Future<void> _initVideo(String videoUrl) async {
-    try {
-      _controller = VideoPlayerController.networkUrl(
-        Uri.parse(videoUrl),
-        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
-      );
+      _controller = VideoPlayerController.asset('assets/videos/op.mp4');
 
       await _controller!.initialize();
       _controller!.setVolume(1.0);
