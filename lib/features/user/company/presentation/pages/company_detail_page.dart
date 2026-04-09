@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:numbers/features/user/company/presentation/providers/company_provider.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/core/theme/app_theme.dart';
@@ -70,6 +71,9 @@ class CompanyDetailPage extends ConsumerWidget {
                       _buildSection(context, '求人', '/company/$companyId/jobs'),
                       _buildSection(
                           context, 'インターン', '/company/$companyId/interns'),
+
+                      // HP・SNSリンク
+                      _buildLinkRow(context, company),
                     ],
                   ),
                 ),
@@ -92,6 +96,31 @@ class CompanyDetailPage extends ConsumerWidget {
     );
   }
 
+  Widget _buildLinkRow(BuildContext context, Map<String, dynamic> company) {
+    final website = company['website'] as String?;
+    final snsUrl = company['sns_url'] as String?;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _LinkButton(
+            icon: Icons.language,
+            label: 'HP',
+            url: website,
+          ),
+        ),
+        const SizedBox(width: SpacePalette.sm),
+        Expanded(
+          child: _LinkButton(
+            icon: Icons.share,
+            label: 'SNS',
+            url: snsUrl,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildSection(BuildContext context, String title, String route) {
     return Container(
       margin: const EdgeInsets.only(bottom: SpacePalette.base),
@@ -110,6 +139,50 @@ class CompanyDetailPage extends ConsumerWidget {
           color: ColorPalette.neutral400,
         ),
         onTap: () => context.push(route),
+      ),
+    );
+  }
+}
+
+class _LinkButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? url;
+
+  const _LinkButton({
+    required this.icon,
+    required this.label,
+    required this.url,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasUrl = url != null && url!.isNotEmpty;
+
+    return OutlinedButton.icon(
+      onPressed: () async {
+        if (!hasUrl) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$labelが設定されていません')),
+          );
+          return;
+        }
+        final uri = Uri.parse(url!.startsWith('http') ? url! : 'https://$url');
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: hasUrl ? ColorPalette.primaryColor : ColorPalette.neutral400,
+        side: BorderSide(
+          color: hasUrl ? ColorPalette.primaryColor : ColorPalette.neutral600,
+        ),
+        padding: const EdgeInsets.symmetric(
+          vertical: SpacePalette.sm,
+          horizontal: SpacePalette.base,
+        ),
       ),
     );
   }

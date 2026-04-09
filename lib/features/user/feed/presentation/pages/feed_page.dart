@@ -149,7 +149,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
                 tabs: const [
                   Tab(text: '特集'),
                   Tab(text: 'トップ'),
-                  Tab(text: 'その他'),
+                  Tab(text: 'アカウント'),
                 ],
               ),
             ),
@@ -1060,9 +1060,8 @@ class _OthersTab extends ConsumerWidget {
         return ListView(
           padding: const EdgeInsets.all(SpacePalette.base),
           children: [
-            // プロフィールカード
+            // プロフィール + メニューカード
             Container(
-              padding: const EdgeInsets.all(SpacePalette.base),
               decoration: BoxDecoration(
                 color: ColorPalette.neutral800,
                 borderRadius: BorderRadius.circular(RadiusPalette.lg),
@@ -1071,43 +1070,70 @@ class _OthersTab extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'プロフィール',
-                        style: TextStylePalette.smHeader,
-                      ),
-                      GestureDetector(
-                        onTap: () => context.push('/profile/edit'),
-                        child: const Icon(
-                          Icons.edit,
-                          color: ColorPalette.neutral0,
-                          size: 20,
+                  Padding(
+                    padding: const EdgeInsets.all(SpacePalette.base),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'プロフィール',
+                              style: TextStylePalette.smHeader,
+                            ),
+                            GestureDetector(
+                              onTap: () => context.push('/profile/edit'),
+                              child: const Icon(
+                                Icons.edit,
+                                color: ColorPalette.neutral0,
+                                size: 20,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: SpacePalette.base),
+                        _buildInfoRow('メール', user?.email ?? '未設定'),
+                        _buildInfoRow('ニックネーム', profile?['nickname'] ?? '未設定'),
+                        _buildInfoRow('性別', _getGenderText(profile?['gender'])),
+                        _buildInfoRow('学歴', profile?['university'] ?? '未設定'),
+                        _buildInfoRow('所在地', profile?['location'] ?? '未設定'),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: SpacePalette.base),
-                  _buildInfoRow('メール', user?.email ?? '未設定'),
-                  _buildInfoRow('ニックネーム', profile?['nickname'] ?? '未設定'),
-                  _buildInfoRow('性別', _getGenderText(profile?['gender'])),
-                  _buildInfoRow('大学', profile?['university'] ?? '未設定'),
-                  _buildInfoRow('所在地', profile?['location'] ?? '未設定'),
-                ],
-              ),
-            ),
-            const SizedBox(height: SpacePalette.base),
-
-            // メニューカード
-            Container(
-              decoration: BoxDecoration(
-                color: ColorPalette.neutral800,
-                borderRadius: BorderRadius.circular(RadiusPalette.lg),
-                border: Border.all(color: ColorPalette.neutral600),
-              ),
-              child: Column(
-                children: [
+                  Divider(height: 1, color: ColorPalette.neutral600),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.description,
+                      color: ColorPalette.neutral0,
+                    ),
+                    title: Text(
+                      '職務経歴書',
+                      style: TextStylePalette.normalText,
+                    ),
+                    subtitle: Text(
+                      profile?['resume_file_name'] as String? ?? '未登録',
+                      style: TextStylePalette.smSubText,
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: ColorPalette.neutral400,
+                    ),
+                    onTap: () {
+                      final resumeUrl = profile?['resume_url'] as String?;
+                      if (resumeUrl != null && resumeUrl.isNotEmpty) {
+                        context.push('/resume');
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('職務経歴書が登録されていません。プロフィール編集から登録してください。')),
+                        );
+                      }
+                    },
+                  ),
+                  Divider(
+                    height: 1,
+                    color: ColorPalette.neutral600,
+                  ),
                   ListTile(
                     leading: const Icon(
                       Icons.history,

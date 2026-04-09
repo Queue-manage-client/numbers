@@ -17,6 +17,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
     final addressController = useTextEditingController();
     final industryController = useTextEditingController();
     final websiteController = useTextEditingController();
+    final snsController = useTextEditingController();
     final isLoading = useState(false);
     final isDataLoaded = useState(false);
 
@@ -32,6 +33,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
           addressController.text = companyInfo['address'] ?? '';
           industryController.text = companyInfo['industry'] ?? '';
           websiteController.text = companyInfo['website'] ?? '';
+          snsController.text = companyInfo['sns_url'] ?? '';
           isDataLoaded.value = true;
         }
       });
@@ -66,6 +68,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
           'address': addressController.text.trim(),
           'industry': industryController.text.trim(),
           'website': websiteController.text.trim(),
+          'sns_url': snsController.text.trim(),
         };
 
         await ref.read(companyPortalRepositoryProvider).updateCompany(companyId, updateData);
@@ -110,6 +113,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
       addressController,
       industryController,
       websiteController,
+      snsController,
     ]);
 
     return Scaffold(
@@ -267,6 +271,23 @@ class CompanyProfileEditPage extends HookConsumerWidget {
                     style: TextStylePalette.normalText,
                     decoration: InputDecoration(
                       hintText: 'https://example.com',
+                      hintStyle: TextStylePalette.hintText,
+                    ),
+                    keyboardType: TextInputType.url,
+                  ),
+                  const SizedBox(height: SpacePalette.base),
+
+                  // SNS
+                  Text(
+                    'SNS',
+                    style: TextStylePalette.smTitle,
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  TextFormField(
+                    controller: snsController,
+                    style: TextStylePalette.normalText,
+                    decoration: InputDecoration(
+                      hintText: 'https://twitter.com/example',
                       hintStyle: TextStylePalette.hintText,
                     ),
                     keyboardType: TextInputType.url,

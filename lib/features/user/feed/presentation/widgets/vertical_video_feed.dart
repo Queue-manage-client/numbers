@@ -304,6 +304,7 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
     final company = widget.video['companies'] as Map<String, dynamic>?;
     final companyName = company?['name'] as String? ?? '不明';
     final companyId = company?['id'] as String? ?? '';
+    final companyLogoUrl = company?['logo_url'] as String?;
     final title = widget.video['title'] as String? ?? '';
     final tags =
         (widget.video['tags'] as List<dynamic>?)?.cast<String>() ?? [];
@@ -396,11 +397,18 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
                       },
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.business,
-                            color: ColorPalette.primaryColor,
-                            size: 16,
-                          ),
+                          if (companyLogoUrl != null && companyLogoUrl.isNotEmpty)
+                            CircleAvatar(
+                              radius: 10,
+                              backgroundImage: NetworkImage(companyLogoUrl),
+                              backgroundColor: ColorPalette.neutral600,
+                            )
+                          else
+                            const Icon(
+                              Icons.business,
+                              color: ColorPalette.primaryColor,
+                              size: 16,
+                            ),
                           const SizedBox(width: SpacePalette.xs),
                           Text(
                             companyName,
@@ -466,6 +474,7 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
               children: [
                 _ActionButton(
                   icon: Icons.business,
+                  imageUrl: companyLogoUrl,
                   label: '企業',
                   onTap: () {
                     if (companyId.isNotEmpty) {
@@ -541,11 +550,13 @@ class _VerticalVideoPageState extends State<_VerticalVideoPage> {
 
 class _ActionButton extends StatelessWidget {
   final IconData icon;
+  final String? imageUrl;
   final String label;
   final VoidCallback onTap;
 
   const _ActionButton({
     required this.icon,
+    this.imageUrl,
     required this.label,
     required this.onTap,
   });
@@ -556,19 +567,26 @@ class _ActionButton extends StatelessWidget {
       onTap: onTap,
       child: Column(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: ColorPalette.neutral900.withValues(alpha: 0.5),
-              shape: BoxShape.circle,
+          if (imageUrl != null && imageUrl!.isNotEmpty)
+            CircleAvatar(
+              radius: 24,
+              backgroundImage: NetworkImage(imageUrl!),
+              backgroundColor: ColorPalette.neutral600,
+            )
+          else
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: ColorPalette.neutral900.withValues(alpha: 0.5),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: ColorPalette.neutral0,
+                size: 24,
+              ),
             ),
-            child: Icon(
-              icon,
-              color: ColorPalette.neutral0,
-              size: 24,
-            ),
-          ),
           const SizedBox(height: 4),
           Text(
             label,

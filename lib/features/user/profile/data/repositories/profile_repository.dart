@@ -60,7 +60,11 @@ class ProfileRepository {
   }) async {
     try {
       final file = File(filePath);
-      final storagePath = 'resumes/$userId/$fileName';
+      // ファイル名に日本語や特殊文字が含まれるとStorageがエラーになるため、
+      // タイムスタンプベースの安全なパスを生成し、元のファイル名はDB側に保存
+      final ext = fileName.contains('.') ? fileName.substring(fileName.lastIndexOf('.')) : '.pdf';
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final storagePath = 'resumes/$userId/resume_$timestamp$ext';
 
       await _supabase.storage
           .from('documents')

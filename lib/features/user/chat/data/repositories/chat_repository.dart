@@ -23,7 +23,7 @@ class ChatRepository {
     try {
       final response = await _supabase
           .from('chat_room_members')
-          .select('room_id, chat_rooms(*)')
+          .select('room_id, chat_rooms(*, companies(*))')
           .eq('profile_id', userId);
 
       return List<Map<String, dynamic>>.from(response);

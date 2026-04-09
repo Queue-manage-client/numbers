@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import 'package:numbers/features/company_portal/intern/presentation/providers/company_intern_provider.dart';
 import 'package:numbers/features/user/intern/domain/models/internship_application.dart';
@@ -289,9 +290,13 @@ class _ApplicationCard extends ConsumerWidget {
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: () async {
-                  final url = Uri.parse(application.userProfile!.resumeUrl!);
-                  if (await canLaunchUrl(url)) {
-                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  final supabase = Supabase.instance.client;
+                  final publicUrl = supabase.storage
+                      .from('documents')
+                      .getPublicUrl(application.userProfile!.resumeUrl!);
+                  final uri = Uri.parse(publicUrl);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
                   }
                 },
                 icon: const Icon(Icons.description, size: 16),

@@ -29,6 +29,7 @@ import 'package:numbers/features/user/chat/presentation/pages/group_chat_create_
 import 'package:numbers/features/user/ai_chat/presentation/pages/ai_chat_page.dart';
 import 'package:numbers/features/user/profile/presentation/pages/my_page.dart';
 import 'package:numbers/features/user/profile/presentation/pages/profile_edit_page.dart';
+import 'package:numbers/features/user/profile/presentation/pages/resume_view_page.dart';
 import 'package:numbers/features/user/profile/presentation/pages/application_history_page.dart';
 import 'package:numbers/features/user/profile/presentation/pages/application_detail_page.dart';
 import 'package:numbers/features/user/profile/presentation/pages/settings_page.dart';
@@ -367,6 +368,10 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       GoRoute(
         path: '/profile/edit',
         builder: (context, state) => const ProfileEditPage(),
+      ),
+      GoRoute(
+        path: '/resume',
+        builder: (context, state) => const ResumeViewPage(),
       ),
       GoRoute(
         path: '/applications',

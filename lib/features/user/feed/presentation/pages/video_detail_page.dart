@@ -374,6 +374,7 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage>
     final title = _videoData?['title'] as String? ?? '無題';
     final description = _videoData?['description'] as String? ?? '';
     final companyName = _companyData?['name'] as String? ?? '';
+    final companyLogoUrl = _companyData?['logo_url'] as String?;
     final tags = (_videoData?['tags'] as List<dynamic>?)?.cast<String>() ?? [];
 
     return Column(
@@ -555,11 +556,18 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage>
                     },
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.business,
-                          size: 16,
-                          color: ColorPalette.neutral400,
-                        ),
+                        if (companyLogoUrl != null && companyLogoUrl.isNotEmpty)
+                          CircleAvatar(
+                            radius: 10,
+                            backgroundImage: NetworkImage(companyLogoUrl),
+                            backgroundColor: ColorPalette.neutral600,
+                          )
+                        else
+                          Icon(
+                            Icons.business,
+                            size: 16,
+                            color: ColorPalette.neutral400,
+                          ),
                         const SizedBox(width: SpacePalette.xs),
                         Text(
                           companyName,

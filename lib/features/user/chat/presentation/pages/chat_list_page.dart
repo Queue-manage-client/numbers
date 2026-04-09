@@ -27,7 +27,7 @@ class ChatListPage extends HookConsumerWidget {
             dividerHeight: 0.5,
             tabs: const [
               Tab(text: 'グループ'),
-              Tab(text: 'DM'),
+              Tab(text: '企業DM'),
             ],
           ),
         ),
@@ -303,6 +303,8 @@ class ChatListPage extends HookConsumerWidget {
 
             final roomId = room['id'] as String;
             final roomName = room['name'] as String? ?? 'チャット';
+            final company = room['companies'] as Map<String, dynamic>?;
+            final logoUrl = company?['logo_url'] as String?;
 
             return Card(
               margin: const EdgeInsets.only(bottom: SpacePalette.sm),
@@ -317,13 +319,18 @@ class ChatListPage extends HookConsumerWidget {
                       width: 1.8,
                     ),
                   ),
-                  child: CircleAvatar(
-                    backgroundColor: ColorPalette.primaryColor,
-                    child: Icon(
-                      Icons.business,
-                      color: ColorPalette.neutral0,
-                    ),
-                  ),
+                  child: (logoUrl != null && logoUrl.isNotEmpty)
+                      ? CircleAvatar(
+                          backgroundImage: NetworkImage(logoUrl),
+                          backgroundColor: ColorPalette.neutral600,
+                        )
+                      : CircleAvatar(
+                          backgroundColor: ColorPalette.primaryColor,
+                          child: Icon(
+                            Icons.business,
+                            color: ColorPalette.neutral0,
+                          ),
+                        ),
                 ),
                 title: Text(
                   roomName,
