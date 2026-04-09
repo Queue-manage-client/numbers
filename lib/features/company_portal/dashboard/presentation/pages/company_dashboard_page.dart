@@ -60,6 +60,7 @@ class CompanyDashboardPage extends HookConsumerWidget {
                           icon: Icons.video_library,
                           title: '動画',
                           count: '${stats['videos'] ?? 0}',
+                          onTap: () => context.go('/company-portal/videos'),
                         ),
                       ),
                       const SizedBox(width: SpacePalette.base),
@@ -68,6 +69,7 @@ class CompanyDashboardPage extends HookConsumerWidget {
                           icon: Icons.work,
                           title: '求人',
                           count: '${stats['jobs'] ?? 0}',
+                          onTap: () => context.go('/company-portal/jobs'),
                         ),
                       ),
                     ],
@@ -80,6 +82,7 @@ class CompanyDashboardPage extends HookConsumerWidget {
                           icon: Icons.school,
                           title: 'インターン',
                           count: '${stats['internships'] ?? 0}',
+                          onTap: () => context.go('/company-portal/interns'),
                         ),
                       ),
                       const SizedBox(width: SpacePalette.base),
@@ -88,6 +91,7 @@ class CompanyDashboardPage extends HookConsumerWidget {
                           icon: Icons.chat,
                           title: 'チャット',
                           count: '${stats['chats'] ?? 0}',
+                          onTap: () => context.go('/company-portal/chats'),
                         ),
                       ),
                     ],
@@ -155,6 +159,14 @@ class CompanyDashboardPage extends HookConsumerWidget {
               description: '企業プロフィールの編集',
               onTap: () => context.go('/company-portal/profile/edit'),
             ),
+            const SizedBox(height: SpacePalette.sm),
+
+            _MenuCard(
+              icon: Icons.description,
+              title: '利用規約・契約条項',
+              description: '法人向け利用規約と契約条項の確認',
+              onTap: () => context.go('/company-portal/terms'),
+            ),
           ],
         ),
       ),
@@ -166,16 +178,21 @@ class _StatCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String count;
+  final VoidCallback? onTap;
 
   const _StatCard({
     required this.icon,
     required this.title,
     required this.count,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(RadiusPalette.lg),
       child: Padding(
         padding: const EdgeInsets.all(SpacePalette.base),
         child: Column(
@@ -199,6 +216,7 @@ class _StatCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

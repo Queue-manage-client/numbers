@@ -187,7 +187,7 @@ class MyPage extends ConsumerWidget {
                     await repository.signOut();
                   } catch (_) {}
                   if (context.mounted) {
-                    context.go('/login');
+                    context.go('/signup');
                   }
                 },
                 child: Container(

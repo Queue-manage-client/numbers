@@ -1,81 +1,60 @@
 // profile/presentation/pages/terms_of_service_page.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:numbers/core/theme/app_theme.dart';
-import 'package:numbers/core/providers/app_config_provider.dart';
 
-class TermsOfServicePage extends ConsumerWidget {
+class TermsOfServicePage extends StatelessWidget {
   const TermsOfServicePage({super.key});
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final docAsync = ref.watch(legalDocumentProvider('terms_of_service'));
+  static const _sections = [
+    ('第1条（適用）', '本利用規約（以下「本規約」といいます。）は、NuMBerS株式会社（以下「当社」といいます。）が提供するアプリケーション、ウェブサイトその他関連する一切のサービス「NBS~New Business Swipe~」（以下「本サービス」といいます。）を、求職者、転職希望者、インターン希望者、アルバイト希望者その他本サービスを利用する個人（以下「利用者」といいます。）が利用するにあたり適用されます。\n利用者は、本規約および当社が別途定めるプライバシーポリシーに同意のうえ、本サービスを利用するものとします。\n当社が本サービス内又は当社ウェブサイト上に掲載するガイドライン、ルール、注意事項、ヘルプ、個別規定その他の定めは、本規約の一部を構成するものとします。'),
+    ('第2条（本サービスの内容）', '本サービスは、主として次の機能を提供します。\n(1) 企業情報、求人情報、募集情報、インターン情報、アルバイト情報その他関連情報の掲載、閲覧、検索機能\n(2) TikTokのようなスワイプ形式による企業情報等の閲覧機能\n(3) 地図機能を利用した近隣企業、募集情報等の表示機能\n(4) AIを活用した企業、募集情報、ビジネス関連情報の提案機能\n(5) ビジネス関連情報の配信機能\n(6) 企業とのダイレクトメッセージ機能\n(7) チャット機能\n(8) インターン又はアルバイトを探すための検索機能\n(9) その他当社が適宜追加又は提供する機能'),
+    ('第3条（利用登録）', '利用者は、当社所定の方法により、本サービスの利用登録を申請するものとします。\n利用者は、登録にあたり、真実、正確かつ最新の情報を入力しなければなりません。'),
+    ('第4条（アカウント管理）', '利用者は、自己の責任において、本サービスに関するアカウント情報、パスワードその他認証情報を適切に管理するものとします。\n利用者は、アカウントを第三者に譲渡、貸与、売買、共有その他処分してはなりません。'),
+    ('第5条（利用環境）', '本サービスの利用に必要なスマートフォン、タブレット、パソコン、通信回線、ソフトウェアその他の利用環境は、利用者の費用と責任において準備するものとします。'),
+    ('第6条（利用者による応募・連絡等）', '利用者は、本サービス上で表示される情報を、自らの責任で確認、比較及び判断するものとします。\n利用者は、企業への応募、問い合わせ、DM送信、チャット参加、面談申込みその他の行為を、自己の判断と責任において行うものとします。'),
+    ('第7条（AI機能）', 'AIによる提案は参考情報にとどまるものであり、当社は、その正確性、完全性、最新性、適法性、有用性、特定目的への適合性又は成果を保証しません。'),
+    ('第8条（位置情報及び地図機能）', '当社は、地図上での企業表示、近隣企業の検索、地域別の提案その他本サービスの提供のため、利用者の同意に基づき位置情報を取得することがあります。'),
+    ('第9条（DM・チャット機能）', '利用者は、DM又はチャットにおいて、法令又は公序良俗に違反する内容、誹謗中傷、差別、ハラスメント、脅迫、迷惑行為に該当する内容等を送信してはなりません。'),
+    ('第10条（禁止事項）', '利用者は、法令又は公序良俗に違反する行為、虚偽情報の登録、他人へのなりすまし、不正アクセス、サービス運営妨害、情報の無断転載等を行ってはなりません。'),
+    ('第11条（投稿情報・送信情報）', '利用者が本サービス上で送信、入力、登録又は投稿した一切の情報について、利用者は、適法な権利を有し、第三者の権利を侵害していないことを保証するものとします。'),
+    ('第12条（知的財産権）', '本サービスに関する一切の知的財産権は、当社又は正当な権利者に帰属します。'),
+    ('第13条（本サービスの変更・停止等）', '当社は、利用者に事前に通知することなく、本サービスの全部又は一部の内容を変更、追加、中断、停止又は終了することができます。'),
+    ('第14条（利用停止・登録抹消）', '当社は、利用者が本規約に違反した場合、事前通知なく、利用停止、登録抹消、投稿削除その他必要な措置を講じることができます。'),
+    ('第15条（退会）', '利用者は、当社所定の方法により退会することができます。'),
+    ('第16条（免責）', '当社は、本サービスが利用者の目的に適合すること、継続的に利用可能であること、不具合がないことを保証しません。'),
+    ('第17条（損害賠償）', '利用者が本規約に違反し、当社又は第三者に損害を与えた場合、利用者はその一切の損害を賠償するものとします。'),
+    ('第18条（個人情報の取扱い）', '当社による利用者情報の取扱いは、別途定める「NBS~New Business Swipe~ プライバシーポリシー」に従うものとします。'),
+    ('第19条（規約の変更）', '当社は、必要に応じて本規約を変更することができます。'),
+    ('第20条（準拠法・管轄）', '本規約は日本法に準拠します。\n本規約又は本サービスに関して紛争が生じた場合、当社本店所在地を管轄する地方裁判所又は簡易裁判所を第一審の専属的合意管轄裁判所とします。'),
+  ];
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
-        title: Text(
-          '利用規約',
-          style: TextStylePalette.title,
-        ),
+        title: const Text('利用規約'),
         backgroundColor: ColorPalette.neutral900,
         elevation: 0,
       ),
-      body: docAsync.when(
-        data: (doc) {
-          if (doc == null) {
-            return const Center(
-              child: Text('利用規約を読み込めませんでした',
-                  style: TextStyle(color: ColorPalette.neutral400)),
-            );
-          }
-
-          final title = doc['title'] as String? ?? '';
-          final lastUpdated = doc['last_updated_label'] as String? ?? '';
-          final sections = (doc['sections'] as List<dynamic>?) ?? [];
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(SpacePalette.base),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: TextStylePalette.smHeader),
-                const SizedBox(height: SpacePalette.base),
-                Text(lastUpdated, style: TextStylePalette.smSubText),
-                const SizedBox(height: SpacePalette.lg),
-                ...sections.map((section) {
-                  final s = section as Map<String, dynamic>;
-                  return _buildSection(
-                    s['title'] as String? ?? '',
-                    s['content'] as String? ?? '',
-                  );
-                }),
-                const SizedBox(height: SpacePalette.lg * 2),
-              ],
-            ),
-          );
-        },
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: ColorPalette.primaryColor),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(SpacePalette.base),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('NBS~New Business Swipe~ 利用規約（利用者向け）',
+                style: TextStylePalette.smHeader),
+            const SizedBox(height: SpacePalette.sm),
+            Text('制定日・施行日：2026年4月2日', style: TextStylePalette.smSubText),
+            const SizedBox(height: SpacePalette.lg),
+            for (final (title, content) in _sections) ...[
+              Text(title, style: TextStylePalette.smTitle),
+              const SizedBox(height: SpacePalette.sm),
+              Text(content, style: TextStylePalette.subText),
+              const SizedBox(height: SpacePalette.lg),
+            ],
+          ],
         ),
-        error: (_, __) => const Center(
-          child: Text('利用規約を読み込めませんでした',
-              style: TextStyle(color: ColorPalette.neutral400)),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSection(String title, String content) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: SpacePalette.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: TextStylePalette.smTitle),
-          const SizedBox(height: SpacePalette.sm),
-          Text(content, style: TextStylePalette.subText),
-        ],
       ),
     );
   }

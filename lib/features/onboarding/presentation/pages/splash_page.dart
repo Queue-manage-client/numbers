@@ -113,7 +113,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
       _navigateByRole(state.session!.user.id);
     } else {
       _isNavigating = true;
-      context.go('/login');
+      context.go('/signup');
     }
   }
 

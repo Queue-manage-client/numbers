@@ -1179,7 +1179,7 @@ class _OthersTab extends ConsumerWidget {
                 final repository = ref.read(authRepositoryProvider);
                 await repository.signOut();
                 if (context.mounted) {
-                  context.go('/login');
+                  context.go('/signup');
                 }
               },
               child: Container(

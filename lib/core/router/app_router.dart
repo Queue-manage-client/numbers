@@ -5,6 +5,7 @@ import 'package:showcaseview/showcaseview.dart';
 import 'package:numbers/core/services/app_tour_service.dart';
 import 'package:numbers/features/onboarding/presentation/pages/splash_page.dart';
 import 'package:numbers/features/onboarding/presentation/pages/onboarding_page.dart';
+import 'package:numbers/features/onboarding/presentation/pages/welcome_guide_page.dart';
 import 'package:numbers/features/auth/presentation/pages/login_page.dart';
 import 'package:numbers/features/auth/presentation/pages/account_type_selection_page.dart';
 import 'package:numbers/features/auth/presentation/pages/individual_signup_page.dart';
@@ -55,6 +56,7 @@ import 'package:numbers/features/company_portal/chat/presentation/pages/company_
 import 'package:numbers/features/company_portal/chat/presentation/pages/company_chat_room_list_page.dart';
 import 'package:numbers/features/company_portal/chat/presentation/pages/company_chat_room_detail_page.dart';
 import 'package:numbers/features/company_portal/profile/presentation/pages/company_profile_edit_page.dart';
+import 'package:numbers/features/company_portal/profile/presentation/pages/company_terms_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_login_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_dashboard_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_user_management_page.dart';
@@ -85,6 +87,9 @@ const _publicPaths = <String>[
   '/terms',
   '/privacy',
 ];
+
+// ウェルカムガイド表示待ちフラグ（新規登録直後にtrueにセット）
+bool pendingWelcomeGuide = false;
 
 // ロールキャッシュ（セッション中のDBクエリを削減）
 String? _cachedRole;
@@ -119,9 +124,14 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
         return '/login';
       }
 
-      // ログイン済みユーザーが認証ページにアクセスした場合 → /feed へ
+      // ログイン済みユーザーが認証ページにアクセスした場合
       const authOnlyPaths = ['/login', '/signup', '/signup/individual', '/signup/company', '/onboarding'];
       if (isLoggedIn && authOnlyPaths.contains(currentPath)) {
+        // 新規登録直後ならウェルカムガイドへ
+        if (pendingWelcomeGuide) {
+          pendingWelcomeGuide = false;
+          return '/welcome-guide';
+        }
         return '/feed';
       }
 
@@ -198,6 +208,10 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingPage(),
+      ),
+      GoRoute(
+        path: '/welcome-guide',
+        builder: (context, state) => const WelcomeGuidePage(),
       ),
       GoRoute(
         path: '/login',
@@ -495,6 +509,10 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       GoRoute(
         path: '/company-portal/profile/edit',
         builder: (context, state) => const CompanyProfileEditPage(),
+      ),
+      GoRoute(
+        path: '/company-portal/terms',
+        builder: (context, state) => const CompanyTermsPage(),
       ),
 
       // Admin

@@ -274,7 +274,9 @@ class _InternListPageState extends ConsumerState<InternListPage> {
                                     child: Padding(
                                       padding: const EdgeInsets.all(
                                           SpacePalette.base),
-                                      child: Column(
+                                      child: Stack(
+                                        children: [
+                                          Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
@@ -342,6 +344,28 @@ class _InternListPageState extends ConsumerState<InternListPage> {
                                               }).toList(),
                                             ),
                                           ],
+                                        ],
+                                      ),
+                                          // 右上に企業ロゴ
+                                          Positioned(
+                                            top: 0,
+                                            right: 0,
+                                            child: () {
+                                              final logoUrl = company?['logo_url'] as String?;
+                                              if (logoUrl != null && logoUrl.isNotEmpty) {
+                                                return CircleAvatar(
+                                                  radius: 16,
+                                                  backgroundImage: NetworkImage(logoUrl),
+                                                  backgroundColor: ColorPalette.neutral600,
+                                                );
+                                              }
+                                              return CircleAvatar(
+                                                radius: 16,
+                                                backgroundColor: ColorPalette.neutral900,
+                                                child: Icon(Icons.business, size: 16, color: ColorPalette.neutral0),
+                                              );
+                                            }(),
+                                          ),
                                         ],
                                       ),
                                     ),

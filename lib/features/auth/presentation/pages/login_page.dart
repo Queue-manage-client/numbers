@@ -82,15 +82,18 @@ class LoginPage extends HookConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // タイトル
-                  Align(
-                    alignment: Alignment.center,
-                    child: Text(
-                      'ようこそ',
-                      style: TextStylePalette.header,
+                  // ロゴ
+                  Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                      child: Image.asset(
+                        'assets/images/nbs_logo.jpg',
+                        width: 160,
+                        height: 160,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: SpacePalette.lg),
 
                   // メールアドレス
                   Align(

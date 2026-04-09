@@ -19,19 +19,17 @@ class AccountTypeSelectionPage extends HookWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  '新規登録',
-                  style: TextStylePalette.header,
-                  textAlign: TextAlign.center,
+                Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                    child: Image.asset(
+                      'assets/images/nbs_logo.jpg',
+                      width: 160,
+                      height: 160,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
-                const SizedBox(height: SpacePalette.sm), // 付随項目の間隔
-                Text(
-                  'アカウントタイプを選択してください',
-                  style: TextStylePalette.subText,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: SpacePalette.lg), // 別機能間隔（大きめ）
-
                 // 個人用アカウントカード
                 _AccountTypeCard(
                   title: '個人',

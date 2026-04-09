@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/router/app_router.dart' show pendingWelcomeGuide;
 
 class IndividualSignupPage extends HookConsumerWidget {
   const IndividualSignupPage({super.key});
@@ -17,6 +18,7 @@ class IndividualSignupPage extends HookConsumerWidget {
     final passwordController = useTextEditingController();
     final confirmPasswordController = useTextEditingController();
     final isLoading = useState(false);
+    final agreedToTerms = useState(false);
 
     Future<void> signup() async {
       if (!formKey.currentState!.validate()) return;
@@ -33,6 +35,9 @@ class IndividualSignupPage extends HookConsumerWidget {
       try {
         final repository = ref.read(authRepositoryProvider);
 
+        // 登録成功後にウェルカムガイドへリダイレクトさせるフラグ
+        pendingWelcomeGuide = true;
+
         await repository.signUp(
           email: emailController.text.trim(),
           password: passwordController.text,
@@ -42,11 +47,11 @@ class IndividualSignupPage extends HookConsumerWidget {
         if (context.mounted) {
           final user = repository.currentUser;
           if (user != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('登録完了しました')),
-            );
-            context.go('/feed');
+            // authNotifierのredirectが/welcome-guideへ飛ばす
+            // 念のため明示的にも遷移
+            context.go('/welcome-guide');
           } else {
+            pendingWelcomeGuide = false;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('登録完了しました。ログインしてください。')),
             );
@@ -188,12 +193,69 @@ class IndividualSignupPage extends HookConsumerWidget {
                       return null;
                     },
                   ),
-                  const SizedBox(height: SpacePalette.lg), // 別機能間隔
+                  const SizedBox(height: SpacePalette.base),
+
+                  // 利用規約同意チェックボックス
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Checkbox(
+                          value: agreedToTerms.value,
+                          onChanged: (v) => agreedToTerms.value = v ?? false,
+                          activeColor: ColorPalette.primaryColor,
+                        ),
+                      ),
+                      const SizedBox(width: SpacePalette.sm),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => agreedToTerms.value = !agreedToTerms.value,
+                          child: Text.rich(
+                            TextSpan(
+                              style: TextStylePalette.smSubText,
+                              children: [
+                                const TextSpan(text: '私は、'),
+                                WidgetSpan(
+                                  child: GestureDetector(
+                                    onTap: () => context.push('/terms'),
+                                    child: Text(
+                                      '利用規約',
+                                      style: TextStylePalette.smSubText.copyWith(
+                                        color: ColorPalette.primaryColor,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const TextSpan(text: ' および '),
+                                WidgetSpan(
+                                  child: GestureDetector(
+                                    onTap: () => context.push('/privacy'),
+                                    child: Text(
+                                      'プライバシーポリシー',
+                                      style: TextStylePalette.smSubText.copyWith(
+                                        color: ColorPalette.primaryColor,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const TextSpan(text: ' を確認し、これらに同意します。'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: SpacePalette.lg),
 
                   // 登録ボタン
                   GradientButton(
                     text: '登録',
-                    onPressed: isLoading.value ? null : signup,
+                    onPressed: isLoading.value || !agreedToTerms.value ? null : signup,
                     isLoading: isLoading.value,
                     icon: Transform.rotate(
                       angle: -0.5,
