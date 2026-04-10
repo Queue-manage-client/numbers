@@ -76,12 +76,12 @@ class InternshipApplication {
 
   factory InternshipApplication.fromJson(Map<String, dynamic> json) {
     return InternshipApplication(
-      id: json['id'] as String,
-      internshipId: json['internship_id'] as String,
-      userId: json['user_id'] as String,
+      id: json['id'] as String? ?? '',
+      internshipId: json['internship_id'] as String? ?? '',
+      userId: json['user_id'] as String? ?? '',
       status: ApplicationStatus.fromString(json['status'] as String? ?? 'pending'),
-      appliedAt: json['applied_at'] != null
-          ? DateTime.parse(json['applied_at'] as String)
+      appliedAt: (json['applied_at'] ?? json['created_at']) != null
+          ? DateTime.parse((json['applied_at'] ?? json['created_at']) as String)
           : DateTime.now(),
       reviewedAt: json['reviewed_at'] != null
           ? DateTime.parse(json['reviewed_at'] as String)

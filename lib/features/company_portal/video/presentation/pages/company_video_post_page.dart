@@ -23,6 +23,10 @@ class CompanyVideoPostPage extends HookConsumerWidget {
     final isPublic = useState(true);
     final isLoading = useState(false);
     
+    // 関連求人
+    final selectedJobId = useState<String?>(null);
+    final jobsAsync = ref.watch(companyJobsProvider);
+
     // アップロードファイル
     final videoFile = useState<PlatformFile?>(null);
     final thumbnailFile = useState<PlatformFile?>(null);
@@ -248,6 +252,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
           'video_path': videoPath,
           'thumbnail_path': thumbnailPath,
           'sort_order': 0,
+          if (selectedJobId.value != null) 'job_id': selectedJobId.value,
         };
 
         await ref.read(companyPortalRepositoryProvider).createVideo(videoData);
@@ -297,6 +302,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
       isPublic.value,
       videoFile.value,
       thumbnailFile.value,
+      selectedJobId.value,
     ]);
 
     return Scaffold(
@@ -502,6 +508,80 @@ class CompanyVideoPostPage extends HookConsumerWidget {
                   helperText: 'カンマ区切りで入力してください',
                   helperStyle: TextStylePalette.smSubText,
                 ),
+              ),
+              const SizedBox(height: SpacePalette.base),
+
+              // 関連求人
+              Text(
+                '関連求人（オプション）',
+                style: TextStylePalette.smTitle,
+              ),
+              const SizedBox(height: SpacePalette.sm),
+              jobsAsync.when(
+                data: (jobs) {
+                  final openJobs = jobs.where((j) => j['status'] != 'closed').toList();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: ColorPalette.neutral800,
+                          borderRadius: BorderRadius.circular(RadiusPalette.base),
+                          border: Border.all(color: ColorPalette.neutral600),
+                        ),
+                        child: Column(
+                          children: [
+                            // 「なし」オプション
+                            RadioListTile<String?>(
+                              title: Text('なし', style: TextStylePalette.normalText),
+                              value: null,
+                              groupValue: selectedJobId.value,
+                              onChanged: (v) => selectedJobId.value = null,
+                              activeColor: ColorPalette.primaryColor,
+                              dense: true,
+                            ),
+                            if (openJobs.isNotEmpty) ...[
+                              Divider(height: 1, color: ColorPalette.neutral600),
+                              ...openJobs.map((job) => RadioListTile<String?>(
+                                title: Text(
+                                  job['title'] as String? ?? '無題',
+                                  style: TextStylePalette.normalText,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Text(
+                                  '${job['job_category'] ?? ''} / ${job['job_type'] ?? ''}',
+                                  style: TextStylePalette.smSubText,
+                                ),
+                                value: job['id'] as String?,
+                                groupValue: selectedJobId.value,
+                                onChanged: (v) => selectedJobId.value = v,
+                                activeColor: ColorPalette.primaryColor,
+                                dense: true,
+                              )),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: SpacePalette.sm),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          await context.push('/company-portal/jobs/post');
+                          ref.invalidate(companyJobsProvider);
+                        },
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('新しい求人を作成'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: ColorPalette.primaryColor,
+                          side: const BorderSide(color: ColorPalette.primaryColor),
+                          minimumSize: const Size(double.infinity, ButtonSizePalette.innerButton),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, __) => Text('求人の取得に失敗しました', style: TextStylePalette.subText),
               ),
               const SizedBox(height: SpacePalette.base),
 

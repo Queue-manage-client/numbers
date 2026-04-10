@@ -61,6 +61,23 @@ class CompanyDetailPage extends ConsumerWidget {
                         company['industry'] ?? '業種未設定',
                         style: TextStylePalette.subText,
                       ),
+
+                      // 企業詳細画像
+                      if (company['detail_image_url'] != null &&
+                          (company['detail_image_url'] as String).isNotEmpty) ...[
+                        const SizedBox(height: SpacePalette.base),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                          child: Image.network(
+                            company['detail_image_url'] as String,
+                            width: double.infinity,
+                            height: 200,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                          ),
+                        ),
+                      ],
+
                       const SizedBox(height: SpacePalette.base),
                       Text(
                         company['description'] ?? '説明未設定',

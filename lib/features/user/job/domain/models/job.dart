@@ -60,8 +60,8 @@ class Job {
 
   factory Job.fromJson(Map<String, dynamic> json) {
     return Job(
-      id: json['id'] as String,
-      companyId: json['company_id'] as String,
+      id: json['id'] as String? ?? '',
+      companyId: json['company_id'] as String? ?? '',
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       salary: json['salary'] as String?,

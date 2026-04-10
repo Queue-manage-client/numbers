@@ -34,10 +34,14 @@ class CompanyVideoEditPage extends HookConsumerWidget {
     final isPublic = useState(true);
     final isLoading = useState(false);
     final isDataLoaded = useState(false);
-    
+
+    // 関連求人
+    final selectedJobId = useState<String?>(null);
+    final jobsAsync = ref.watch(companyJobsProvider);
+
     // 新しいサムネイル
     final newThumbnailFile = useState<PlatformFile?>(null);
-    
+
     // 既存の動画データ
     final videoAsync = ref.watch(videoByIdProvider(videoId));
 
@@ -55,6 +59,7 @@ class CompanyVideoEditPage extends HookConsumerWidget {
           
           isVertical.value = video['vertical'] ?? true;
           isPublic.value = video['is_public'] ?? true;
+          selectedJobId.value = video['job_id'] as String?;
           isDataLoaded.value = true;
         }
       });
@@ -175,12 +180,13 @@ class CompanyVideoEditPage extends HookConsumerWidget {
             : tagsText.split(',').map((tag) => tag.trim()).where((tag) => tag.isNotEmpty).toList();
 
         // 更新データを作成
-        final updateData = {
+        final updateData = <String, dynamic>{
           'title': titleController.text.trim(),
           'description': descriptionController.text.trim(),
           'vertical': isVertical.value,
           'is_public': isPublic.value,
           'tags': tags,
+          'job_id': selectedJobId.value,
         };
 
         // 新しいサムネイルがあれば追加
@@ -232,6 +238,7 @@ class CompanyVideoEditPage extends HookConsumerWidget {
       isVertical.value,
       isPublic.value,
       newThumbnailFile.value,
+      selectedJobId.value,
       videoId,
     ]);
 
@@ -482,6 +489,79 @@ class CompanyVideoEditPage extends HookConsumerWidget {
                       helperText: 'カンマ区切りで入力してください',
                       helperStyle: TextStylePalette.smSubText,
                     ),
+                  ),
+                  const SizedBox(height: SpacePalette.base),
+
+                  // 関連求人
+                  Text(
+                    '関連求人（オプション）',
+                    style: TextStylePalette.smTitle,
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  jobsAsync.when(
+                    data: (jobs) {
+                      final openJobs = jobs.where((j) => j['status'] != 'closed').toList();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: ColorPalette.neutral800,
+                              borderRadius: BorderRadius.circular(RadiusPalette.base),
+                              border: Border.all(color: ColorPalette.neutral600),
+                            ),
+                            child: Column(
+                              children: [
+                                RadioListTile<String?>(
+                                  title: Text('なし', style: TextStylePalette.normalText),
+                                  value: null,
+                                  groupValue: selectedJobId.value,
+                                  onChanged: (v) => selectedJobId.value = null,
+                                  activeColor: ColorPalette.primaryColor,
+                                  dense: true,
+                                ),
+                                if (openJobs.isNotEmpty) ...[
+                                  Divider(height: 1, color: ColorPalette.neutral600),
+                                  ...openJobs.map((job) => RadioListTile<String?>(
+                                    title: Text(
+                                      job['title'] as String? ?? '無題',
+                                      style: TextStylePalette.normalText,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    subtitle: Text(
+                                      '${job['job_category'] ?? ''} / ${job['job_type'] ?? ''}',
+                                      style: TextStylePalette.smSubText,
+                                    ),
+                                    value: job['id'] as String?,
+                                    groupValue: selectedJobId.value,
+                                    onChanged: (v) => selectedJobId.value = v,
+                                    activeColor: ColorPalette.primaryColor,
+                                    dense: true,
+                                  )),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: SpacePalette.sm),
+                          OutlinedButton.icon(
+                            onPressed: () async {
+                              await context.push('/company-portal/jobs/post');
+                              ref.invalidate(companyJobsProvider);
+                            },
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('新しい求人を作成'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: ColorPalette.primaryColor,
+                              side: const BorderSide(color: ColorPalette.primaryColor),
+                              minimumSize: const Size(double.infinity, ButtonSizePalette.innerButton),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (_, __) => Text('求人の取得に失敗しました', style: TextStylePalette.subText),
                   ),
                   const SizedBox(height: SpacePalette.base),
 

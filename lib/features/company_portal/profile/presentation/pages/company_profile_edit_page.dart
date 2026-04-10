@@ -1,8 +1,12 @@
 // company_portal/presentation/pages/company_profile_edit_page.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
@@ -20,6 +24,8 @@ class CompanyProfileEditPage extends HookConsumerWidget {
     final snsController = useTextEditingController();
     final isLoading = useState(false);
     final isDataLoaded = useState(false);
+    final detailImageFile = useState<PlatformFile?>(null);
+    final existingDetailImageUrl = useState<String?>(null);
 
     // 企業情報を取得
     final companyInfoAsync = ref.watch(companyInfoProvider);
@@ -34,6 +40,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
           industryController.text = companyInfo['industry'] ?? '';
           websiteController.text = companyInfo['website'] ?? '';
           snsController.text = companyInfo['sns_url'] ?? '';
+          existingDetailImageUrl.value = companyInfo['detail_image_url'] as String?;
           isDataLoaded.value = true;
         }
       });
@@ -62,6 +69,24 @@ class CompanyProfileEditPage extends HookConsumerWidget {
       isLoading.value = true;
 
       try {
+        // 詳細画像アップロード
+        String? detailImageUrl = existingDetailImageUrl.value;
+        if (detailImageFile.value != null && detailImageFile.value!.bytes != null) {
+          final supabase = Supabase.instance.client;
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          final imagePath = 'companies/$companyId/detail_${timestamp}.jpg';
+
+          await supabase.storage.from('company-thumbnails').uploadBinary(
+            imagePath,
+            detailImageFile.value!.bytes!,
+            fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+          );
+
+          detailImageUrl = supabase.storage
+              .from('company-thumbnails')
+              .getPublicUrl(imagePath);
+        }
+
         final updateData = {
           'name': companyNameController.text.trim(),
           'description': descriptionController.text.trim(),
@@ -69,6 +94,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
           'industry': industryController.text.trim(),
           'website': websiteController.text.trim(),
           'sns_url': snsController.text.trim(),
+          'detail_image_url': detailImageUrl,
         };
 
         await ref.read(companyPortalRepositoryProvider).updateCompany(companyId, updateData);
@@ -187,7 +213,125 @@ class CompanyProfileEditPage extends HookConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: SpacePalette.lg * 2),
+                  const SizedBox(height: SpacePalette.lg),
+
+                  // 企業詳細画像
+                  Text(
+                    '企業詳細画像',
+                    style: TextStylePalette.smTitle,
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  GestureDetector(
+                    onTap: () async {
+                      try {
+                        if (kIsWeb) {
+                          final result = await FilePicker.platform.pickFiles(
+                            type: FileType.image,
+                            allowMultiple: false,
+                            withData: true,
+                          );
+                          if (result != null && result.files.isNotEmpty) {
+                            detailImageFile.value = result.files.first;
+                          }
+                        } else {
+                          final picker = ImagePicker();
+                          final image = await picker.pickImage(source: ImageSource.gallery);
+                          if (image != null) {
+                            final bytes = await image.readAsBytes();
+                            detailImageFile.value = PlatformFile(
+                              name: image.name,
+                              size: bytes.length,
+                              bytes: bytes,
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('画像選択エラー: $e')),
+                          );
+                        }
+                      }
+                    },
+                    child: Container(
+                      height: 180,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: ColorPalette.neutral800,
+                        borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                        border: Border.all(
+                          color: detailImageFile.value != null
+                              ? ColorPalette.primaryColor
+                              : ColorPalette.neutral600,
+                        ),
+                        image: detailImageFile.value == null &&
+                                existingDetailImageUrl.value != null &&
+                                existingDetailImageUrl.value!.isNotEmpty
+                            ? DecorationImage(
+                                image: NetworkImage(existingDetailImageUrl.value!),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      child: detailImageFile.value != null
+                          ? Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                                  child: Image.memory(
+                                    detailImageFile.value!.bytes!,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: SpacePalette.base,
+                                      vertical: SpacePalette.sm,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(RadiusPalette.base),
+                                    ),
+                                    child: Text('タップして変更', style: TextStylePalette.smText),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : existingDetailImageUrl.value != null &&
+                                  existingDetailImageUrl.value!.isNotEmpty
+                              ? Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: SpacePalette.base,
+                                      vertical: SpacePalette.sm,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(RadiusPalette.base),
+                                    ),
+                                    child: Text('タップして変更', style: TextStylePalette.smText),
+                                  ),
+                                )
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.add_photo_alternate,
+                                      size: 48,
+                                      color: ColorPalette.neutral400,
+                                    ),
+                                    const SizedBox(height: SpacePalette.sm),
+                                    Text(
+                                      'タップして画像を選択',
+                                      style: TextStylePalette.smSubText,
+                                    ),
+                                  ],
+                                ),
+                    ),
+                  ),
+                  const SizedBox(height: SpacePalette.lg),
 
                   // 企業名
                   Text(

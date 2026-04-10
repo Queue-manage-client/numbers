@@ -27,6 +27,7 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage>
   String? _errorMessage;
   Map<String, dynamic>? _videoData;
   Map<String, dynamic>? _companyData;
+  Map<String, dynamic>? _jobData;
   List<Map<String, dynamic>> _relatedVideos = [];
   bool _isPlaying = false;
   bool _showControls = true;
@@ -56,10 +57,10 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage>
     try {
       final supabase = Supabase.instance.client;
 
-      // 動画データを取得
+      // 動画データを取得（関連求人も含む）
       final videoResponse = await supabase
           .from('company_videos')
-          .select('*, companies(*)')
+          .select('*, companies(*), jobs(*)')
           .eq('id', widget.videoId)
           .eq('company_id', widget.companyId)
           .maybeSingle();
@@ -74,6 +75,7 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage>
 
       _videoData = videoResponse;
       _companyData = videoResponse['companies'] as Map<String, dynamic>?;
+      _jobData = videoResponse['jobs'] as Map<String, dynamic>?;
 
       final videoPath = videoResponse['video_path'] as String?;
       if (videoPath == null || videoPath.isEmpty) {
@@ -639,6 +641,81 @@ class _VideoDetailPageState extends ConsumerState<VideoDetailPage>
                       ),
                     ),
                   ),
+
+                // 関連求人カード
+                if (_jobData != null) ...[
+                  const SizedBox(height: SpacePalette.lg),
+                  Text(
+                    '関連求人',
+                    style: TextStylePalette.smHeader,
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  GestureDetector(
+                    onTap: () {
+                      final jobId = _jobData!['id'] as String?;
+                      if (jobId != null) {
+                        context.push('/jobs/$jobId');
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(SpacePalette.base),
+                      decoration: BoxDecoration(
+                        color: ColorPalette.neutral800,
+                        borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                        border: Border.all(
+                          color: ColorPalette.primaryColor.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: ColorPalette.primaryColor.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(RadiusPalette.base),
+                            ),
+                            child: const Icon(
+                              Icons.work,
+                              color: ColorPalette.primaryColor,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: SpacePalette.sm),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _jobData!['title'] as String? ?? '無題',
+                                  style: TextStylePalette.smListTitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  [
+                                    _jobData!['job_category'] as String?,
+                                    _jobData!['job_type'] as String?,
+                                    _jobData!['location_text'] as String?,
+                                  ].where((s) => s != null && s.isNotEmpty).join(' / '),
+                                  style: TextStylePalette.smSubText,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right,
+                            color: ColorPalette.primaryColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
 
                 const SizedBox(height: SpacePalette.lg * 2),
 

@@ -36,8 +36,8 @@ class Internship {
 
   factory Internship.fromJson(Map<String, dynamic> json) {
     return Internship(
-      id: json['id'] as String,
-      companyId: json['company_id'] as String,
+      id: json['id'] as String? ?? '',
+      companyId: json['company_id'] as String? ?? '',
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       startDate: json['start_date'] != null

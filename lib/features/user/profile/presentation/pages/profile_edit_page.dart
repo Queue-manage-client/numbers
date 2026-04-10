@@ -326,9 +326,31 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: SpacePalette.sm),
+                        // 区切り線
+                        Row(
+                          children: [
+                            const Expanded(child: Divider(color: ColorPalette.neutral600)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: SpacePalette.sm),
+                              child: Text('または', style: TextStylePalette.dividerText),
+                            ),
+                            const Expanded(child: Divider(color: ColorPalette.neutral600)),
+                          ],
+                        ),
+                        const SizedBox(height: SpacePalette.sm),
+                        // アプリ内作成ボタン
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () => context.push('/resume/build'),
+                            icon: const Icon(Icons.edit_document, size: 18),
+                            label: const Text('アプリで作成する'),
+                          ),
+                        ),
                         const SizedBox(height: SpacePalette.xs),
                         Text(
-                          'PDF, DOC, DOCX形式に対応',
+                          'ひな形に沿って入力するだけで作成できます',
                           style: TextStylePalette.smSubText,
                         ),
                       ],

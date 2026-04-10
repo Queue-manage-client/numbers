@@ -21,7 +21,7 @@ final feedVideosProvider = FutureProvider<List<Map<String, dynamic>>>((ref) asyn
   try {
     final response = await supabase
         .from('company_videos')
-        .select('*, companies(*)')
+        .select('*, companies(*), jobs(*)')
         .eq('is_public', true)
         .order('created_at', ascending: false)
         .limit(50);

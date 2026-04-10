@@ -31,6 +31,7 @@ import 'package:numbers/features/user/ai_chat/presentation/pages/ai_chat_page.da
 import 'package:numbers/features/user/profile/presentation/pages/my_page.dart';
 import 'package:numbers/features/user/profile/presentation/pages/profile_edit_page.dart';
 import 'package:numbers/features/user/profile/presentation/pages/resume_view_page.dart';
+import 'package:numbers/features/user/profile/presentation/pages/resume_builder_page.dart';
 import 'package:numbers/features/user/profile/presentation/pages/application_history_page.dart';
 import 'package:numbers/features/user/profile/presentation/pages/application_detail_page.dart';
 import 'package:numbers/features/user/profile/presentation/pages/settings_page.dart';
@@ -124,7 +125,7 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
         return '/login';
       }
 
-      // ログイン済みユーザーが認証ページにアクセスした場合
+      // ログイン済みユーザーが認証ページにアクセスした場合 → ロールに応じて遷移
       const authOnlyPaths = ['/login', '/signup', '/signup/individual', '/signup/company', '/onboarding'];
       if (isLoggedIn && authOnlyPaths.contains(currentPath)) {
         // 新規登録直後ならウェルカムガイドへ
@@ -132,6 +133,28 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
           pendingWelcomeGuide = false;
           return '/welcome-guide';
         }
+
+        // ロールに応じた遷移先を決定
+        try {
+          final userId = supabase.auth.currentUser!.id;
+          String? role;
+          if (_cachedUserId == userId && _cachedRole != null) {
+            role = _cachedRole;
+          } else {
+            final profile = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', userId)
+                .maybeSingle();
+            role = profile?['role'] as String?;
+            _cachedUserId = userId;
+            _cachedRole = role;
+          }
+
+          if (role == 'admin') return '/admin/dashboard';
+          if (role == 'company_user') return '/company-portal/dashboard';
+        } catch (_) {}
+
         return '/feed';
       }
 
@@ -386,6 +409,10 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       GoRoute(
         path: '/resume',
         builder: (context, state) => const ResumeViewPage(),
+      ),
+      GoRoute(
+        path: '/resume/build',
+        builder: (context, state) => const ResumeBuilderPage(),
       ),
       GoRoute(
         path: '/applications',
