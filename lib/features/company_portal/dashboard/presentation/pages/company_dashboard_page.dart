@@ -122,6 +122,14 @@ class CompanyDashboardPage extends HookConsumerWidget {
             const SizedBox(height: SpacePalette.base),
 
             _MenuCard(
+              icon: Icons.business,
+              title: '企業情報編集',
+              description: '企業プロフィールの編集',
+              onTap: () => context.go('/company-portal/profile/edit'),
+            ),
+            const SizedBox(height: SpacePalette.sm),
+
+            _MenuCard(
               icon: Icons.video_library,
               title: '動画管理',
               description: '企業紹介動画の投稿・編集',
@@ -150,14 +158,6 @@ class CompanyDashboardPage extends HookConsumerWidget {
               title: 'チャット管理',
               description: '応募者とのチャット',
               onTap: () => context.go('/company-portal/chats'),
-            ),
-            const SizedBox(height: SpacePalette.sm),
-
-            _MenuCard(
-              icon: Icons.business,
-              title: '企業情報編集',
-              description: '企業プロフィールの編集',
-              onTap: () => context.go('/company-portal/profile/edit'),
             ),
             const SizedBox(height: SpacePalette.sm),
 

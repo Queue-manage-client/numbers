@@ -180,6 +180,14 @@ class AdminDashboardPage extends HookConsumerWidget {
                 description: 'バナー・特集セクションの管理',
                 onTap: () => context.go('/admin/feed'),
               ),
+              const SizedBox(height: SpacePalette.sm),
+
+              _MenuCard(
+                icon: Icons.verified_user,
+                title: '同意記録管理',
+                description: '法人登録時の規約同意記録の確認',
+                onTap: () => context.go('/admin/consents'),
+              ),
             ],
           ),
         ),

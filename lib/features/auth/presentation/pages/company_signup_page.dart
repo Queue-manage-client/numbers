@@ -20,6 +20,9 @@ class CompanySignupPage extends HookConsumerWidget {
     final representativeNameController = useTextEditingController();
     final phoneController = useTextEditingController();
     final isLoading = useState(false);
+    final agreedToTerms = useState(false);
+    final agreedToPrivacy = useState(false);
+    final agreedToContract = useState(false);
 
     Future<void> signup() async {
       if (!formKey.currentState!.validate()) return;
@@ -27,6 +30,13 @@ class CompanySignupPage extends HookConsumerWidget {
       if (passwordController.text != confirmPasswordController.text) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('パスワードが一致しません')),
+        );
+        return;
+      }
+
+      if (!agreedToTerms.value || !agreedToPrivacy.value || !agreedToContract.value) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('すべての規約に同意してください')),
         );
         return;
       }
@@ -58,7 +68,7 @@ class CompanySignupPage extends HookConsumerWidget {
           'industry': '',
           'website': null,
         };
-        
+
         final companyId = await companyPortalRepository.createCompany(companyData);
 
         // 3. profiles の role を 'company_user' に、company_id を設定
@@ -69,15 +79,24 @@ class CompanySignupPage extends HookConsumerWidget {
           position: '管理者', // デフォルト
         );
 
+        // 4. 同意記録を保存
+        final consentRepository = ref.read(consentRepositoryProvider);
+        await consentRepository.saveConsentLogs(
+          userId: userId,
+          companyId: companyId,
+          agreementTypes: ['terms', 'privacy', 'company_contract'],
+          agreementVersion: 'v1.0',
+        );
+
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('企業登録完了しました')),
           );
-          
+
           // プロフィール情報を再取得
           ref.invalidate(currentUserProfileProvider);
           ref.invalidate(companyInfoProvider);
-          
+
           context.go('/company-portal/dashboard');
         }
       } catch (e) {
@@ -107,6 +126,7 @@ class CompanySignupPage extends HookConsumerWidget {
             padding: const EdgeInsets.all(SpacePalette.base), // 全体padding
             child: Form(
               key: formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -260,7 +280,33 @@ class CompanySignupPage extends HookConsumerWidget {
                       return null;
                     },
                   ),
-                  const SizedBox(height: SpacePalette.base), // 別機能間隔
+                  const SizedBox(height: SpacePalette.lg),
+
+                  // 同意チェックボックス群
+                  _buildAgreementCheckbox(
+                    context: context,
+                    value: agreedToTerms.value,
+                    onChanged: (v) => agreedToTerms.value = v ?? false,
+                    label: '利用規約',
+                    onTapLink: () => context.push('/terms'),
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  _buildAgreementCheckbox(
+                    context: context,
+                    value: agreedToPrivacy.value,
+                    onChanged: (v) => agreedToPrivacy.value = v ?? false,
+                    label: 'プライバシーポリシー',
+                    onTapLink: () => context.push('/privacy'),
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  _buildAgreementCheckbox(
+                    context: context,
+                    value: agreedToContract.value,
+                    onChanged: (v) => agreedToContract.value = v ?? false,
+                    label: '法人向け契約条項',
+                    onTapLink: () => context.push('/company-portal/terms'),
+                  ),
+                  const SizedBox(height: SpacePalette.lg),
 
                   // 登録ボタン
                   GradientButton(
@@ -277,7 +323,7 @@ class CompanySignupPage extends HookConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: SpacePalette.lg), // 別機能間隔
-                  
+
                   Align(
                     alignment: Alignment.center,
                     child: GestureDetector(
@@ -297,6 +343,49 @@ class CompanySignupPage extends HookConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAgreementCheckbox({
+    required BuildContext context,
+    required bool value,
+    required ValueChanged<bool?> onChanged,
+    required String label,
+    required VoidCallback onTapLink,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Checkbox(
+            value: value,
+            onChanged: onChanged,
+            activeColor: ColorPalette.primaryColor,
+          ),
+        ),
+        const SizedBox(width: SpacePalette.sm),
+        Expanded(
+          child: GestureDetector(
+            onTap: onTapLink,
+            child: Text(
+              label,
+              style: TextStylePalette.smSubText.copyWith(
+                color: ColorPalette.primaryColor,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
+        ),
+        GestureDetector(
+          onTap: () => onChanged(!value),
+          child: Text(
+            'に同意する',
+            style: TextStylePalette.smSubText,
+          ),
+        ),
+      ],
     );
   }
 }

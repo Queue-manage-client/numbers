@@ -67,6 +67,7 @@ import 'package:numbers/features/admin/presentation/pages/admin_intern_managemen
 import 'package:numbers/features/admin/presentation/pages/admin_inquiry_management_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_inquiry_detail_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_feed_management_page.dart';
+import 'package:numbers/features/admin/presentation/pages/admin_consent_management_page.dart';
 import 'package:numbers/features/company_portal/job/presentation/pages/company_job_applications_page.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/features/user/feed/presentation/pages/feature_detail_page.dart';
@@ -581,6 +582,10 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       GoRoute(
         path: '/admin/feed',
         builder: (context, state) => const AdminFeedManagementPage(),
+      ),
+      GoRoute(
+        path: '/admin/consents',
+        builder: (context, state) => const AdminConsentManagementPage(),
       ),
     ],
   );

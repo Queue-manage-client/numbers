@@ -71,6 +71,7 @@ class SignupPage extends HookConsumerWidget {
             padding: const EdgeInsets.all(SpacePalette.base),
             child: Form(
               key: formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -157,6 +158,9 @@ class SignupPage extends HookConsumerWidget {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'パスワード（確認）を入力してください';
+                      }
+                      if (value != passwordController.text) {
+                        return 'パスワードが一致しません';
                       }
                       return null;
                     },

@@ -428,6 +428,39 @@ class AdminRepository {
   }
 
   // ==========================================
+  // 同意記録管理
+  // ==========================================
+
+  /// 同意記録一覧を取得
+  Future<List<Map<String, dynamic>>> getConsentLogs({
+    int limit = 20,
+    int offset = 0,
+    String? companyId,
+    String? agreementType,
+  }) async {
+    try {
+      var query = _supabase
+          .from('consent_logs')
+          .select('*, profiles(id, nickname), companies(id, name)');
+
+      if (companyId != null && companyId.isNotEmpty) {
+        query = query.eq('company_id', companyId);
+      }
+
+      if (agreementType != null && agreementType.isNotEmpty) {
+        query = query.eq('agreement_type', agreementType);
+      }
+
+      final response = await query
+          .order('accepted_at', ascending: false)
+          .range(offset, offset + limit - 1);
+      return List<Map<String, dynamic>>.from(response as List);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // ==========================================
   // 企業一覧（フィルター用）
   // ==========================================
 

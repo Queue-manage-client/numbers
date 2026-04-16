@@ -7,6 +7,17 @@ import 'package:numbers/features/user/company/presentation/providers/company_pro
 import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
+/// SNSプラットフォームの表示情報
+const _snsPlatformInfo = <String, ({String label, IconData icon})>{
+  'youtube': (label: 'YouTube', icon: Icons.play_circle_outline),
+  'instagram': (label: 'Instagram', icon: Icons.camera_alt_outlined),
+  'tiktok': (label: 'TikTok', icon: Icons.music_note_outlined),
+  'facebook': (label: 'Facebook', icon: Icons.facebook),
+  'linkedin': (label: 'LinkedIn', icon: Icons.business_center_outlined),
+  'x': (label: 'X', icon: Icons.tag),
+  'other': (label: 'SNS', icon: Icons.share),
+};
+
 class CompanyDetailPage extends ConsumerWidget {
   const CompanyDetailPage({super.key});
 
@@ -89,8 +100,8 @@ class CompanyDetailPage extends ConsumerWidget {
                       _buildSection(
                           context, 'インターン', '/company/$companyId/interns'),
 
-                      // HP・SNSリンク
-                      _buildLinkRow(context, company),
+                      // HP・SNSリンク（縦並び）
+                      _buildLinkColumn(context, company),
                     ],
                   ),
                 ),
@@ -113,27 +124,45 @@ class CompanyDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildLinkRow(BuildContext context, Map<String, dynamic> company) {
+  Widget _buildLinkColumn(BuildContext context, Map<String, dynamic> company) {
     final website = company['website'] as String?;
-    final snsUrl = company['sns_url'] as String?;
 
-    return Row(
+    // sns_links を取得
+    final rawLinks = company['sns_links'];
+    List<Map<String, dynamic>> snsLinks = [];
+    if (rawLinks is List) {
+      snsLinks = rawLinks
+          .where((e) =>
+              e is Map &&
+              e['url'] != null &&
+              (e['url'] as String).isNotEmpty)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: _LinkButton(
-            icon: Icons.language,
-            label: 'HP',
-            url: website,
-          ),
+        // HPボタン
+        _LinkButton(
+          icon: Icons.language,
+          label: 'HP',
+          url: website,
         ),
-        const SizedBox(width: SpacePalette.sm),
-        Expanded(
-          child: _LinkButton(
-            icon: Icons.share,
-            label: 'SNS',
-            url: snsUrl,
-          ),
-        ),
+        // SNSボタン群
+        ...snsLinks.map((link) {
+          final platform = link['platform'] as String? ?? 'other';
+          final url = link['url'] as String?;
+          final info = _snsPlatformInfo[platform] ?? _snsPlatformInfo['other']!;
+          return Padding(
+            padding: const EdgeInsets.only(top: SpacePalette.sm),
+            child: _LinkButton(
+              icon: info.icon,
+              label: info.label,
+              url: url,
+            ),
+          );
+        }),
       ],
     );
   }

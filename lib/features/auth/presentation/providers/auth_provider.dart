@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/auth/data/repositories/auth_repository.dart';
+import 'package:numbers/features/auth/data/repositories/consent_repository.dart';
 
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
   return Supabase.instance.client;
@@ -14,6 +15,11 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final supabase = ref.watch(supabaseClientProvider);
   return AuthRepository(supabase);
+});
+
+final consentRepositoryProvider = Provider<ConsentRepository>((ref) {
+  final supabase = ref.watch(supabaseClientProvider);
+  return ConsentRepository(supabase);
 });
 
 final authStateProvider = StreamProvider<AuthState>((ref) {

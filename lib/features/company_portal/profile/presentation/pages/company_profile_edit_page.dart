@@ -21,7 +21,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
     final addressController = useTextEditingController();
     final industryController = useTextEditingController();
     final websiteController = useTextEditingController();
-    final snsController = useTextEditingController();
+    final snsLinks = useState<List<Map<String, String>>>([]);
     final isLoading = useState(false);
     final isDataLoaded = useState(false);
     final detailImageFile = useState<PlatformFile?>(null);
@@ -39,7 +39,16 @@ class CompanyProfileEditPage extends HookConsumerWidget {
           addressController.text = companyInfo['address'] ?? '';
           industryController.text = companyInfo['industry'] ?? '';
           websiteController.text = companyInfo['website'] ?? '';
-          snsController.text = companyInfo['sns_url'] ?? '';
+          // sns_links (jsonb) からSNSリンクを読み込み
+          final rawLinks = companyInfo['sns_links'];
+          if (rawLinks is List && rawLinks.isNotEmpty) {
+            snsLinks.value = rawLinks
+                .map((e) => <String, String>{
+                      'platform': (e['platform'] ?? '') as String,
+                      'url': (e['url'] ?? '') as String,
+                    })
+                .toList();
+          }
           existingDetailImageUrl.value = companyInfo['detail_image_url'] as String?;
           isDataLoaded.value = true;
         }
@@ -93,7 +102,13 @@ class CompanyProfileEditPage extends HookConsumerWidget {
           'address': addressController.text.trim(),
           'industry': industryController.text.trim(),
           'website': websiteController.text.trim(),
-          'sns_url': snsController.text.trim(),
+          'sns_links': snsLinks.value
+              .where((link) => link['url'] != null && link['url']!.trim().isNotEmpty)
+              .map((link) => {
+                    'platform': link['platform'] ?? 'other',
+                    'url': link['url']!.trim(),
+                  })
+              .toList(),
           'detail_image_url': detailImageUrl,
         };
 
@@ -139,7 +154,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
       addressController,
       industryController,
       websiteController,
-      snsController,
+      snsLinks,
     ]);
 
     return Scaffold(
@@ -421,21 +436,63 @@ class CompanyProfileEditPage extends HookConsumerWidget {
                   ),
                   const SizedBox(height: SpacePalette.base),
 
-                  // SNS
-                  Text(
-                    'SNS',
-                    style: TextStylePalette.smTitle,
+                  // SNSリンク（最大3つ）
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'SNSリンク',
+                        style: TextStylePalette.smTitle,
+                      ),
+                      if (snsLinks.value.length < 3)
+                        TextButton.icon(
+                          onPressed: () {
+                            snsLinks.value = [
+                              ...snsLinks.value,
+                              {'platform': 'youtube', 'url': ''},
+                            ];
+                          },
+                          icon: const Icon(Icons.add, size: 18),
+                          label: const Text('追加'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: ColorPalette.primaryColor,
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: SpacePalette.sm),
-                  TextFormField(
-                    controller: snsController,
-                    style: TextStylePalette.normalText,
-                    decoration: InputDecoration(
-                      hintText: 'https://twitter.com/example',
-                      hintStyle: TextStylePalette.hintText,
+                  if (snsLinks.value.isEmpty)
+                    Text(
+                      'SNSリンクがまだありません。「追加」を押してください。',
+                      style: TextStylePalette.subText,
                     ),
-                    keyboardType: TextInputType.url,
-                  ),
+                  ...List.generate(snsLinks.value.length, (index) {
+                    return _SnsLinkRow(
+                      platform: snsLinks.value[index]['platform'] ?? 'other',
+                      url: snsLinks.value[index]['url'] ?? '',
+                      onPlatformChanged: (platform) {
+                        final updated = List<Map<String, String>>.from(
+                          snsLinks.value.map((e) => Map<String, String>.from(e)),
+                        );
+                        updated[index]['platform'] = platform;
+                        snsLinks.value = updated;
+                      },
+                      onUrlChanged: (url) {
+                        final updated = List<Map<String, String>>.from(
+                          snsLinks.value.map((e) => Map<String, String>.from(e)),
+                        );
+                        updated[index]['url'] = url;
+                        snsLinks.value = updated;
+                      },
+                      onRemove: () {
+                        final updated = List<Map<String, String>>.from(
+                          snsLinks.value.map((e) => Map<String, String>.from(e)),
+                        );
+                        updated.removeAt(index);
+                        snsLinks.value = updated;
+                      },
+                    );
+                  }),
                   const SizedBox(height: SpacePalette.lg * 2),
 
                   // 更新ボタン
@@ -485,6 +542,95 @@ class CompanyProfileEditPage extends HookConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// SNSプラットフォームの定義
+const _snsPlatforms = <String, String>{
+  'youtube': 'YouTube',
+  'instagram': 'Instagram',
+  'tiktok': 'TikTok',
+  'facebook': 'Facebook',
+  'linkedin': 'LinkedIn',
+  'x': 'X (Twitter)',
+  'other': 'その他',
+};
+
+class _SnsLinkRow extends StatelessWidget {
+  final String platform;
+  final String url;
+  final ValueChanged<String> onPlatformChanged;
+  final ValueChanged<String> onUrlChanged;
+  final VoidCallback onRemove;
+
+  const _SnsLinkRow({
+    required this.platform,
+    required this.url,
+    required this.onPlatformChanged,
+    required this.onUrlChanged,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SpacePalette.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // プラットフォーム選択
+          SizedBox(
+            width: 130,
+            child: DropdownButtonFormField<String>(
+              value: _snsPlatforms.containsKey(platform) ? platform : 'other',
+              dropdownColor: ColorPalette.neutral600,
+              style: TextStylePalette.normalText,
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: SpacePalette.sm,
+                  vertical: SpacePalette.sm,
+                ),
+              ),
+              items: _snsPlatforms.entries
+                  .map((e) => DropdownMenuItem(
+                        value: e.key,
+                        child: Text(e.value, style: const TextStyle(fontSize: 13)),
+                      ))
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) onPlatformChanged(v);
+              },
+            ),
+          ),
+          const SizedBox(width: SpacePalette.sm),
+          // URL入力
+          Expanded(
+            child: TextFormField(
+              initialValue: url,
+              style: TextStylePalette.normalText,
+              decoration: InputDecoration(
+                hintText: 'URLを入力',
+                hintStyle: TextStylePalette.hintText,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: SpacePalette.sm,
+                  vertical: SpacePalette.sm,
+                ),
+              ),
+              keyboardType: TextInputType.url,
+              onChanged: onUrlChanged,
+            ),
+          ),
+          // 削除ボタン
+          IconButton(
+            icon: const Icon(Icons.close, size: 20),
+            color: ColorPalette.neutral400,
+            onPressed: onRemove,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: const EdgeInsets.only(top: SpacePalette.sm),
+          ),
+        ],
       ),
     );
   }

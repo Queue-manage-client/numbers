@@ -220,6 +220,40 @@ final adminInquiryByIdProvider = FutureProvider.family<Map<String, dynamic>?, St
 });
 
 // ==========================================
+// 同意記録管理プロバイダー
+// ==========================================
+
+class ConsentFilter {
+  final String? companyId;
+  final String? agreementType;
+  final int page;
+
+  ConsentFilter({this.companyId, this.agreementType, this.page = 0});
+
+  ConsentFilter copyWith({String? companyId, String? agreementType, int? page}) {
+    return ConsentFilter(
+      companyId: companyId ?? this.companyId,
+      agreementType: agreementType ?? this.agreementType,
+      page: page ?? this.page,
+    );
+  }
+}
+
+final consentFilterProvider = StateProvider<ConsentFilter>((ref) => ConsentFilter());
+
+final adminConsentLogsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final repository = ref.watch(adminRepositoryProvider);
+  final filter = ref.watch(consentFilterProvider);
+
+  return await repository.getConsentLogs(
+    limit: 20,
+    offset: filter.page * 20,
+    companyId: filter.companyId,
+    agreementType: filter.agreementType,
+  );
+});
+
+// ==========================================
 // 企業一覧プロバイダー（フィルター用ドロップダウン）
 // ==========================================
 

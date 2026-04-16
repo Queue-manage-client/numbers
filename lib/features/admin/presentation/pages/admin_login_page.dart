@@ -16,6 +16,7 @@ class AdminLoginPage extends HookConsumerWidget {
     final emailController = useTextEditingController();
     final passwordController = useTextEditingController();
     final isLoading = useState(false);
+    final obscurePassword = useState(true);
 
     Future<void> login() async {
       if (!formKey.currentState!.validate()) return;
@@ -129,10 +130,17 @@ class AdminLoginPage extends HookConsumerWidget {
                   const SizedBox(height: SpacePalette.sm),
                   TextFormField(
                     controller: passwordController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'パスワードを入力',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscurePassword.value ? Icons.visibility_off : Icons.visibility,
+                          color: ColorPalette.neutral400,
+                        ),
+                        onPressed: () => obscurePassword.value = !obscurePassword.value,
+                      ),
                     ),
-                    obscureText: true,
+                    obscureText: obscurePassword.value,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'パスワードを入力してください';

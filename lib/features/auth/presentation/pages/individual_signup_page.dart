@@ -77,6 +77,7 @@ class IndividualSignupPage extends HookConsumerWidget {
             padding: const EdgeInsets.all(SpacePalette.base), // 全体padding
             child: Form(
               key: formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -255,7 +256,15 @@ class IndividualSignupPage extends HookConsumerWidget {
                   // 登録ボタン
                   GradientButton(
                     text: '登録',
-                    onPressed: isLoading.value || !agreedToTerms.value ? null : signup,
+                    onPressed: isLoading.value ? null : () {
+                      if (!agreedToTerms.value) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('利用規約とプライバシーポリシーに同意してください')),
+                        );
+                        return;
+                      }
+                      signup();
+                    },
                     isLoading: isLoading.value,
                     icon: Transform.rotate(
                       angle: -0.5,
