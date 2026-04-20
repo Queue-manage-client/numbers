@@ -51,7 +51,7 @@ class CompanyLoginPage extends HookConsumerWidget {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('ログインしました')),
             );
-            context.go('/company-portal/dashboard');
+            context.go('/feed');
           }
         }
       } catch (e) {

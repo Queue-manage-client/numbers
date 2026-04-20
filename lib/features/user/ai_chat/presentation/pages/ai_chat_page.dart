@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import '../providers/ai_chat_provider.dart';
 import '../widgets/ai_conversation_drawer.dart';
 import '../../domain/models/ai_message.dart';
@@ -91,6 +92,28 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 企業アカウント制限
+    final roleAsync = ref.watch(userRoleProvider);
+    if (roleAsync.valueOrNull == 'company_user') {
+      return Scaffold(
+        backgroundColor: ColorPalette.neutral900,
+        appBar: AppBar(title: const Text('AI')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.block, size: 64, color: ColorPalette.neutral400),
+              const SizedBox(height: SpacePalette.base),
+              Text(
+                '企業アカウントではご利用になれません',
+                style: TextStylePalette.normalText,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final currentConversation = ref.watch(currentConversationProvider);
     final messages = currentConversation?.messages ?? [];
 

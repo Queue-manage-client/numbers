@@ -97,7 +97,7 @@ class CompanySignupPage extends HookConsumerWidget {
           ref.invalidate(currentUserProfileProvider);
           ref.invalidate(companyInfoProvider);
 
-          context.go('/company-portal/dashboard');
+          context.go('/feed');
         }
       } catch (e) {
         if (context.mounted) {

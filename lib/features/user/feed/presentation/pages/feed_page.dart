@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/user/feed/presentation/providers/feed_provider.dart';
 import 'package:numbers/features/user/profile/presentation/providers/profile_provider.dart';
+import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import '../widgets/vertical_video_feed.dart';
 
@@ -1052,6 +1053,22 @@ class _OthersTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final roleAsync = ref.watch(userRoleProvider);
+    final isCompanyUser = roleAsync.valueOrNull == 'company_user';
+
+    if (isCompanyUser) {
+      return const _CompanyAccountTab();
+    }
+    return const _UserAccountTab();
+  }
+}
+
+// 一般ユーザー用アカウントタブ
+class _UserAccountTab extends ConsumerWidget {
+  const _UserAccountTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
     final profileAsync = ref.watch(profileProvider);
 
@@ -1174,39 +1191,7 @@ class _OthersTab extends ConsumerWidget {
             const SizedBox(height: SpacePalette.base),
 
             // ログアウトカード
-            GestureDetector(
-              onTap: () async {
-                final repository = ref.read(authRepositoryProvider);
-                await repository.signOut();
-                if (context.mounted) {
-                  context.go('/signup');
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.all(SpacePalette.base),
-                decoration: BoxDecoration(
-                  color: ColorPalette.neutral800,
-                  borderRadius: BorderRadius.circular(RadiusPalette.lg),
-                  border: Border.all(color: ColorPalette.neutral600),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.logout, color: Colors.red),
-                    const SizedBox(width: SpacePalette.sm),
-                    Text(
-                      'ログアウト',
-                      style: TextStyle(
-                        fontFamily: 'NotoSansJP',
-                        color: Colors.red,
-                        fontSize: FontSizePalette.size14,
-                        fontVariations: const [FontVariation('wght', 700)],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            _LogoutCard(),
           ],
         );
       },
@@ -1223,41 +1208,254 @@ class _OthersTab extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: SpacePalette.sm),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: TextStylePalette.subText,
-            ),
+// 企業ユーザー用アカウントタブ
+class _CompanyAccountTab extends ConsumerWidget {
+  const _CompanyAccountTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final companyInfoAsync = ref.watch(companyInfoProvider);
+    final statsAsync = ref.watch(dashboardStatsProvider);
+
+    return ListView(
+      padding: const EdgeInsets.all(SpacePalette.base),
+      children: [
+        // 企業名ヘッダー
+        companyInfoAsync.when(
+          data: (company) => Text(
+            company?['name'] ?? '企業ポータル',
+            style: TextStylePalette.header,
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStylePalette.normalText,
-            ),
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => Text('企業ポータル', style: TextStylePalette.header),
+        ),
+        const SizedBox(height: SpacePalette.lg),
+
+        // 統計カード
+        statsAsync.when(
+          data: (stats) => Row(
+            children: [
+              Expanded(
+                child: _CompanyStatCard(
+                  icon: Icons.video_library,
+                  title: '動画',
+                  count: '${stats['videos'] ?? 0}',
+                ),
+              ),
+              const SizedBox(width: SpacePalette.sm),
+              Expanded(
+                child: _CompanyStatCard(
+                  icon: Icons.work,
+                  title: '求人',
+                  count: '${stats['jobs'] ?? 0}',
+                ),
+              ),
+              const SizedBox(width: SpacePalette.sm),
+              Expanded(
+                child: _CompanyStatCard(
+                  icon: Icons.school,
+                  title: 'インターン',
+                  count: '${stats['internships'] ?? 0}',
+                ),
+              ),
+            ],
           ),
-        ],
+          loading: () => Center(
+            child: CircularProgressIndicator(color: ColorPalette.primaryColor),
+          ),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
+        const SizedBox(height: SpacePalette.lg),
+
+        // 企業メニュー
+        Text('メニュー', style: TextStylePalette.smHeader),
+        const SizedBox(height: SpacePalette.sm),
+
+        _CompanyMenuTile(
+          icon: Icons.business,
+          title: '企業情報編集',
+          onTap: () => context.push('/company-portal/profile/edit'),
+        ),
+        _CompanyMenuTile(
+          icon: Icons.video_library,
+          title: '動画管理',
+          onTap: () => context.push('/company-portal/videos'),
+        ),
+        _CompanyMenuTile(
+          icon: Icons.work,
+          title: '求人管理',
+          onTap: () => context.push('/company-portal/jobs'),
+        ),
+        _CompanyMenuTile(
+          icon: Icons.school,
+          title: 'インターン管理',
+          onTap: () => context.push('/company-portal/interns'),
+        ),
+        _CompanyMenuTile(
+          icon: Icons.chat,
+          title: 'チャット管理',
+          onTap: () => context.push('/company-portal/chats'),
+        ),
+        _CompanyMenuTile(
+          icon: Icons.description,
+          title: '利用規約・契約条項',
+          onTap: () => context.push('/company-portal/terms'),
+        ),
+        const SizedBox(height: SpacePalette.base),
+
+        // ログアウト
+        _LogoutCard(),
+      ],
+    );
+  }
+}
+
+// 企業統計カード
+class _CompanyStatCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String count;
+
+  const _CompanyStatCard({
+    required this.icon,
+    required this.title,
+    required this.count,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(SpacePalette.sm),
+        child: Column(
+          children: [
+            Icon(icon, size: 24, color: ColorPalette.primaryColor),
+            const SizedBox(height: SpacePalette.xs),
+            Text(
+              count,
+              style: TextStylePalette.smHeader.copyWith(
+                color: ColorPalette.primaryColor,
+              ),
+            ),
+            const SizedBox(height: SpacePalette.xs),
+            Text(
+              title,
+              style: TextStylePalette.subText.copyWith(fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  String _getGenderText(String? gender) {
-    switch (gender) {
-      case 'male':
-        return '男性';
-      case 'female':
-        return '女性';
-      case 'other':
-        return 'その他';
-      default:
-        return '未設定';
-    }
+// 企業メニュータイル
+class _CompanyMenuTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _CompanyMenuTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: SpacePalette.sm),
+      decoration: BoxDecoration(
+        color: ColorPalette.neutral800,
+        borderRadius: BorderRadius.circular(RadiusPalette.base),
+        border: Border.all(color: ColorPalette.neutral600),
+      ),
+      child: ListTile(
+        leading: Icon(icon, color: ColorPalette.primaryColor),
+        title: Text(title, style: TextStylePalette.normalText),
+        trailing: const Icon(Icons.chevron_right, color: ColorPalette.neutral400),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+// ログアウトカード（共通）
+class _LogoutCard extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      onTap: () async {
+        final repository = ref.read(authRepositoryProvider);
+        await repository.signOut();
+        if (context.mounted) {
+          context.go('/signup');
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(SpacePalette.base),
+        decoration: BoxDecoration(
+          color: ColorPalette.neutral800,
+          borderRadius: BorderRadius.circular(RadiusPalette.lg),
+          border: Border.all(color: ColorPalette.neutral600),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.logout, color: Colors.red),
+            const SizedBox(width: SpacePalette.sm),
+            Text(
+              'ログアウト',
+              style: TextStyle(
+                fontFamily: 'NotoSansJP',
+                color: Colors.red,
+                fontSize: FontSizePalette.size14,
+                fontVariations: const [FontVariation('wght', 700)],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Widget _buildInfoRow(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: SpacePalette.sm),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(
+            label,
+            style: TextStylePalette.subText,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStylePalette.normalText,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+String _getGenderText(String? gender) {
+  switch (gender) {
+    case 'male':
+      return '男性';
+    case 'female':
+      return '女性';
+    case 'other':
+      return 'その他';
+    default:
+      return '未設定';
   }
 }

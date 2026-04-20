@@ -153,7 +153,7 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
           }
 
           if (role == 'admin') return '/admin/dashboard';
-          if (role == 'company_user') return '/company-portal/dashboard';
+          // company_userもユーザーと同じフィードに遷移
         } catch (_) {}
 
         return '/feed';

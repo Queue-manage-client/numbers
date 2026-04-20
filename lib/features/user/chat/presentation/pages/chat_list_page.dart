@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/user/chat/presentation/providers/chat_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import 'package:numbers/features/user/chat/presentation/pages/group_chat_create_page.dart';
@@ -11,6 +12,28 @@ class ChatListPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 企業アカウント制限
+    final roleAsync = ref.watch(userRoleProvider);
+    if (roleAsync.valueOrNull == 'company_user') {
+      return Scaffold(
+        backgroundColor: ColorPalette.neutral900,
+        appBar: AppBar(title: const Text('チャット')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.block, size: 64, color: ColorPalette.neutral400),
+              const SizedBox(height: SpacePalette.base),
+              Text(
+                '企業アカウントではご利用になれません',
+                style: TextStylePalette.normalText,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final allGroupChatsAsync = ref.watch(allGroupChatsProvider);
     final myChatRoomsAsync = ref.watch(chatRoomsProvider);
     return DefaultTabController(

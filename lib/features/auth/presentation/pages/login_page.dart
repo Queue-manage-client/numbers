@@ -49,8 +49,6 @@ class LoginPage extends HookConsumerWidget {
             if (context.mounted) {
               if (role == 'admin') {
                 context.go('/admin/dashboard');
-              } else if (role == 'company_user') {
-                context.go('/company-portal/dashboard');
               } else {
                 context.go('/feed');
               }
