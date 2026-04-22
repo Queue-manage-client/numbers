@@ -23,7 +23,7 @@ class CompanyChatManagementPage extends ConsumerWidget {
             Icons.arrow_back,
             color: ColorPalette.neutral0,
           ),
-          onPressed: () => context.go('/company-portal/dashboard'),
+          onPressed: () => context.go('/feed'),
         ),
         title: const Text('チャット管理'),
       ),

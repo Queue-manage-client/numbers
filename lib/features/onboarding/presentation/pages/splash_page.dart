@@ -88,8 +88,6 @@ class _SplashPageState extends ConsumerState<SplashPage> {
 
       if (role == 'admin') {
         context.go('/admin/dashboard');
-      } else if (role == 'company_user') {
-        context.go('/company-portal/dashboard');
       } else {
         context.go('/feed');
       }

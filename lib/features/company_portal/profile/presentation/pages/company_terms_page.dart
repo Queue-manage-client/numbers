@@ -48,7 +48,7 @@ class CompanyTermsPage extends StatelessWidget {
               if (Navigator.of(context).canPop()) {
                 context.pop();
               } else {
-                context.go('/company-portal/dashboard');
+                context.go('/feed');
               }
             },
           ),

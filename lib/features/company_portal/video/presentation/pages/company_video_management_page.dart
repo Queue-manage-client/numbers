@@ -17,7 +17,7 @@ class CompanyVideoManagementPage extends ConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
-          onPressed: () => context.go('/company-portal/dashboard'),
+          onPressed: () => context.go('/feed'),
         ),
         title: const Text('動画管理'),
       ),

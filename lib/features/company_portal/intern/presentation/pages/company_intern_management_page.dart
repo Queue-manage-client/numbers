@@ -20,7 +20,7 @@ class CompanyInternManagementPage extends ConsumerWidget {
         foregroundColor: ColorPalette.neutral0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
-          onPressed: () => context.go('/company-portal/dashboard'),
+          onPressed: () => context.go('/feed'),
         ),
         title: const Text('インターン管理'),
       ),

@@ -129,7 +129,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
               backgroundColor: ColorPalette.systemGold,
             ),
           );
-          context.go('/company-portal/dashboard');
+          context.go('/feed');
         }
       } catch (e) {
         if (context.mounted) {
@@ -162,7 +162,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
-          onPressed: () => context.go('/company-portal/dashboard'),
+          onPressed: () => context.go('/feed'),
         ),
         title: const Text('企業情報編集'),
       ),
