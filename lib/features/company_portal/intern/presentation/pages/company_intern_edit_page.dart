@@ -192,7 +192,7 @@ class _CompanyInternEditPageState extends ConsumerState<CompanyInternEditPage> {
         foregroundColor: ColorPalette.neutral0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
-          onPressed: () => context.go('/company-portal/interns/list'),
+          onPressed: () => context.pop(),
         ),
         title: const Text('インターン編集'),
       ),

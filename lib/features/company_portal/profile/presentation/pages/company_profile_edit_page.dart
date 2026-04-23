@@ -162,7 +162,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
-          onPressed: () => context.go('/feed'),
+          onPressed: () => context.pop(),
         ),
         title: const Text('企業情報編集'),
       ),

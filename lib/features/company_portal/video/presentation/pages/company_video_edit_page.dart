@@ -322,7 +322,7 @@ class CompanyVideoEditPage extends HookConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
-          onPressed: () => context.go('/company-portal/videos/list'),
+          onPressed: () => context.pop(),
         ),
         title: const Text('動画編集'),
       ),

@@ -30,7 +30,7 @@ Widget _companyPlaceholder(String name) {
 }
 
 // 選択中のホームタブインデックス
-final selectedHomeTabProvider = StateProvider<int>((ref) => 0);
+final selectedHomeTabProvider = StateProvider<int>((ref) => 1);
 
 class FeedPage extends ConsumerStatefulWidget {
   const FeedPage({super.key});

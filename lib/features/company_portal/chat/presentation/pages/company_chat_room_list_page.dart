@@ -20,7 +20,7 @@ class CompanyChatRoomListPage extends ConsumerWidget {
             Icons.arrow_back,
             color: ColorPalette.neutral0,
           ),
-          onPressed: () => context.go('/company-portal/chats'),
+          onPressed: () => context.pop(),
         ),
         title: const Text('チャットルーム一覧'),
         actions: [

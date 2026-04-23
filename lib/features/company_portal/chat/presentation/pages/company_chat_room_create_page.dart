@@ -92,7 +92,7 @@ class CompanyChatRoomCreatePage extends HookConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
-          onPressed: () => context.go('/company-portal/chats'),
+          onPressed: () => context.pop(),
         ),
         title: const Text('グループチャット作成'),
       ),

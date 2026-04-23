@@ -77,7 +77,7 @@ class CompanyChatRoomDetailPage extends HookConsumerWidget {
             Icons.arrow_back,
             color: ColorPalette.neutral0,
           ),
-          onPressed: () => context.go('/company-portal/chats/list'),
+          onPressed: () => context.pop(),
         ),
         title: roomAsync.when(
           data: (room) => Text(room?['name'] ?? 'チャットルーム'),

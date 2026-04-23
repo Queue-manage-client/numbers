@@ -205,7 +205,7 @@ class _CompanyJobEditPageState extends ConsumerState<CompanyJobEditPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
-          onPressed: () => context.go('/company-portal/jobs'),
+          onPressed: () => context.pop(),
         ),
         title: const Text('求人編集'),
       ),
