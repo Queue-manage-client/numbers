@@ -32,7 +32,7 @@ class CompanyInternApplicationsPage extends ConsumerWidget {
             if (Navigator.of(context).canPop()) {
               context.pop();
             } else {
-              context.go('/company-portal/interns');
+              context.go('/feed');
             }
           },
         ),

@@ -86,7 +86,7 @@ class SettingsPage extends StatelessWidget {
                 color: ColorPalette.neutral400,
               ),
               onTap: () async {
-                await AppTourService.resetTour();
+                await AppTourService.resetAllTours();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('ホームに戻ると操作ガイドが表示されます')),

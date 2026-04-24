@@ -121,8 +121,8 @@ class ShellFooter extends StatelessWidget {
           ),
           Showcase(
             key: AppTourKeys.internTab,
-            title: 'インターン',
-            description: 'インターンを探して応募できます。',
+            title: 'インターン・求人',
+            description: 'インターンや求人を一覧で探して応募できます。',
             titleTextStyle: _tourTitleStyle,
             descTextStyle: _tourDescStyle,
             tooltipBackgroundColor: const Color(0xFF3A3A3A),

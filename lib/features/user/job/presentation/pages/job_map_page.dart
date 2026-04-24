@@ -11,6 +11,7 @@ import 'package:numbers/features/user/job/presentation/widgets/map_filter_sheet.
 import 'package:numbers/features/user/job/presentation/widgets/location_selector.dart';
 import 'package:numbers/features/user/job/presentation/widgets/radius_slider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/services/app_tour_service.dart';
 
 class JobMapPage extends ConsumerStatefulWidget {
   const JobMapPage({super.key});
@@ -22,6 +23,8 @@ class JobMapPage extends ConsumerStatefulWidget {
 class _JobMapPageState extends ConsumerState<JobMapPage> {
   GoogleMapController? _mapController;
   bool _showRadiusSlider = false;
+  final _filterButtonKey = GlobalKey();
+  final _locationSelectorKey = GlobalKey();
 
   @override
   void initState() {
@@ -29,7 +32,31 @@ class _JobMapPageState extends ConsumerState<JobMapPage> {
     // Initialize base location
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeLocation();
+      _startPageTour();
     });
+  }
+
+  Future<void> _startPageTour() async {
+    // マップ読み込み後に少し待ってからツアー表示
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
+    await AppTourService.showPageTourIfNeeded(
+      context: context,
+      pageKey: 'job_map',
+      targets: [
+        AppTourService.createTarget(
+          key: _locationSelectorKey,
+          title: '場所の選択',
+          description: '拠点を選んで周辺の求人・インターンを探せます。現在地・自宅・学校など、登録した場所から選べます。',
+        ),
+        AppTourService.createTarget(
+          key: _filterButtonKey,
+          title: 'フィルター',
+          description: '職種やカテゴリで絞り込めます。ドットが表示されている時はフィルターが有効です。',
+          align: ContentAlign.bottom,
+        ),
+      ],
+    );
   }
 
   @override
@@ -75,6 +102,7 @@ class _JobMapPageState extends ConsumerState<JobMapPage> {
         actions: [
           // Filter button
           IconButton(
+            key: _filterButtonKey,
             icon: Stack(
               children: [
                 const Icon(Icons.tune),
@@ -122,16 +150,19 @@ class _JobMapPageState extends ConsumerState<JobMapPage> {
                   top: SpacePalette.base,
                   left: SpacePalette.base,
                   right: SpacePalette.base,
-                  child: LocationSelector(
-                    onLocationSelected: (location) {
-                      ref.read(selectedBaseLocationProvider.notifier).state =
-                          location;
-                      _mapController?.animateCamera(
-                        CameraUpdate.newLatLng(
-                          LatLng(location.latitude, location.longitude),
-                        ),
-                      );
-                    },
+                  child: Container(
+                    key: _locationSelectorKey,
+                    child: LocationSelector(
+                      onLocationSelected: (location) {
+                        ref.read(selectedBaseLocationProvider.notifier).state =
+                            location;
+                        _mapController?.animateCamera(
+                          CameraUpdate.newLatLng(
+                            LatLng(location.latitude, location.longitude),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
 

@@ -9,6 +9,7 @@ import 'package:numbers/features/user/feed/presentation/providers/feed_provider.
 import 'package:numbers/features/user/profile/presentation/providers/profile_provider.dart';
 import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/services/app_tour_service.dart';
 import '../widgets/vertical_video_feed.dart';
 
 // ロゴ画像がない企業用のプレースホルダー
@@ -44,6 +45,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
   late final TabController _tabController;
   late final PageController _pageController;
   bool _isSyncingFromTab = false;
+  final _tabBarKey = GlobalKey();
 
   @override
   void initState() {
@@ -63,6 +65,24 @@ class _FeedPageState extends ConsumerState<FeedPage>
       }
       ref.read(selectedHomeTabProvider.notifier).state = _tabController.index;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startPageTour();
+    });
+  }
+
+  Future<void> _startPageTour() async {
+    await AppTourService.showPageTourIfNeeded(
+      context: context,
+      pageKey: 'feed',
+      targets: [
+        AppTourService.createTarget(
+          key: _tabBarKey,
+          title: 'タブ切り替え',
+          description: '「特集」で注目のコンテンツ、「トップ」で動画フィード、「アカウント」でプロフィールや設定にアクセスできます。左右スワイプでも切り替えられます。',
+        ),
+      ],
+    );
   }
 
   @override
@@ -131,6 +151,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
                 ),
               ),
               child: TabBar(
+                key: _tabBarKey,
                 controller: _tabController,
                 indicatorColor: ColorPalette.primaryColor,
                 indicatorWeight: 3,
@@ -1211,11 +1232,77 @@ class _UserAccountTab extends ConsumerWidget {
 }
 
 // 企業ユーザー用アカウントタブ
-class _CompanyAccountTab extends ConsumerWidget {
+class _CompanyAccountTab extends ConsumerStatefulWidget {
   const _CompanyAccountTab();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_CompanyAccountTab> createState() => _CompanyAccountTabState();
+}
+
+class _CompanyAccountTabState extends ConsumerState<_CompanyAccountTab> {
+  final _statsKey = GlobalKey();
+  final _profileEditKey = GlobalKey();
+  final _videoManageKey = GlobalKey();
+  final _jobManageKey = GlobalKey();
+  final _internManageKey = GlobalKey();
+  final _chatManageKey = GlobalKey();
+  final _termsKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startPageTour();
+    });
+  }
+
+  Future<void> _startPageTour() async {
+    await AppTourService.showPageTourIfNeeded(
+      context: context,
+      pageKey: 'company_account',
+      targets: [
+        AppTourService.createTarget(
+          key: _statsKey,
+          title: '統計情報',
+          description: '投稿した動画・求人・インターンの件数を一目で確認できます。',
+        ),
+        AppTourService.createTarget(
+          key: _profileEditKey,
+          title: '企業情報編集',
+          description: '企業名・説明文・所在地・業界・ウェブサイト・SNSリンク・詳細画像などを編集できます。ここで設定した情報がユーザーに公開されます。',
+        ),
+        AppTourService.createTarget(
+          key: _videoManageKey,
+          title: '動画管理',
+          description: '企業紹介動画の投稿・編集・削除ができます。動画に求人を紐づけると、ユーザーが動画から直接求人を確認できます。',
+        ),
+        AppTourService.createTarget(
+          key: _jobManageKey,
+          title: '求人管理',
+          description: '求人情報の作成・編集・公開管理ができます。投稿した求人はマップ上にも表示されます。',
+        ),
+        AppTourService.createTarget(
+          key: _internManageKey,
+          title: 'インターン管理',
+          description: 'インターンシップ情報の作成・編集・応募者の確認ができます。',
+        ),
+        AppTourService.createTarget(
+          key: _chatManageKey,
+          title: 'チャット管理',
+          description: 'グループチャットの作成や、応募者とのメッセージのやり取りができます。',
+        ),
+        AppTourService.createTarget(
+          key: _termsKey,
+          title: '利用規約・契約条項',
+          description: '法人向けの利用規約と契約条項を確認できます。',
+          align: ContentAlign.top,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final companyInfoAsync = ref.watch(companyInfoProvider);
     final statsAsync = ref.watch(dashboardStatsProvider);
 
@@ -1236,6 +1323,7 @@ class _CompanyAccountTab extends ConsumerWidget {
         // 統計カード
         statsAsync.when(
           data: (stats) => Row(
+            key: _statsKey,
             children: [
               Expanded(
                 child: _CompanyStatCard(
@@ -1274,34 +1362,40 @@ class _CompanyAccountTab extends ConsumerWidget {
         const SizedBox(height: SpacePalette.sm),
 
         _CompanyMenuTile(
+          key: _profileEditKey,
           icon: Icons.business,
           title: '企業情報編集',
-          onTap: () => context.push('/company-portal/profile/edit'),
+          onTap: () => context.go('/company-portal/profile/edit'),
         ),
         _CompanyMenuTile(
+          key: _videoManageKey,
           icon: Icons.video_library,
           title: '動画管理',
-          onTap: () => context.push('/company-portal/videos'),
+          onTap: () => context.go('/company-portal/videos'),
         ),
         _CompanyMenuTile(
+          key: _jobManageKey,
           icon: Icons.work,
           title: '求人管理',
-          onTap: () => context.push('/company-portal/jobs'),
+          onTap: () => context.go('/company-portal/jobs'),
         ),
         _CompanyMenuTile(
+          key: _internManageKey,
           icon: Icons.school,
           title: 'インターン管理',
-          onTap: () => context.push('/company-portal/interns'),
+          onTap: () => context.go('/company-portal/interns'),
         ),
         _CompanyMenuTile(
+          key: _chatManageKey,
           icon: Icons.chat,
           title: 'チャット管理',
-          onTap: () => context.push('/company-portal/chats'),
+          onTap: () => context.go('/company-portal/chats'),
         ),
         _CompanyMenuTile(
+          key: _termsKey,
           icon: Icons.description,
           title: '利用規約・契約条項',
-          onTap: () => context.push('/company-portal/terms'),
+          onTap: () => context.go('/company-portal/terms'),
         ),
         const SizedBox(height: SpacePalette.base),
 
@@ -1359,6 +1453,7 @@ class _CompanyMenuTile extends StatelessWidget {
   final VoidCallback onTap;
 
   const _CompanyMenuTile({
+    super.key,
     required this.icon,
     required this.title,
     required this.onTap,

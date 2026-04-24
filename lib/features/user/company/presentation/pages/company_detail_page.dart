@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:numbers/features/user/company/presentation/providers/company_provider.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/services/app_tour_service.dart';
 
 /// SNSプラットフォームの表示情報
 const _snsPlatformInfo = <String, ({String label, IconData icon})>{
@@ -18,11 +19,56 @@ const _snsPlatformInfo = <String, ({String label, IconData icon})>{
   'other': (label: 'SNS', icon: Icons.share),
 };
 
-class CompanyDetailPage extends ConsumerWidget {
+class CompanyDetailPage extends ConsumerStatefulWidget {
   const CompanyDetailPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CompanyDetailPage> createState() => _CompanyDetailPageState();
+}
+
+class _CompanyDetailPageState extends ConsumerState<CompanyDetailPage> {
+  final _videoSectionKey = GlobalKey();
+  final _jobSectionKey = GlobalKey();
+  final _internSectionKey = GlobalKey();
+  final _linkSectionKey = GlobalKey();
+  bool _tourStarted = false;
+
+  void _maybeStartTour() {
+    if (_tourStarted) return;
+    _tourStarted = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppTourService.showPageTourIfNeeded(
+        context: context,
+        pageKey: 'company_detail',
+        targets: [
+          AppTourService.createTarget(
+            key: _videoSectionKey,
+            title: '動画',
+            description: 'この企業が投稿した紹介動画を見ることができます。',
+          ),
+          AppTourService.createTarget(
+            key: _jobSectionKey,
+            title: '求人',
+            description: 'この企業の求人情報を確認・応募できます。',
+          ),
+          AppTourService.createTarget(
+            key: _internSectionKey,
+            title: 'インターン',
+            description: 'この企業のインターンシップ情報を確認できます。',
+          ),
+          AppTourService.createTarget(
+            key: _linkSectionKey,
+            title: 'HP・SNSリンク',
+            description: '企業のホームページやSNSアカウントにアクセスできます。',
+            align: ContentAlign.top,
+          ),
+        ],
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final companyId = GoRouterState.of(context).pathParameters['id'] ?? '';
     final companyAsync = ref.watch(companyProvider(companyId));
     final currentRoute = GoRouterState.of(context).uri.path;
@@ -53,6 +99,9 @@ class CompanyDetailPage extends ConsumerWidget {
               ),
             );
           }
+
+          // データ読み込み後にツアー開始
+          _maybeStartTour();
 
           return SingleChildScrollView(
             child: Column(
@@ -95,10 +144,10 @@ class CompanyDetailPage extends ConsumerWidget {
                         style: TextStylePalette.normalText,
                       ),
                       const SizedBox(height: SpacePalette.lg),
-                      _buildSection(context, '動画', '/company/$companyId/videos'),
-                      _buildSection(context, '求人', '/company/$companyId/jobs'),
+                      _buildSection(context, '動画', '/company/$companyId/videos', _videoSectionKey),
+                      _buildSection(context, '求人', '/company/$companyId/jobs', _jobSectionKey),
                       _buildSection(
-                          context, 'インターン', '/company/$companyId/interns'),
+                          context, 'インターン', '/company/$companyId/interns', _internSectionKey),
 
                       // HP・SNSリンク（縦並び）
                       _buildLinkColumn(context, company),
@@ -141,6 +190,7 @@ class CompanyDetailPage extends ConsumerWidget {
     }
 
     return Column(
+      key: _linkSectionKey,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // HPボタン
@@ -167,8 +217,9 @@ class CompanyDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildSection(BuildContext context, String title, String route) {
+  Widget _buildSection(BuildContext context, String title, String route, GlobalKey sectionKey) {
     return Container(
+      key: sectionKey,
       margin: const EdgeInsets.only(bottom: SpacePalette.base),
       decoration: BoxDecoration(
         color: ColorPalette.neutral800,

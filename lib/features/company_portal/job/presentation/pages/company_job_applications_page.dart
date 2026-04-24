@@ -27,7 +27,7 @@ class CompanyJobApplicationsPage extends ConsumerWidget {
         foregroundColor: ColorPalette.neutral0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
-          onPressed: () => context.pop(),
+          onPressed: () { if (Navigator.of(context).canPop()) { context.pop(); } else { context.go("/feed"); } },
         ),
         title: jobAsync.when(
           data: (job) => Text(job?.title ?? '申し込み一覧'),

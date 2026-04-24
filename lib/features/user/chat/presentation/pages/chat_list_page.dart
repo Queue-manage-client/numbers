@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/user/chat/presentation/providers/chat_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/services/app_tour_service.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:numbers/features/user/chat/presentation/pages/group_chat_create_page.dart';
 
 class ChatListPage extends HookConsumerWidget {
@@ -36,6 +38,32 @@ class ChatListPage extends HookConsumerWidget {
 
     final allGroupChatsAsync = ref.watch(allGroupChatsProvider);
     final myChatRoomsAsync = ref.watch(chatRoomsProvider);
+    final tabBarKey = useMemoized(() => GlobalKey());
+    final fabKey = useMemoized(() => GlobalKey());
+
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        AppTourService.showPageTourIfNeeded(
+          context: context,
+          pageKey: 'chat_list',
+          targets: [
+            AppTourService.createTarget(
+              key: tabBarKey,
+              title: 'チャットタブ',
+              description: '「グループ」で公開グループチャット、「企業DM」で企業との個別メッセージを確認できます。',
+            ),
+            AppTourService.createTarget(
+              key: fabKey,
+              title: 'グループ作成',
+              description: 'このボタンから新しいグループチャットを作成できます。',
+              align: ContentAlign.top,
+            ),
+          ],
+        );
+      });
+      return null;
+    }, const []);
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -43,6 +71,7 @@ class ChatListPage extends HookConsumerWidget {
         appBar: AppBar(
           title: const Text('チャット'),
           bottom: TabBar(
+            key: tabBarKey,
             indicatorColor: ColorPalette.primaryColor,
             labelColor: ColorPalette.primaryColor,
             unselectedLabelColor: ColorPalette.neutral500,
@@ -57,7 +86,7 @@ class ChatListPage extends HookConsumerWidget {
         body: TabBarView(
           children: [
             // グループチャットタブ（全公開）
-            _buildGroupChatTab(context, ref, allGroupChatsAsync),
+            _buildGroupChatTab(context, ref, allGroupChatsAsync, fabKey),
 
             // DMタブ（参加中のみ）
             _buildDMTab(context, ref, myChatRoomsAsync),
@@ -72,6 +101,7 @@ class ChatListPage extends HookConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     AsyncValue<List<Map<String, dynamic>>> groupChatsAsync,
+    GlobalKey fabKey,
   ) {
     return Stack(
       children: [
@@ -80,6 +110,7 @@ class ChatListPage extends HookConsumerWidget {
           right: SpacePalette.base,
           bottom: SpacePalette.base,
           child: FloatingActionButton(
+            key: fabKey,
             heroTag: 'createGroupChat',
             backgroundColor: ColorPalette.primaryColor,
             onPressed: () async {

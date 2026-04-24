@@ -134,7 +134,7 @@ class CompanyJobPostPage extends HookConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: ColorPalette.neutral0),
-          onPressed: () => context.pop(),
+          onPressed: () { if (Navigator.of(context).canPop()) { context.pop(); } else { context.go("/feed"); } },
         ),
         title: const Text('求人投稿'),
       ),

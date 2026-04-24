@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/services/app_tour_service.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import '../providers/ai_chat_provider.dart';
 import '../widgets/ai_conversation_drawer.dart';
@@ -20,6 +21,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   bool _isLoading = false;
+  final _menuButtonKey = GlobalKey();
 
   @override
   void initState() {
@@ -28,6 +30,24 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
     Future.microtask(() {
       ref.read(aiConversationsProvider.notifier).loadConversations();
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startPageTour();
+    });
+  }
+
+  Future<void> _startPageTour() async {
+    await AppTourService.showPageTourIfNeeded(
+      context: context,
+      pageKey: 'ai_chat',
+      targets: [
+        AppTourService.createTarget(
+          key: _menuButtonKey,
+          title: '会話履歴',
+          description: 'ここをタップすると過去の会話履歴を確認できます。会話を切り替えたり、新しい会話を始めることもできます。',
+          align: ContentAlign.bottom,
+        ),
+      ],
+    );
   }
 
   @override
@@ -128,6 +148,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
         elevation: 0,
         leading: Builder(
           builder: (context) => IconButton(
+            key: _menuButtonKey,
             icon: const Icon(Icons.menu, color: ColorPalette.neutral0),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
