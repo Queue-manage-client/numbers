@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/services/app_tour_service.dart';
 
 class CompanySignupPage extends HookConsumerWidget {
   const CompanySignupPage({super.key});
@@ -87,6 +88,9 @@ class CompanySignupPage extends HookConsumerWidget {
           agreementTypes: ['terms', 'privacy', 'company_contract'],
           agreementVersion: 'v1.0',
         );
+
+        // 新規アカウント作成時にツアー閲覧履歴をリセット
+        await AppTourService.resetAllTours();
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

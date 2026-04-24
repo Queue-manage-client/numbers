@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/services/app_tour_service.dart';
 import 'package:numbers/core/router/app_router.dart' show pendingWelcomeGuide;
 
 class IndividualSignupPage extends HookConsumerWidget {
@@ -35,6 +36,8 @@ class IndividualSignupPage extends HookConsumerWidget {
       try {
         final repository = ref.read(authRepositoryProvider);
 
+        // 新規アカウント作成時にツアー閲覧履歴をリセット
+        await AppTourService.resetAllTours();
         // 登録成功後にウェルカムガイドへリダイレクトさせるフラグ
         pendingWelcomeGuide = true;
 
