@@ -18,7 +18,9 @@ class ApplicationHistoryPage extends ConsumerWidget {
     final currentRoute = GoRouterState.of(context).uri.path;
 
     final isLoading = jobAppsAsync.isLoading || internAppsAsync.isLoading;
-    final error = jobAppsAsync.error ?? internAppsAsync.error;
+    final jobError = jobAppsAsync.error;
+    final internError = internAppsAsync.error;
+    final error = jobError ?? internError;
 
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
@@ -49,9 +51,33 @@ class ApplicationHistoryPage extends ConsumerWidget {
             )
           : error != null
               ? Center(
-                  child: Text(
-                    'エラー: $error',
-                    style: TextStylePalette.normalText,
+                  child: Padding(
+                    padding: const EdgeInsets.all(SpacePalette.base),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (jobError != null)
+                          Text(
+                            '求人データエラー: $jobError',
+                            style: TextStylePalette.normalText,
+                            textAlign: TextAlign.center,
+                          ),
+                        if (internError != null)
+                          Text(
+                            'インターンデータエラー: $internError',
+                            style: TextStylePalette.normalText,
+                            textAlign: TextAlign.center,
+                          ),
+                        const SizedBox(height: SpacePalette.base),
+                        ElevatedButton(
+                          onPressed: () {
+                            ref.invalidate(jobApplicationsProvider);
+                            ref.invalidate(userApplicationsProvider);
+                          },
+                          child: const Text('再読み込み'),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               : _buildList(context, jobAppsAsync, internAppsAsync),

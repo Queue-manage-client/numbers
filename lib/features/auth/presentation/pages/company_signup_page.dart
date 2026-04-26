@@ -56,6 +56,20 @@ class CompanySignupPage extends HookConsumerWidget {
           throw Exception('ユーザー作成に失敗しました');
         }
 
+        // セッションが確立されているか確認
+        // メールアドレスが既に登録済み、またはメール確認が必要な場合はセッションがnull
+        if (response.session == null) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('このメールアドレスは既に登録されています。ログイン画面からお試しください。'),
+              ),
+            );
+          }
+          isLoading.value = false;
+          return;
+        }
+
         final userId = response.user!.id;
 
         // 2. 企業情報を companies テーブルに保存
@@ -80,14 +94,18 @@ class CompanySignupPage extends HookConsumerWidget {
           position: '管理者', // デフォルト
         );
 
-        // 4. 同意記録を保存
-        final consentRepository = ref.read(consentRepositoryProvider);
-        await consentRepository.saveConsentLogs(
-          userId: userId,
-          companyId: companyId,
-          agreementTypes: ['terms', 'privacy', 'company_contract'],
-          agreementVersion: 'v1.0',
-        );
+        // 4. 同意記録を保存（失敗しても登録は完了させる）
+        try {
+          final consentRepository = ref.read(consentRepositoryProvider);
+          await consentRepository.saveConsentLogs(
+            userId: userId,
+            companyId: companyId,
+            agreementTypes: ['terms', 'privacy', 'company_contract'],
+            agreementVersion: 'v1.0',
+          );
+        } catch (_) {
+          // 同意記録の保存失敗は致命的ではない
+        }
 
         // 新規アカウント作成時にツアー閲覧履歴をリセット
         await AppTourService.resetAllTours();
@@ -105,8 +123,17 @@ class CompanySignupPage extends HookConsumerWidget {
         }
       } catch (e) {
         if (context.mounted) {
+          String errorMsg = '登録に失敗しました。';
+          final errStr = e.toString().toLowerCase();
+          if (errStr.contains('already registered') || errStr.contains('already exists')) {
+            errorMsg = 'このメールアドレスは既に登録されています。';
+          } else if (errStr.contains('email')) {
+            errorMsg = 'メールアドレスを確認してください。';
+          } else if (errStr.contains('password')) {
+            errorMsg = 'パスワードは6文字以上で入力してください。';
+          }
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('登録に失敗しました。入力内容をご確認ください。')),
+            SnackBar(content: Text(errorMsg)),
           );
         }
       } finally {

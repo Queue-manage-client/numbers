@@ -70,19 +70,19 @@ class Job {
       jobType: json['job_type'] as String?,
       jobCategory: json['job_category'] as String?,
       workingHours: json['working_hours'] as String?,
-      salaryMin: json['salary_min'] as int?,
-      salaryMax: json['salary_max'] as int?,
+      salaryMin: (json['salary_min'] as num?)?.toInt(),
+      salaryMax: (json['salary_max'] as num?)?.toInt(),
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       thumbnailUrl: json['thumbnail_url'] as String?,
       createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+          ? DateTime.tryParse(json['created_at'].toString())
           : null,
       updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
+          ? DateTime.tryParse(json['updated_at'].toString())
           : null,
-      company: json['companies'] != null
-          ? Company.fromJson(json['companies'] as Map<String, dynamic>)
+      company: json['companies'] != null && json['companies'] is Map
+          ? Company.fromJson(Map<String, dynamic>.from(json['companies'] as Map))
           : null,
     );
   }

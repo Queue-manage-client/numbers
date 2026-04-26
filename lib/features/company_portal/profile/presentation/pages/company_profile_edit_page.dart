@@ -24,6 +24,8 @@ class CompanyProfileEditPage extends HookConsumerWidget {
     final snsLinks = useState<List<Map<String, String>>>([]);
     final isLoading = useState(false);
     final isDataLoaded = useState(false);
+    final logoFile = useState<PlatformFile?>(null);
+    final existingLogoUrl = useState<String?>(null);
     final detailImageFile = useState<PlatformFile?>(null);
     final existingDetailImageUrl = useState<String?>(null);
 
@@ -49,6 +51,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
                     })
                 .toList();
           }
+          existingLogoUrl.value = companyInfo['logo_url'] as String?;
           existingDetailImageUrl.value = companyInfo['detail_image_url'] as String?;
           isDataLoaded.value = true;
         }
@@ -78,11 +81,28 @@ class CompanyProfileEditPage extends HookConsumerWidget {
       isLoading.value = true;
 
       try {
+        final supabase = Supabase.instance.client;
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+        // ロゴアップロード
+        String? logoUrl = existingLogoUrl.value;
+        if (logoFile.value != null && logoFile.value!.bytes != null) {
+          final logoPath = 'companies/$companyId/logo_${timestamp}.jpg';
+
+          await supabase.storage.from('company-thumbnails').uploadBinary(
+            logoPath,
+            logoFile.value!.bytes!,
+            fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+          );
+
+          logoUrl = supabase.storage
+              .from('company-thumbnails')
+              .getPublicUrl(logoPath);
+        }
+
         // 詳細画像アップロード
         String? detailImageUrl = existingDetailImageUrl.value;
         if (detailImageFile.value != null && detailImageFile.value!.bytes != null) {
-          final supabase = Supabase.instance.client;
-          final timestamp = DateTime.now().millisecondsSinceEpoch;
           final imagePath = 'companies/$companyId/detail_${timestamp}.jpg';
 
           await supabase.storage.from('company-thumbnails').uploadBinary(
@@ -109,6 +129,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
                     'url': link['url']!.trim(),
                   })
               .toList(),
+          'logo_url': logoUrl,
           'detail_image_url': detailImageUrl,
         };
 
@@ -183,55 +204,96 @@ class CompanyProfileEditPage extends HookConsumerWidget {
                 children: [
                   // 企業ロゴ
                   Center(
-                    child: Stack(
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: ColorPalette.neutral200,
-                              width: 2,
-                            ),
-                            borderRadius: BorderRadius.circular(RadiusPalette.lg),
-                            color: ColorPalette.neutral200,
-                          ),
-                          child: Icon(
-                            Icons.business,
-                            size: 60,
-                            color: ColorPalette.neutral500,
-                          ),
-                        ),
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: Container(
+                    child: GestureDetector(
+                      onTap: () async {
+                        try {
+                          if (kIsWeb) {
+                            final result = await FilePicker.platform.pickFiles(
+                              type: FileType.image,
+                              allowMultiple: false,
+                              withData: true,
+                            );
+                            if (result != null && result.files.isNotEmpty) {
+                              logoFile.value = result.files.first;
+                            }
+                          } else {
+                            final picker = ImagePicker();
+                            final image = await picker.pickImage(source: ImageSource.gallery);
+                            if (image != null) {
+                              final bytes = await image.readAsBytes();
+                              logoFile.value = PlatformFile(
+                                name: image.name,
+                                size: bytes.length,
+                                bytes: bytes,
+                              );
+                            }
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('画像選択エラー: $e')),
+                            );
+                          }
+                        }
+                      },
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: 120,
+                            height: 120,
                             decoration: BoxDecoration(
-                              color: ColorPalette.primaryColor,
-                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: logoFile.value != null
+                                    ? ColorPalette.primaryColor
+                                    : ColorPalette.neutral200,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                              color: ColorPalette.neutral200,
                             ),
-                            child: IconButton(
-                              icon: Icon(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(RadiusPalette.lg - 1),
+                              child: logoFile.value != null && logoFile.value!.bytes != null
+                                  ? Image.memory(
+                                      logoFile.value!.bytes!,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : existingLogoUrl.value != null &&
+                                          existingLogoUrl.value!.isNotEmpty
+                                      ? Image.network(
+                                          existingLogoUrl.value!,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => Icon(
+                                            Icons.business,
+                                            size: 60,
+                                            color: ColorPalette.neutral500,
+                                          ),
+                                        )
+                                      : Icon(
+                                          Icons.business,
+                                          size: 60,
+                                          color: ColorPalette.neutral500,
+                                        ),
+                            ),
+                          ),
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: ColorPalette.primaryColor,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Icon(
                                 Icons.camera_alt,
                                 color: ColorPalette.neutral0,
+                                size: 20,
                               ),
-                              onPressed: () {
-                                // TODO: 画像選択
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'ロゴアップロード機能は実装中です',
-                                      style: TextStylePalette.normalText.copyWith(
-                                        color: ColorPalette.neutral0,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: SpacePalette.lg),

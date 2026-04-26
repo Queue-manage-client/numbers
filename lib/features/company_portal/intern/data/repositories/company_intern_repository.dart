@@ -166,10 +166,11 @@ class CompanyInternRepository {
           .from('internship_applications')
           .select('*')
           .eq('internship_id', internshipId)
-          .order('applied_at', ascending: false);
+          .order('created_at', ascending: false);
 
       // ユーザーIDを収集してプロフィールを取得
       final userIds = (applications as List)
+          .where((app) => app['user_id'] != null)
           .map((app) => app['user_id'] as String)
           .toSet()
           .toList();
@@ -182,16 +183,19 @@ class CompanyInternRepository {
             .inFilter('id', userIds);
 
         for (final profile in profiles as List) {
-          profilesMap[profile['id'] as String] = profile;
+          final profileId = profile['id'] as String?;
+          if (profileId != null) {
+            profilesMap[profileId] = Map<String, dynamic>.from(profile as Map);
+          }
         }
       }
 
       // 申し込みにプロフィールを結合
       final result = (applications as List).map((app) {
-        final userId = app['user_id'] as String;
+        final uid = app['user_id'] as String? ?? '';
         return <String, dynamic>{
           ...Map<String, dynamic>.from(app as Map),
-          'profiles': profilesMap[userId],
+          'profiles': profilesMap[uid],
         };
       }).toList();
 
@@ -233,9 +237,11 @@ class CompanyInternRepository {
       final internshipsMap = <String, Map<String, dynamic>>{};
       final internshipIds = <String>[];
       for (final intern in internships as List) {
-        final id = intern['id'] as String;
-        internshipIds.add(id);
-        internshipsMap[id] = intern;
+        final id = intern['id'] as String?;
+        if (id != null) {
+          internshipIds.add(id);
+          internshipsMap[id] = Map<String, dynamic>.from(intern as Map);
+        }
       }
 
       if (internshipIds.isEmpty) {
@@ -247,10 +253,11 @@ class CompanyInternRepository {
           .from('internship_applications')
           .select('*')
           .inFilter('internship_id', internshipIds)
-          .order('applied_at', ascending: false);
+          .order('created_at', ascending: false);
 
       // ユーザーIDを収集してプロフィールを取得
       final userIds = (applications as List)
+          .where((app) => app['user_id'] != null)
           .map((app) => app['user_id'] as String)
           .toSet()
           .toList();
@@ -263,17 +270,20 @@ class CompanyInternRepository {
             .inFilter('id', userIds);
 
         for (final p in profiles as List) {
-          profilesMap[p['id'] as String] = p;
+          final pId = p['id'] as String?;
+          if (pId != null) {
+            profilesMap[pId] = Map<String, dynamic>.from(p as Map);
+          }
         }
       }
 
       // 申し込みにインターンとプロフィールを結合
       final result = (applications as List).map((app) {
-        final appUserId = app['user_id'] as String;
-        final internshipId = app['internship_id'] as String;
+        final appUserId = app['user_id'] as String? ?? '';
+        final appInternshipId = app['internship_id'] as String? ?? '';
         return <String, dynamic>{
           ...Map<String, dynamic>.from(app as Map),
-          'internships': internshipsMap[internshipId],
+          'internships': internshipsMap[appInternshipId],
           'profiles': profilesMap[appUserId],
         };
       }).toList();
@@ -492,7 +502,7 @@ class CompanyInternRepository {
       };
 
       for (final app in response as List) {
-        final status = app['status'] as String;
+        final status = app['status'] as String? ?? 'pending';
         counts[status] = (counts[status] ?? 0) + 1;
         counts['total'] = (counts['total'] ?? 0) + 1;
       }

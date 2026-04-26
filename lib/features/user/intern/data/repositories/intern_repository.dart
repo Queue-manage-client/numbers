@@ -1,4 +1,5 @@
 // intern/data/repositories/intern_repository.dart
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/user/intern/domain/models/internship.dart';
 import 'package:numbers/features/user/intern/domain/models/internship_application.dart';
@@ -56,7 +57,9 @@ class InternRepository {
           .insert({
             'internship_id': internshipId,
             'user_id': userId,
+            'status': 'pending',
             'message': message,
+            'applied_at': DateTime.now().toIso8601String(),
           })
           .select()
           .single();
@@ -98,12 +101,25 @@ class InternRepository {
           .from('internship_applications')
           .select('*, internships(*, companies(*))')
           .eq('user_id', userId)
-          .order('applied_at', ascending: false);
+          .order('created_at', ascending: false);
 
-      return (response as List)
-          .map((json) => InternshipApplication.fromJson(json))
-          .toList();
-    } catch (e) {
+      final List<InternshipApplication> results = [];
+      for (final json in response as List) {
+        try {
+          final map = Map<String, dynamic>.from(json as Map);
+          results.add(InternshipApplication.fromJson(map));
+        } catch (e, st) {
+          debugPrint('=== InternshipApplication parse error ===');
+          debugPrint('Error: $e');
+          debugPrint('Raw data: $json');
+          debugPrint('Stack: $st');
+        }
+      }
+      return results;
+    } catch (e, st) {
+      debugPrint('=== getUserApplications query error ===');
+      debugPrint('Error: $e');
+      debugPrint('Stack: $st');
       rethrow;
     }
   }

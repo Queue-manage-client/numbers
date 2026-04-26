@@ -75,31 +75,35 @@ class InternshipApplication {
   });
 
   factory InternshipApplication.fromJson(Map<String, dynamic> json) {
+    final appliedAtRaw = json['applied_at'];
+    final createdAtRaw = json['created_at'];
+    final dateSource = appliedAtRaw ?? createdAtRaw;
+
     return InternshipApplication(
       id: json['id'] as String? ?? '',
       internshipId: json['internship_id'] as String? ?? '',
       userId: json['user_id'] as String? ?? '',
       status: ApplicationStatus.fromString(json['status'] as String? ?? 'pending'),
-      appliedAt: (json['applied_at'] ?? json['created_at']) != null
-          ? DateTime.parse((json['applied_at'] ?? json['created_at']) as String)
+      appliedAt: dateSource != null
+          ? (DateTime.tryParse(dateSource.toString()) ?? DateTime.now())
           : DateTime.now(),
       reviewedAt: json['reviewed_at'] != null
-          ? DateTime.parse(json['reviewed_at'] as String)
+          ? DateTime.tryParse(json['reviewed_at'].toString())
           : null,
       reviewedBy: json['reviewed_by'] as String?,
       message: json['message'] as String?,
       rejectionReason: json['rejection_reason'] as String?,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+      createdAt: createdAtRaw != null
+          ? DateTime.tryParse(createdAtRaw.toString())
           : null,
       updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
+          ? DateTime.tryParse(json['updated_at'].toString())
           : null,
-      internship: json['internships'] != null
-          ? Internship.fromJson(json['internships'] as Map<String, dynamic>)
+      internship: json['internships'] != null && json['internships'] is Map
+          ? Internship.fromJson(Map<String, dynamic>.from(json['internships'] as Map))
           : null,
-      userProfile: json['profiles'] != null
-          ? UserProfile.fromJson(json['profiles'] as Map<String, dynamic>)
+      userProfile: json['profiles'] != null && json['profiles'] is Map
+          ? UserProfile.fromJson(Map<String, dynamic>.from(json['profiles'] as Map))
           : null,
     );
   }
@@ -173,16 +177,16 @@ class UserProfile {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      id: json['id'] as String,
+      id: json['id'] as String? ?? '',
       nickname: json['nickname'] as String?,
       gender: json['gender'] as String?,
       birthDate: json['birth_date'] != null
-          ? DateTime.parse(json['birth_date'] as String)
+          ? DateTime.tryParse(json['birth_date'].toString())
           : null,
       location: json['location'] as String?,
       university: json['university'] as String?,
-      skills: json['skills'] != null
-          ? List<String>.from(json['skills'] as List)
+      skills: json['skills'] != null && json['skills'] is List
+          ? (json['skills'] as List).whereType<String>().toList()
           : [],
       resumeUrl: json['resume_url'] as String?,
       resumeFileName: json['resume_file_name'] as String?,

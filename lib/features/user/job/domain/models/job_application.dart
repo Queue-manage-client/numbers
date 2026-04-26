@@ -37,34 +37,36 @@ class JobApplication {
   });
 
   factory JobApplication.fromJson(Map<String, dynamic> json) {
+    final appliedAtRaw = json['applied_at'];
+    final createdAtRaw = json['created_at'];
+    final dateSource = appliedAtRaw ?? createdAtRaw;
+
     return JobApplication(
       id: json['id'] as String? ?? '',
       jobId: json['job_id'] as String? ?? '',
       userId: json['user_id'] as String? ?? '',
       status:
           ApplicationStatus.fromString(json['status'] as String? ?? 'pending'),
-      appliedAt: json['applied_at'] != null
-          ? DateTime.parse(json['applied_at'] as String)
-          : (json['created_at'] != null
-              ? DateTime.parse(json['created_at'] as String)
-              : DateTime.now()),
+      appliedAt: dateSource != null
+          ? (DateTime.tryParse(dateSource.toString()) ?? DateTime.now())
+          : DateTime.now(),
       reviewedAt: json['reviewed_at'] != null
-          ? DateTime.parse(json['reviewed_at'] as String)
+          ? DateTime.tryParse(json['reviewed_at'].toString())
           : null,
       reviewedBy: json['reviewed_by'] as String?,
       message: json['message'] as String?,
       rejectionReason: json['rejection_reason'] as String?,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+      createdAt: createdAtRaw != null
+          ? DateTime.tryParse(createdAtRaw.toString())
           : null,
       updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
+          ? DateTime.tryParse(json['updated_at'].toString())
           : null,
-      job: json['jobs'] != null
-          ? Job.fromJson(json['jobs'] as Map<String, dynamic>)
+      job: json['jobs'] != null && json['jobs'] is Map
+          ? Job.fromJson(Map<String, dynamic>.from(json['jobs'] as Map))
           : null,
-      userProfile: json['profiles'] != null
-          ? UserProfile.fromJson(json['profiles'] as Map<String, dynamic>)
+      userProfile: json['profiles'] != null && json['profiles'] is Map
+          ? UserProfile.fromJson(Map<String, dynamic>.from(json['profiles'] as Map))
           : null,
     );
   }

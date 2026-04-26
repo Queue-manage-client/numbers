@@ -1,4 +1,5 @@
 // job/data/repositories/job_repository.dart
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/user/job/domain/models/job.dart';
 import 'package:numbers/features/user/job/domain/models/job_application.dart';
@@ -104,10 +105,23 @@ class JobRepository {
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      return (response as List)
-          .map((json) => JobApplication.fromJson(json))
-          .toList();
-    } catch (e) {
+      final List<JobApplication> results = [];
+      for (final json in response as List) {
+        try {
+          final map = Map<String, dynamic>.from(json as Map);
+          results.add(JobApplication.fromJson(map));
+        } catch (e, st) {
+          debugPrint('=== JobApplication parse error ===');
+          debugPrint('Error: $e');
+          debugPrint('Raw data: $json');
+          debugPrint('Stack: $st');
+        }
+      }
+      return results;
+    } catch (e, st) {
+      debugPrint('=== getApplications query error ===');
+      debugPrint('Error: $e');
+      debugPrint('Stack: $st');
       rethrow;
     }
   }

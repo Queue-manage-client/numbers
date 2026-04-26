@@ -190,10 +190,11 @@ class CompanyJobRepository {
           .from('job_applications')
           .select('*')
           .eq('job_id', jobId)
-          .order('applied_at', ascending: false);
+          .order('created_at', ascending: false);
 
       // ユーザーIDを収集してプロフィールを取得
       final userIds = (applications as List)
+          .where((app) => app['user_id'] != null)
           .map((app) => app['user_id'] as String)
           .toSet()
           .toList();
@@ -206,16 +207,19 @@ class CompanyJobRepository {
             .inFilter('id', userIds);
 
         for (final profile in profiles as List) {
-          profilesMap[profile['id'] as String] = profile;
+          final profileId = profile['id'] as String?;
+          if (profileId != null) {
+            profilesMap[profileId] = Map<String, dynamic>.from(profile as Map);
+          }
         }
       }
 
       // 申し込みにプロフィールを結合
       final result = (applications as List).map((app) {
-        final userId = app['user_id'] as String;
+        final uid = app['user_id'] as String? ?? '';
         return <String, dynamic>{
           ...Map<String, dynamic>.from(app as Map),
-          'profiles': profilesMap[userId],
+          'profiles': profilesMap[uid],
         };
       }).toList();
 
@@ -257,9 +261,11 @@ class CompanyJobRepository {
       final jobsMap = <String, Map<String, dynamic>>{};
       final jobIds = <String>[];
       for (final job in jobs as List) {
-        final id = job['id'] as String;
-        jobIds.add(id);
-        jobsMap[id] = job;
+        final id = job['id'] as String?;
+        if (id != null) {
+          jobIds.add(id);
+          jobsMap[id] = Map<String, dynamic>.from(job as Map);
+        }
       }
 
       if (jobIds.isEmpty) {
@@ -271,10 +277,11 @@ class CompanyJobRepository {
           .from('job_applications')
           .select('*')
           .inFilter('job_id', jobIds)
-          .order('applied_at', ascending: false);
+          .order('created_at', ascending: false);
 
       // ユーザーIDを収集してプロフィールを取得
       final userIds = (applications as List)
+          .where((app) => app['user_id'] != null)
           .map((app) => app['user_id'] as String)
           .toSet()
           .toList();
@@ -287,17 +294,20 @@ class CompanyJobRepository {
             .inFilter('id', userIds);
 
         for (final p in profiles as List) {
-          profilesMap[p['id'] as String] = p;
+          final pId = p['id'] as String?;
+          if (pId != null) {
+            profilesMap[pId] = Map<String, dynamic>.from(p as Map);
+          }
         }
       }
 
       // 申し込みに求人とプロフィールを結合
       final result = (applications as List).map((app) {
-        final appUserId = app['user_id'] as String;
-        final jobId = app['job_id'] as String;
+        final appUserId = app['user_id'] as String? ?? '';
+        final appJobId = app['job_id'] as String? ?? '';
         return <String, dynamic>{
           ...Map<String, dynamic>.from(app as Map),
-          'jobs': jobsMap[jobId],
+          'jobs': jobsMap[appJobId],
           'profiles': profilesMap[appUserId],
         };
       }).toList();
@@ -515,8 +525,7 @@ class CompanyJobRepository {
       };
 
       for (final app in response as List) {
-        final status = app['status'] as String;
-        // DB値がそのままキーに対応（統一済み）
+        final status = app['status'] as String? ?? 'pending';
         counts[status] = (counts[status] ?? 0) + 1;
         counts['total'] = (counts['total'] ?? 0) + 1;
       }

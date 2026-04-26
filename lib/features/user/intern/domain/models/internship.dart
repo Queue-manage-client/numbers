@@ -41,23 +41,23 @@ class Internship {
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       startDate: json['start_date'] != null
-          ? DateTime.parse(json['start_date'] as String)
+          ? DateTime.tryParse(json['start_date'].toString())
           : null,
       endDate: json['end_date'] != null
-          ? DateTime.parse(json['end_date'] as String)
+          ? DateTime.tryParse(json['end_date'].toString())
           : null,
-      tags: json['tags'] != null
-          ? List<String>.from(json['tags'] as List)
+      tags: json['tags'] != null && json['tags'] is List
+          ? (json['tags'] as List).whereType<String>().toList()
           : [],
       isPublic: json['is_public'] as bool? ?? true,
       createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+          ? DateTime.tryParse(json['created_at'].toString())
           : null,
       updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
+          ? DateTime.tryParse(json['updated_at'].toString())
           : null,
-      company: json['companies'] != null
-          ? Company.fromJson(json['companies'] as Map<String, dynamic>)
+      company: json['companies'] != null && json['companies'] is Map
+          ? Company.fromJson(Map<String, dynamic>.from(json['companies'] as Map))
           : null,
     );
   }
