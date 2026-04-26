@@ -57,6 +57,7 @@ import 'package:numbers/features/company_portal/chat/presentation/pages/company_
 import 'package:numbers/features/company_portal/chat/presentation/pages/company_chat_room_detail_page.dart';
 import 'package:numbers/features/company_portal/profile/presentation/pages/company_profile_edit_page.dart';
 import 'package:numbers/features/company_portal/profile/presentation/pages/company_terms_page.dart';
+import 'package:numbers/features/company_portal/presentation/pages/company_approval_status_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_login_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_dashboard_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_user_management_page.dart';
@@ -67,6 +68,7 @@ import 'package:numbers/features/admin/presentation/pages/admin_inquiry_manageme
 import 'package:numbers/features/admin/presentation/pages/admin_inquiry_detail_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_feed_management_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_consent_management_page.dart';
+import 'package:numbers/features/admin/presentation/pages/admin_company_approval_page.dart';
 import 'package:numbers/features/company_portal/job/presentation/pages/company_job_applications_page.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/features/user/feed/presentation/pages/feature_detail_page.dart';
@@ -95,10 +97,12 @@ bool pendingWelcomeGuide = false;
 // ロールキャッシュ（セッション中のDBクエリを削減）
 String? _cachedRole;
 String? _cachedUserId;
+String? _cachedApprovalStatus;
 
 void clearRoleCache() {
   _cachedRole = null;
   _cachedUserId = null;
+  _cachedApprovalStatus = null;
 }
 
 /// GoRouterインスタンスを生成する。
@@ -177,12 +181,26 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
             } else {
               final profile = await supabase
                   .from('profiles')
-                  .select('role')
+                  .select('role, company_id')
                   .eq('id', userId)
                   .maybeSingle();
               role = profile?['role'] as String?;
               _cachedUserId = userId;
               _cachedRole = role;
+
+              // company_user の場合、企業の審査ステータスもキャッシュ
+              if (role == 'company_user' && profile?['company_id'] != null) {
+                try {
+                  final company = await supabase
+                      .from('companies')
+                      .select('approval_status')
+                      .eq('id', profile!['company_id'] as String)
+                      .maybeSingle();
+                  _cachedApprovalStatus = company?['approval_status'] as String? ?? 'pending';
+                } catch (_) {
+                  _cachedApprovalStatus = 'pending';
+                }
+              }
             }
 
             if (isAdminRoute && role != 'admin') {
@@ -190,6 +208,19 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
             }
             if (isCompanyPortalRoute && role != 'company_user') {
               return '/feed';
+            }
+
+            // 企業ポータルへのアクセス時、未承認企業はステータスページへリダイレクト
+            if (isCompanyPortalRoute && role == 'company_user') {
+              final approvalStatus = _cachedApprovalStatus ?? 'pending';
+              final isApprovalPage = currentPath == '/company-portal/approval-status';
+
+              if (approvalStatus != 'approved' && !isApprovalPage) {
+                return '/company-portal/approval-status';
+              }
+              if (approvalStatus == 'approved' && isApprovalPage) {
+                return '/feed';
+              }
             }
           } catch (e) {
             debugPrint('Router redirect: ロール取得エラー: $e');
@@ -443,6 +474,10 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
         builder: (context, state) => const CompanyLoginPage(),
       ),
       GoRoute(
+        path: '/company-portal/approval-status',
+        builder: (context, state) => const CompanyApprovalStatusPage(),
+      ),
+      GoRoute(
         path: '/company-portal/dashboard',
         redirect: (context, state) => '/feed',
       ),
@@ -585,6 +620,10 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       GoRoute(
         path: '/admin/consents',
         builder: (context, state) => const AdminConsentManagementPage(),
+      ),
+      GoRoute(
+        path: '/admin/company-approvals',
+        builder: (context, state) => const AdminCompanyApprovalPage(),
       ),
     ],
   );

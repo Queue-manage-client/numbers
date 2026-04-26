@@ -478,4 +478,72 @@ class AdminRepository {
       return [];
     }
   }
+
+  // ==========================================
+  // 企業審査管理
+  // ==========================================
+
+  /// 審査対象の企業一覧を取得
+  Future<List<Map<String, dynamic>>> getCompaniesForApproval({
+    int limit = 20,
+    int offset = 0,
+    String? approvalStatusFilter,
+    String? searchQuery,
+  }) async {
+    try {
+      var query = _supabase.from('companies').select();
+
+      if (approvalStatusFilter != null && approvalStatusFilter.isNotEmpty) {
+        query = query.eq('approval_status', approvalStatusFilter);
+      }
+
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        query = query.ilike('name', '%$searchQuery%');
+      }
+
+      final response = await query
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+      return List<Map<String, dynamic>>.from(response as List);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// 審査待ち企業数を取得
+  Future<int> getPendingCompanyCount() async {
+    try {
+      final response = await _supabase
+          .from('companies')
+          .select()
+          .eq('approval_status', 'pending')
+          .count();
+      return response.count;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// 企業の審査ステータスを更新
+  Future<void> updateCompanyApprovalStatus({
+    required String companyId,
+    required String status,
+    String? note,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+
+    try {
+      await _supabase
+          .from('companies')
+          .update({
+            'approval_status': status,
+            'approval_note': note,
+            'reviewed_at': DateTime.now().toIso8601String(),
+            'reviewed_by': userId,
+          })
+          .eq('id', companyId);
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

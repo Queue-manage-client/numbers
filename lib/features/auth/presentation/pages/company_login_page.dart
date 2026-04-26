@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/router/app_router.dart';
 
 class CompanyLoginPage extends HookConsumerWidget {
   const CompanyLoginPage({super.key});
@@ -48,10 +49,23 @@ class CompanyLoginPage extends HookConsumerWidget {
           }
 
           if (context.mounted) {
+            // ロールキャッシュをクリア（審査ステータス再取得のため）
+            clearRoleCache();
+
+            // 審査ステータスを確認
+            final companyData = await ref.read(companyPortalRepositoryProvider).getCompanyById(companyId);
+            final approvalStatus = companyData?['approval_status'] as String? ?? 'pending';
+
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('ログインしました')),
             );
-            context.go('/feed');
+
+            if (approvalStatus != 'approved') {
+              // 未承認の場合は審査ステータスページへ
+              context.go('/company-portal/approval-status');
+            } else {
+              context.go('/feed');
+            }
           }
         }
       } catch (e) {

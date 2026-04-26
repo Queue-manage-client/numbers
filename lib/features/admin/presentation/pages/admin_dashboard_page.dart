@@ -12,6 +12,7 @@ class AdminDashboardPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(adminDashboardStatsProvider);
+    final pendingCountAsync = ref.watch(pendingCompanyCountProvider);
 
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
@@ -36,6 +37,7 @@ class AdminDashboardPage extends HookConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(adminDashboardStatsProvider);
+          ref.invalidate(pendingCompanyCountProvider);
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -127,12 +129,67 @@ class AdminDashboardPage extends HookConsumerWidget {
               ),
               const SizedBox(height: SpacePalette.lg * 2),
 
+              // 審査待ち企業通知
+              pendingCountAsync.when(
+                data: (count) {
+                  if (count > 0) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: SpacePalette.base),
+                      padding: const EdgeInsets.all(SpacePalette.base),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(RadiusPalette.lg),
+                        border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                      ),
+                      child: InkWell(
+                        onTap: () => context.go('/admin/company-approvals'),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.warning_amber, color: Colors.orange, size: 28),
+                            const SizedBox(width: SpacePalette.base),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '審査待ちの企業があります',
+                                    style: TextStylePalette.smListTitle.copyWith(
+                                      color: Colors.orange,
+                                    ),
+                                  ),
+                                  Text(
+                                    '$count件の企業が審査を待っています',
+                                    style: TextStylePalette.subText,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.chevron_right, color: Colors.orange),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+
               // メニューグリッド
               Text(
                 '管理メニュー',
                 style: TextStylePalette.smHeader,
               ),
               const SizedBox(height: SpacePalette.base),
+
+              _MenuCard(
+                icon: Icons.verified_user,
+                title: '企業審査管理',
+                description: '法人アカウントの審査・承認・否認',
+                onTap: () => context.go('/admin/company-approvals'),
+              ),
+              const SizedBox(height: SpacePalette.sm),
 
               _MenuCard(
                 icon: Icons.people,

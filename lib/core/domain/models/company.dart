@@ -1,6 +1,37 @@
 // core/domain/models/company.dart
 // 共通のCompanyモデル（Job/Intern/Feed等で共有）
 
+enum CompanyApprovalStatus {
+  pending,
+  approved,
+  rejected;
+
+  static CompanyApprovalStatus fromString(String? status) {
+    switch (status) {
+      case 'approved':
+        return CompanyApprovalStatus.approved;
+      case 'rejected':
+        return CompanyApprovalStatus.rejected;
+      case 'pending':
+      default:
+        return CompanyApprovalStatus.pending;
+    }
+  }
+
+  String toJson() => name;
+
+  String get displayName {
+    switch (this) {
+      case CompanyApprovalStatus.pending:
+        return '審査待ち';
+      case CompanyApprovalStatus.approved:
+        return '審査通過';
+      case CompanyApprovalStatus.rejected:
+        return '審査否認';
+    }
+  }
+}
+
 class Company {
   final String id;
   final String name;
@@ -13,6 +44,10 @@ class Company {
   final String? representativeName;
   final String? phone;
   final bool isSuspended;
+  final CompanyApprovalStatus approvalStatus;
+  final String? approvalNote;
+  final DateTime? reviewedAt;
+  final String? reviewedBy;
 
   Company({
     required this.id,
@@ -26,6 +61,10 @@ class Company {
     this.representativeName,
     this.phone,
     this.isSuspended = false,
+    this.approvalStatus = CompanyApprovalStatus.pending,
+    this.approvalNote,
+    this.reviewedAt,
+    this.reviewedBy,
   });
 
   factory Company.fromJson(Map<String, dynamic> json) {
@@ -41,6 +80,12 @@ class Company {
       representativeName: json['representative_name'] as String?,
       phone: json['phone'] as String?,
       isSuspended: json['is_suspended'] as bool? ?? false,
+      approvalStatus: CompanyApprovalStatus.fromString(json['approval_status'] as String?),
+      approvalNote: json['approval_note'] as String?,
+      reviewedAt: json['reviewed_at'] != null
+          ? DateTime.tryParse(json['reviewed_at'].toString())
+          : null,
+      reviewedBy: json['reviewed_by'] as String?,
     );
   }
 
@@ -59,4 +104,8 @@ class Company {
       'is_suspended': isSuspended,
     };
   }
+
+  bool get isApproved => approvalStatus == CompanyApprovalStatus.approved;
+  bool get isPending => approvalStatus == CompanyApprovalStatus.pending;
+  bool get isRejected => approvalStatus == CompanyApprovalStatus.rejected;
 }

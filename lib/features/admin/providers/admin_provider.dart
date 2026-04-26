@@ -261,3 +261,44 @@ final adminCompaniesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) 
   final repository = ref.watch(adminRepositoryProvider);
   return await repository.getAllCompanies();
 });
+
+// ==========================================
+// 企業審査管理プロバイダー
+// ==========================================
+
+class CompanyApprovalFilter {
+  final String? approvalStatus;
+  final String? searchQuery;
+  final int page;
+
+  CompanyApprovalFilter({this.approvalStatus, this.searchQuery, this.page = 0});
+
+  CompanyApprovalFilter copyWith({String? approvalStatus, String? searchQuery, int? page}) {
+    return CompanyApprovalFilter(
+      approvalStatus: approvalStatus ?? this.approvalStatus,
+      searchQuery: searchQuery ?? this.searchQuery,
+      page: page ?? this.page,
+    );
+  }
+}
+
+final companyApprovalFilterProvider = StateProvider<CompanyApprovalFilter>(
+  (ref) => CompanyApprovalFilter(),
+);
+
+final adminCompanyApprovalsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final repository = ref.watch(adminRepositoryProvider);
+  final filter = ref.watch(companyApprovalFilterProvider);
+
+  return await repository.getCompaniesForApproval(
+    limit: 20,
+    offset: filter.page * 20,
+    approvalStatusFilter: filter.approvalStatus,
+    searchQuery: filter.searchQuery,
+  );
+});
+
+final pendingCompanyCountProvider = FutureProvider<int>((ref) async {
+  final repository = ref.watch(adminRepositoryProvider);
+  return await repository.getPendingCompanyCount();
+});

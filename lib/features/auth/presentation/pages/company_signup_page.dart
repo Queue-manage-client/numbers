@@ -112,14 +112,15 @@ class CompanySignupPage extends HookConsumerWidget {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('企業登録完了しました')),
+            const SnackBar(content: Text('企業登録が完了しました。運営による審査をお待ちください。')),
           );
 
           // プロフィール情報を再取得
           ref.invalidate(currentUserProfileProvider);
           ref.invalidate(companyInfoProvider);
 
-          context.go('/feed');
+          // 審査待ちステータスページへ遷移
+          context.go('/company-portal/approval-status');
         }
       } catch (e) {
         if (context.mounted) {
