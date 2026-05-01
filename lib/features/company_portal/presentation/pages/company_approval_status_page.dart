@@ -6,6 +6,7 @@ import 'package:numbers/features/auth/presentation/providers/auth_provider.dart'
 import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
 import 'package:numbers/core/domain/models/company.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/router/app_router.dart';
 
 class CompanyApprovalStatusPage extends HookConsumerWidget {
   const CompanyApprovalStatusPage({super.key});
@@ -17,6 +18,10 @@ class CompanyApprovalStatusPage extends HookConsumerWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: ColorPalette.neutral0),
+          onPressed: () => context.go('/feed'),
+        ),
         title: Text(
           'アカウント審査状況',
           style: TextStylePalette.title,
@@ -47,6 +52,17 @@ class CompanyApprovalStatusPage extends HookConsumerWidget {
           }
 
           final company = Company.fromJson(companyData);
+
+          // 承認済みの場合、キャッシュをクリアしてフィードへ自動遷移
+          if (company.isApproved) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              clearRoleCache();
+              if (context.mounted) {
+                context.go('/feed');
+              }
+            });
+          }
+
           return _buildStatusContent(context, ref, company);
         },
         loading: () => Center(
@@ -199,6 +215,7 @@ class CompanyApprovalStatusPage extends HookConsumerWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: () {
+                clearRoleCache();
                 ref.invalidate(companyInfoProvider);
               },
               icon: const Icon(Icons.refresh),
@@ -206,6 +223,22 @@ class CompanyApprovalStatusPage extends HookConsumerWidget {
               style: OutlinedButton.styleFrom(
                 foregroundColor: ColorPalette.primaryColor,
                 side: const BorderSide(color: ColorPalette.primaryColor),
+                padding: const EdgeInsets.symmetric(vertical: SpacePalette.base),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: SpacePalette.base),
+
+          // ホームへ戻るボタン
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              onPressed: () => context.go('/feed'),
+              icon: const Icon(Icons.home),
+              label: const Text('ホームへ戻る'),
+              style: TextButton.styleFrom(
+                foregroundColor: ColorPalette.neutral400,
                 padding: const EdgeInsets.symmetric(vertical: SpacePalette.base),
               ),
             ),
