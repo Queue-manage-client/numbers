@@ -80,7 +80,7 @@ class CompanySignupPage extends HookConsumerWidget {
           'name': companyNameController.text.trim(),
           'representative_name': representativeNameController.text.trim(),
           'phone': phoneController.text.trim(),
-          'description': '', // 後で編集可能
+          'description': '',
           'address': '',
           'industry': '',
           'website': null,
