@@ -1,4 +1,5 @@
 // auth/presentation/pages/company_signup_page.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -71,6 +72,7 @@ class CompanySignupPage extends HookConsumerWidget {
         }
 
         final userId = response.user!.id;
+        debugPrint('=== 企業登録 Step1完了: ユーザー作成成功 userId=$userId ===');
 
         // 2. 企業情報を companies テーブルに保存
         final companyPortalRepository = ref.read(companyPortalRepositoryProvider);
@@ -84,15 +86,19 @@ class CompanySignupPage extends HookConsumerWidget {
           'website': null,
         };
 
+        debugPrint('=== 企業登録 Step2開始: createCompany ===');
         final companyId = await companyPortalRepository.createCompany(companyData);
+        debugPrint('=== 企業登録 Step2完了: companyId=$companyId ===');
 
         // 3. profiles の role を 'company_user' に、company_id を設定
+        debugPrint('=== 企業登録 Step3開始: updateUserProfile ===');
         await companyPortalRepository.updateUserProfile(
           userId: userId,
           role: 'company_user',
           companyId: companyId,
           position: '管理者', // デフォルト
         );
+        debugPrint('=== 企業登録 Step3完了: プロフィール更新成功 ===');
 
         // 4. 同意記録を保存（失敗しても登録は完了させる）
         try {
@@ -123,6 +129,8 @@ class CompanySignupPage extends HookConsumerWidget {
           context.go('/company-portal/approval-status');
         }
       } catch (e) {
+        debugPrint('=== 企業登録エラー ===');
+        debugPrint('Error: $e');
         if (context.mounted) {
           String errorMsg = '登録に失敗しました。';
           final errStr = e.toString().toLowerCase();
@@ -132,9 +140,14 @@ class CompanySignupPage extends HookConsumerWidget {
             errorMsg = 'メールアドレスを確認してください。';
           } else if (errStr.contains('password')) {
             errorMsg = 'パスワードは6文字以上で入力してください。';
+          } else {
+            errorMsg = '登録に失敗しました: $e';
           }
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMsg)),
+            SnackBar(
+              content: Text(errorMsg),
+              duration: const Duration(seconds: 8),
+            ),
           );
         }
       } finally {
