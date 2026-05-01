@@ -33,7 +33,7 @@ class CompanyJobRepository {
 
       final response = await _supabase
           .from('jobs')
-          .select('*, companies(*)')
+          .select('id, company_id, title, description, salary, location_text, status, job_type, job_category, working_hours, salary_min, salary_max, latitude, longitude, thumbnail_url, created_at, updated_at, companies(*)')
           .eq('company_id', companyId)
           .order('created_at', ascending: false);
 
@@ -99,7 +99,7 @@ class CompanyJobRepository {
       final response = await _supabase
           .from('jobs')
           .insert(insertData)
-          .select('*, companies(*)')
+          .select('id, company_id, title, description, salary, location_text, status, job_type, job_category, working_hours, salary_min, salary_max, latitude, longitude, thumbnail_url, created_at, updated_at, companies(*)')
           .single();
 
       return Job.fromJson(response);
@@ -144,7 +144,7 @@ class CompanyJobRepository {
           .from('jobs')
           .update(updateData)
           .eq('id', jobId)
-          .select('*, companies(*)')
+          .select('id, company_id, title, description, salary, location_text, status, job_type, job_category, working_hours, salary_min, salary_max, latitude, longitude, thumbnail_url, created_at, updated_at, companies(*)')
           .single();
 
       return Job.fromJson(response);
@@ -167,7 +167,7 @@ class CompanyJobRepository {
     try {
       final response = await _supabase
           .from('jobs')
-          .select('*, companies(*)')
+          .select('id, company_id, title, description, salary, location_text, status, job_type, job_category, working_hours, salary_min, salary_max, latitude, longitude, thumbnail_url, created_at, updated_at, companies(*)')
           .eq('id', jobId)
           .maybeSingle();
 
@@ -255,7 +255,7 @@ class CompanyJobRepository {
       // 自社求人を取得
       final jobs = await _supabase
           .from('jobs')
-          .select('*, companies(*)')
+          .select('id, company_id, title, description, salary, location_text, status, job_type, job_category, working_hours, salary_min, salary_max, latitude, longitude, thumbnail_url, created_at, updated_at, companies(*)')
           .eq('company_id', companyId);
 
       final jobsMap = <String, Map<String, dynamic>>{};
@@ -343,7 +343,7 @@ class CompanyJobRepository {
       // 求人情報を取得（companies情報含む）
       final jobData = await _supabase
           .from('jobs')
-          .select('*, companies(*)')
+          .select('id, company_id, title, description, salary, location_text, status, job_type, job_category, working_hours, salary_min, salary_max, latitude, longitude, thumbnail_url, created_at, updated_at, companies(*)')
           .eq('id', appResponse['job_id'])
           .single();
 
@@ -485,7 +485,7 @@ class CompanyJobRepository {
       // 求人情報を取得
       final jobData = await _supabase
           .from('jobs')
-          .select('*, companies(*)')
+          .select('id, company_id, title, description, salary, location_text, status, job_type, job_category, working_hours, salary_min, salary_max, latitude, longitude, thumbnail_url, created_at, updated_at, companies(*)')
           .eq('id', appResponse['job_id'])
           .single();
 

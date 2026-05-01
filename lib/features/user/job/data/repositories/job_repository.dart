@@ -16,7 +16,7 @@ class JobRepository {
     try {
       final response = await _supabase
           .from('jobs')
-          .select('*, companies(*)')
+          .select('id, company_id, title, description, salary, location_text, status, job_type, job_category, working_hours, salary_min, salary_max, latitude, longitude, thumbnail_url, created_at, updated_at, companies(*)')
           .eq('status', 'open')
           .order('created_at', ascending: false);
 
@@ -30,7 +30,7 @@ class JobRepository {
     try {
       final response = await _supabase
           .from('jobs')
-          .select('*, companies(*)')
+          .select('id, company_id, title, description, salary, location_text, status, job_type, job_category, working_hours, salary_min, salary_max, latitude, longitude, thumbnail_url, created_at, updated_at, companies(*)')
           .eq('id', jobId)
           .maybeSingle();
 
@@ -101,7 +101,7 @@ class JobRepository {
     try {
       final response = await _supabase
           .from('job_applications')
-          .select('*, jobs(*, companies(*))')
+          .select('*, jobs(id, company_id, title, description, salary, location_text, status, job_type, job_category, working_hours, salary_min, salary_max, latitude, longitude, thumbnail_url, created_at, updated_at, companies(*))')
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 

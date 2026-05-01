@@ -39,7 +39,7 @@ class CompanyRepository {
     try {
       final response = await _supabase
           .from('jobs')
-          .select()
+          .select('id, company_id, title, description, salary, location_text, status, job_type, job_category, working_hours, salary_min, salary_max, latitude, longitude, thumbnail_url, created_at, updated_at')
           .eq('company_id', companyId)
           .eq('status', 'open')
           .order('created_at', ascending: false);

@@ -188,7 +188,7 @@ class AdminRepository {
     String? companyId,
   }) async {
     try {
-      var query = _supabase.from('company_videos').select('*, companies(id, name)');
+      var query = _supabase.from('company_videos').select('id, company_id, title, description, salary, location_text, status, job_type, job_category, working_hours, salary_min, salary_max, latitude, longitude, thumbnail_url, created_at, updated_at, companies(id, name)');
 
       if (isPublicFilter != null) {
         query = query.eq('is_public', isPublicFilter);
@@ -273,7 +273,7 @@ class AdminRepository {
     String? companyId,
   }) async {
     try {
-      var query = _supabase.from('jobs').select('*, companies(id, name)');
+      var query = _supabase.from('jobs').select('id, company_id, title, description, salary, location_text, status, job_type, job_category, working_hours, salary_min, salary_max, latitude, longitude, thumbnail_url, created_at, updated_at, companies(id, name)');
 
       if (statusFilter != null && statusFilter.isNotEmpty) {
         query = query.eq('status', statusFilter);
@@ -328,7 +328,7 @@ class AdminRepository {
     String? companyId,
   }) async {
     try {
-      var query = _supabase.from('internships').select('*, companies(id, name)');
+      var query = _supabase.from('internships').select('id, company_id, title, description, salary, location_text, status, job_type, job_category, working_hours, salary_min, salary_max, latitude, longitude, thumbnail_url, created_at, updated_at, companies(id, name)');
 
       if (isPublicFilter != null) {
         query = query.eq('is_public', isPublicFilter);
