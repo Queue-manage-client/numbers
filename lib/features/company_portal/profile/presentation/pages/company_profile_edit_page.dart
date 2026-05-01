@@ -17,6 +17,8 @@ class CompanyProfileEditPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final companyNameController = useTextEditingController();
+    final representativeNameController = useTextEditingController();
+    final phoneController = useTextEditingController();
     final descriptionController = useTextEditingController();
     final addressController = useTextEditingController();
     final industryController = useTextEditingController();
@@ -37,6 +39,8 @@ class CompanyProfileEditPage extends HookConsumerWidget {
       companyInfoAsync.whenData((companyInfo) {
         if (companyInfo != null && !isDataLoaded.value) {
           companyNameController.text = companyInfo['name'] ?? '';
+          representativeNameController.text = companyInfo['representative_name'] ?? '';
+          phoneController.text = companyInfo['phone'] ?? '';
           descriptionController.text = companyInfo['description'] ?? '';
           addressController.text = companyInfo['address'] ?? '';
           industryController.text = companyInfo['industry'] ?? '';
@@ -118,6 +122,8 @@ class CompanyProfileEditPage extends HookConsumerWidget {
 
         final updateData = {
           'name': companyNameController.text.trim(),
+          'representative_name': representativeNameController.text.trim(),
+          'phone': phoneController.text.trim(),
           'description': descriptionController.text.trim(),
           'address': addressController.text.trim(),
           'industry': industryController.text.trim(),
@@ -171,6 +177,8 @@ class CompanyProfileEditPage extends HookConsumerWidget {
       }
     }, [
       companyNameController,
+      representativeNameController,
+      phoneController,
       descriptionController,
       addressController,
       industryController,
@@ -435,6 +443,39 @@ class CompanyProfileEditPage extends HookConsumerWidget {
                       }
                       return null;
                     },
+                  ),
+                  const SizedBox(height: SpacePalette.base),
+
+                  // 代表者名
+                  Text(
+                    '代表者名',
+                    style: TextStylePalette.smTitle,
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  TextFormField(
+                    controller: representativeNameController,
+                    style: TextStylePalette.normalText,
+                    decoration: InputDecoration(
+                      hintText: '例: 山田太郎',
+                      hintStyle: TextStylePalette.hintText,
+                    ),
+                  ),
+                  const SizedBox(height: SpacePalette.base),
+
+                  // 電話番号
+                  Text(
+                    '電話番号',
+                    style: TextStylePalette.smTitle,
+                  ),
+                  const SizedBox(height: SpacePalette.sm),
+                  TextFormField(
+                    controller: phoneController,
+                    style: TextStylePalette.normalText,
+                    decoration: InputDecoration(
+                      hintText: '例: 090-1234-5678',
+                      hintStyle: TextStylePalette.hintText,
+                    ),
+                    keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: SpacePalette.base),
 
