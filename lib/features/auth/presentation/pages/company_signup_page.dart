@@ -8,6 +8,7 @@ import 'package:numbers/features/auth/presentation/providers/auth_provider.dart'
 import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import 'package:numbers/core/services/app_tour_service.dart';
+import 'package:numbers/core/router/app_router.dart';
 
 class CompanySignupPage extends HookConsumerWidget {
   const CompanySignupPage({super.key});
@@ -46,6 +47,9 @@ class CompanySignupPage extends HookConsumerWidget {
       isLoading.value = true;
 
       try {
+        // ルーターの自動リダイレクトを抑制（全ステップ完了まで遷移しない）
+        pendingCompanySignup = true;
+
         // 1. ユーザー作成（auth.users + profiles に 'user' で作成される）
         final authRepository = ref.read(authRepositoryProvider);
         final response = await authRepository.signUp(
@@ -100,6 +104,9 @@ class CompanySignupPage extends HookConsumerWidget {
         );
         debugPrint('=== 企業登録 Step3完了: プロフィール更新成功 ===');
 
+        // ルーターのキャッシュをクリア（signUp時にrole='user'でキャッシュされているため）
+        clearRoleCache();
+
         // 4. 同意記録を保存（失敗しても登録は完了させる）
         try {
           final consentRepository = ref.read(consentRepositoryProvider);
@@ -151,6 +158,7 @@ class CompanySignupPage extends HookConsumerWidget {
           );
         }
       } finally {
+        pendingCompanySignup = false;
         isLoading.value = false;
       }
     }

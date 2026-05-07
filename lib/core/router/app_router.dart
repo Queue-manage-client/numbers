@@ -94,6 +94,9 @@ const _publicPaths = <String>[
 // ウェルカムガイド表示待ちフラグ（新規登録直後にtrueにセット）
 bool pendingWelcomeGuide = false;
 
+// 企業登録処理中フラグ（signUp後のauto redirectを抑制）
+bool pendingCompanySignup = false;
+
 // ロールキャッシュ（セッション中のDBクエリを削減）
 String? _cachedRole;
 String? _cachedUserId;
@@ -132,6 +135,11 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       // ログイン済みユーザーが認証ページにアクセスした場合 → ロールに応じて遷移
       const authOnlyPaths = ['/login', '/signup', '/signup/individual', '/signup/company', '/onboarding'];
       if (isLoggedIn && authOnlyPaths.contains(currentPath)) {
+        // 企業登録処理中はリダイレクトを抑制（signup関数が自分で遷移を制御する）
+        if (pendingCompanySignup) {
+          return null;
+        }
+
         // 新規登録直後ならウェルカムガイドへ
         if (pendingWelcomeGuide) {
           pendingWelcomeGuide = false;

@@ -31,6 +31,9 @@ class CompanyLoginPage extends HookConsumerWidget {
           password: passwordController.text,
         );
 
+        // signIn直後にキャッシュクリア（auth redirectでの古いキャッシュ防止）
+        clearRoleCache();
+
         if (context.mounted) {
           // プロフィールを取得して企業アカウントかどうかをチェック
           final profile = await ref.read(companyPortalRepositoryProvider).getCurrentUserProfile();

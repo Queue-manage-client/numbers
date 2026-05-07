@@ -8,6 +8,7 @@ import 'package:numbers/features/auth/presentation/providers/auth_provider.dart'
 import 'package:numbers/features/user/feed/presentation/providers/feed_provider.dart';
 import 'package:numbers/features/user/profile/presentation/providers/profile_provider.dart';
 import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
+import 'package:numbers/core/domain/models/company.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import 'package:numbers/core/services/app_tour_service.dart';
 import '../widgets/vertical_video_feed.dart';
@@ -1306,6 +1307,22 @@ class _CompanyAccountTabState extends ConsumerState<_CompanyAccountTab> {
     final companyInfoAsync = ref.watch(companyInfoProvider);
     final statsAsync = ref.watch(dashboardStatsProvider);
 
+    // データ読み込み中はローディング表示
+    if (companyInfoAsync.isLoading) {
+      return Center(
+        child: CircularProgressIndicator(color: ColorPalette.primaryColor),
+      );
+    }
+
+    // 審査ステータスを確認
+    final approvalStatus = companyInfoAsync.whenOrNull(
+      data: (info) {
+        if (info == null) return null;
+        return CompanyApprovalStatus.fromString(info['approval_status'] as String?);
+      },
+    );
+    final isApproved = approvalStatus == CompanyApprovalStatus.approved;
+
     return ListView(
       padding: const EdgeInsets.all(SpacePalette.base),
       children: [
@@ -1320,84 +1337,96 @@ class _CompanyAccountTabState extends ConsumerState<_CompanyAccountTab> {
         ),
         const SizedBox(height: SpacePalette.lg),
 
-        // 統計カード
-        statsAsync.when(
-          data: (stats) => Row(
-            key: _statsKey,
-            children: [
-              Expanded(
-                child: _CompanyStatCard(
-                  icon: Icons.video_library,
-                  title: '動画',
-                  count: '${stats['videos'] ?? 0}',
-                ),
-              ),
-              const SizedBox(width: SpacePalette.sm),
-              Expanded(
-                child: _CompanyStatCard(
-                  icon: Icons.work,
-                  title: '求人',
-                  count: '${stats['jobs'] ?? 0}',
-                ),
-              ),
-              const SizedBox(width: SpacePalette.sm),
-              Expanded(
-                child: _CompanyStatCard(
-                  icon: Icons.school,
-                  title: 'インターン',
-                  count: '${stats['internships'] ?? 0}',
-                ),
-              ),
-            ],
+        // 未承認の場合: 審査待ちバナー
+        if (!isApproved) ...[
+          _ApprovalPendingBanner(
+            status: approvalStatus,
+            onTap: () => context.go('/company-portal/approval-status'),
           ),
-          loading: () => Center(
-            child: CircularProgressIndicator(color: ColorPalette.primaryColor),
+          const SizedBox(height: SpacePalette.lg),
+        ],
+
+        // 承認済みの場合のみ: 統計カード + メニュー
+        if (isApproved) ...[
+          // 統計カード
+          statsAsync.when(
+            data: (stats) => Row(
+              key: _statsKey,
+              children: [
+                Expanded(
+                  child: _CompanyStatCard(
+                    icon: Icons.video_library,
+                    title: '動画',
+                    count: '${stats['videos'] ?? 0}',
+                  ),
+                ),
+                const SizedBox(width: SpacePalette.sm),
+                Expanded(
+                  child: _CompanyStatCard(
+                    icon: Icons.work,
+                    title: '求人',
+                    count: '${stats['jobs'] ?? 0}',
+                  ),
+                ),
+                const SizedBox(width: SpacePalette.sm),
+                Expanded(
+                  child: _CompanyStatCard(
+                    icon: Icons.school,
+                    title: 'インターン',
+                    count: '${stats['internships'] ?? 0}',
+                  ),
+                ),
+              ],
+            ),
+            loading: () => Center(
+              child: CircularProgressIndicator(color: ColorPalette.primaryColor),
+            ),
+            error: (_, __) => const SizedBox.shrink(),
           ),
-          error: (_, __) => const SizedBox.shrink(),
-        ),
-        const SizedBox(height: SpacePalette.lg),
+          const SizedBox(height: SpacePalette.lg),
 
-        // 企業メニュー
-        Text('メニュー', style: TextStylePalette.smHeader),
-        const SizedBox(height: SpacePalette.sm),
+          // 企業メニュー
+          Text('メニュー', style: TextStylePalette.smHeader),
+          const SizedBox(height: SpacePalette.sm),
 
-        _CompanyMenuTile(
-          key: _profileEditKey,
-          icon: Icons.business,
-          title: '企業情報編集',
-          onTap: () => context.go('/company-portal/profile/edit'),
-        ),
-        _CompanyMenuTile(
-          key: _videoManageKey,
-          icon: Icons.video_library,
-          title: '動画管理',
-          onTap: () => context.go('/company-portal/videos'),
-        ),
-        _CompanyMenuTile(
-          key: _jobManageKey,
-          icon: Icons.work,
-          title: '求人管理',
-          onTap: () => context.go('/company-portal/jobs'),
-        ),
-        _CompanyMenuTile(
-          key: _internManageKey,
-          icon: Icons.school,
-          title: 'インターン管理',
-          onTap: () => context.go('/company-portal/interns'),
-        ),
-        _CompanyMenuTile(
-          key: _chatManageKey,
-          icon: Icons.chat,
-          title: 'チャット管理',
-          onTap: () => context.go('/company-portal/chats'),
-        ),
-        _CompanyMenuTile(
-          key: _termsKey,
-          icon: Icons.description,
-          title: '利用規約・契約条項',
-          onTap: () => context.go('/company-portal/terms'),
-        ),
-        const SizedBox(height: SpacePalette.base),
+          _CompanyMenuTile(
+            key: _profileEditKey,
+            icon: Icons.business,
+            title: '企業情報編集',
+            onTap: () => context.go('/company-portal/profile/edit'),
+          ),
+          _CompanyMenuTile(
+            key: _videoManageKey,
+            icon: Icons.video_library,
+            title: '動画管理',
+            onTap: () => context.go('/company-portal/videos'),
+          ),
+          _CompanyMenuTile(
+            key: _jobManageKey,
+            icon: Icons.work,
+            title: '求人管理',
+            onTap: () => context.go('/company-portal/jobs'),
+          ),
+          _CompanyMenuTile(
+            key: _internManageKey,
+            icon: Icons.school,
+            title: 'インターン管理',
+            onTap: () => context.go('/company-portal/interns'),
+          ),
+          _CompanyMenuTile(
+            key: _chatManageKey,
+            icon: Icons.chat,
+            title: 'チャット管理',
+            onTap: () => context.go('/company-portal/chats'),
+          ),
+          _CompanyMenuTile(
+            key: _termsKey,
+            icon: Icons.description,
+            title: '利用規約・契約条項',
+            onTap: () => context.go('/company-portal/terms'),
+          ),
+          const SizedBox(height: SpacePalette.base),
+        ],
 
         // ログアウト
         _LogoutCard(),
@@ -1473,6 +1502,66 @@ class _CompanyMenuTile extends StatelessWidget {
         title: Text(title, style: TextStylePalette.normalText),
         trailing: const Icon(Icons.chevron_right, color: ColorPalette.neutral400),
         onTap: onTap,
+      ),
+    );
+  }
+}
+
+// 審査待ちバナー
+class _ApprovalPendingBanner extends StatelessWidget {
+  final CompanyApprovalStatus? status;
+  final VoidCallback onTap;
+
+  const _ApprovalPendingBanner({
+    required this.status,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isRejected = status == CompanyApprovalStatus.rejected;
+    final Color bannerColor = isRejected ? Colors.red : Colors.orange;
+    final IconData bannerIcon = isRejected ? Icons.cancel_outlined : Icons.hourglass_top;
+    final String title = isRejected ? '審査が否認されました' : 'アカウント審査中';
+    final String message = isRejected
+        ? '詳細を確認するには下のボタンをタップしてください。'
+        : '現在、運営による審査を行っています。審査が完了するまで企業ポータルの機能はご利用いただけません。';
+
+    return Container(
+      padding: const EdgeInsets.all(SpacePalette.lg),
+      decoration: BoxDecoration(
+        color: bannerColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(RadiusPalette.lg),
+        border: Border.all(color: bannerColor.withOpacity(0.4)),
+      ),
+      child: Column(
+        children: [
+          Icon(bannerIcon, size: 48, color: bannerColor),
+          const SizedBox(height: SpacePalette.base),
+          Text(
+            title,
+            style: TextStylePalette.smHeader.copyWith(color: bannerColor),
+          ),
+          const SizedBox(height: SpacePalette.sm),
+          Text(
+            message,
+            style: TextStylePalette.normalText,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: SpacePalette.base),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onTap,
+              icon: const Icon(Icons.info_outline),
+              label: const Text('審査状況を確認'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: bannerColor,
+                side: BorderSide(color: bannerColor),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
