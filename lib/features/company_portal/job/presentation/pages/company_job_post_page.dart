@@ -6,10 +6,23 @@ import 'package:go_router/go_router.dart';
 import 'package:numbers/features/company_portal/job/presentation/providers/company_job_provider.dart';
 import 'package:numbers/features/user/job/domain/models/job.dart';
 import 'package:numbers/features/user/job/presentation/providers/job_map_provider.dart';
+import 'package:numbers/features/company_portal/subscription/presentation/providers/subscription_providers.dart';
+import 'package:numbers/features/company_portal/subscription/presentation/widgets/subscription_required_overlay.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
-class CompanyJobPostPage extends HookConsumerWidget {
+class CompanyJobPostPage extends ConsumerWidget {
   const CompanyJobPostPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final canPost = ref.watch(canPostProvider);
+    if (!canPost) return const SubscriptionRequiredOverlay();
+    return const _CompanyJobPostPageBody();
+  }
+}
+
+class _CompanyJobPostPageBody extends HookConsumerWidget {
+  const _CompanyJobPostPageBody();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

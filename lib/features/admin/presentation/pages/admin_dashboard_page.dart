@@ -192,6 +192,14 @@ class AdminDashboardPage extends HookConsumerWidget {
               const SizedBox(height: SpacePalette.sm),
 
               _MenuCard(
+                icon: Icons.assignment_turned_in,
+                title: 'プラン申請審査',
+                description: '商工会・特別プランの申請審査',
+                onTap: () => context.go('/admin/plan-applications'),
+              ),
+              const SizedBox(height: SpacePalette.sm),
+
+              _MenuCard(
                 icon: Icons.people,
                 title: 'ユーザー管理',
                 description: 'ユーザーアカウントの管理・停止',

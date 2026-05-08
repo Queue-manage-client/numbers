@@ -79,6 +79,9 @@ dependencies:
   device_info_plus: ^11.0.0
   tutorial_coach_mark: ^1.3.3
 
+  # In-app WebView for Stripe Checkout / Customer Portal
+  flutter_inappwebview: ^6.1.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

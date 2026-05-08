@@ -54,6 +54,30 @@ class JobRepository {
     }
 
     try {
+      // 求人の存在と募集状態を確認
+      final job = await _supabase
+          .from('jobs')
+          .select('id, status')
+          .eq('id', jobId)
+          .maybeSingle();
+      if (job == null) {
+        throw Exception('求人が見つかりません');
+      }
+      if (job['status'] != 'open') {
+        throw Exception('この求人は現在募集を受け付けていません');
+      }
+
+      // 重複応募の防止
+      final existing = await _supabase
+          .from('job_applications')
+          .select('id')
+          .eq('job_id', jobId)
+          .eq('user_id', userId)
+          .maybeSingle();
+      if (existing != null) {
+        throw Exception('この求人にはすでに応募済みです');
+      }
+
       final response = await _supabase
           .from('job_applications')
           .insert({

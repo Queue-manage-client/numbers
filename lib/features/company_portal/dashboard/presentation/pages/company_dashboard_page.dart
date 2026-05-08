@@ -162,6 +162,14 @@ class CompanyDashboardPage extends HookConsumerWidget {
             const SizedBox(height: SpacePalette.sm),
 
             _MenuCard(
+              icon: Icons.credit_card,
+              title: 'サブスクリプション',
+              description: 'プラン加入・変更・解約・領収書',
+              onTap: () => context.go('/company-portal/subscription'),
+            ),
+            const SizedBox(height: SpacePalette.sm),
+
+            _MenuCard(
               icon: Icons.description,
               title: '利用規約・契約条項',
               description: '法人向け利用規約と契約条項の確認',

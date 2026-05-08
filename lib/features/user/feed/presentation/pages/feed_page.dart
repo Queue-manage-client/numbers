@@ -1420,6 +1420,11 @@ class _CompanyAccountTabState extends ConsumerState<_CompanyAccountTab> {
             onTap: () => context.go('/company-portal/chats'),
           ),
           _CompanyMenuTile(
+            icon: Icons.credit_card,
+            title: 'サブスクリプション',
+            onTap: () => context.go('/company-portal/subscription'),
+          ),
+          _CompanyMenuTile(
             key: _termsKey,
             icon: Icons.description,
             title: '利用規約・契約条項',

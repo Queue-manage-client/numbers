@@ -4,15 +4,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import 'package:numbers/features/company_portal/intern/presentation/providers/company_intern_provider.dart';
+import 'package:numbers/features/company_portal/subscription/presentation/providers/subscription_providers.dart';
+import 'package:numbers/features/company_portal/subscription/presentation/widgets/subscription_required_overlay.dart';
 
-class CompanyInternPostPage extends ConsumerStatefulWidget {
+class CompanyInternPostPage extends ConsumerWidget {
   const CompanyInternPostPage({super.key});
 
   @override
-  ConsumerState<CompanyInternPostPage> createState() => _CompanyInternPostPageState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final canPost = ref.watch(canPostProvider);
+    if (!canPost) return const SubscriptionRequiredOverlay();
+    return const _CompanyInternPostPageBody();
+  }
 }
 
-class _CompanyInternPostPageState extends ConsumerState<CompanyInternPostPage> {
+class _CompanyInternPostPageBody extends ConsumerStatefulWidget {
+  const _CompanyInternPostPageBody();
+
+  @override
+  ConsumerState<_CompanyInternPostPageBody> createState() => _CompanyInternPostPageState();
+}
+
+class _CompanyInternPostPageState extends ConsumerState<_CompanyInternPostPageBody> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -68,6 +81,16 @@ class _CompanyInternPostPageState extends ConsumerState<CompanyInternPostPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('開始日と終了日を選択してください'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_endDate!.isBefore(_startDate!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('終了日は開始日以降に設定してください'),
           backgroundColor: Colors.red,
         ),
       );

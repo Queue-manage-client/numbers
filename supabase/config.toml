@@ -357,6 +357,10 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Stripe Webhook は JWT を持たないので検証を OFF にする (関数内で署名検証)
+[functions.stripe-webhook]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

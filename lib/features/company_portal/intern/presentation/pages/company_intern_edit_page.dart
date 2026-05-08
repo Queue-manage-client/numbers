@@ -84,6 +84,13 @@ class _CompanyInternEditPageState extends ConsumerState<CompanyInternEditPage> {
       return;
     }
 
+    if (_endDate!.isBefore(_startDate!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('終了日は開始日以降に設定してください')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {

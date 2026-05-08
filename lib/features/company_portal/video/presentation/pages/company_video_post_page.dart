@@ -8,10 +8,23 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
+import 'package:numbers/features/company_portal/subscription/presentation/providers/subscription_providers.dart';
+import 'package:numbers/features/company_portal/subscription/presentation/widgets/subscription_required_overlay.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 
-class CompanyVideoPostPage extends HookConsumerWidget {
+class CompanyVideoPostPage extends ConsumerWidget {
   const CompanyVideoPostPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final canPost = ref.watch(canPostProvider);
+    if (!canPost) return const SubscriptionRequiredOverlay();
+    return const _CompanyVideoPostPageBody();
+  }
+}
+
+class _CompanyVideoPostPageBody extends HookConsumerWidget {
+  const _CompanyVideoPostPageBody();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -42,12 +55,31 @@ class CompanyVideoPostPage extends HookConsumerWidget {
         );
 
         if (result != null && result.files.isNotEmpty) {
-          videoFile.value = result.files.first;
+          final picked = result.files.first;
+
+          // 動画ファイルサイズ上限 (200MB)
+          const maxVideoBytes = 200 * 1024 * 1024;
+          if (picked.size > maxVideoBytes) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '動画サイズは 200MB 以下にしてください（選択: ${(picked.size / (1024 * 1024)).toStringAsFixed(1)}MB）',
+                  style: TextStylePalette.normalText.copyWith(
+                    color: ColorPalette.neutral0,
+                  ),
+                ),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+            return;
+          }
+
+          videoFile.value = picked;
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '動画を選択しました: ${result.files.first.name}',
+                '動画を選択しました: ${picked.name}',
                 style: TextStylePalette.normalText.copyWith(
                   color: ColorPalette.neutral0,
                 ),
@@ -84,13 +116,9 @@ class CompanyVideoPostPage extends HookConsumerWidget {
 
           if (result != null && result.files.isNotEmpty) {
             thumbnailFile.value = result.files.first;
-            
-            // Web用のプレビューURL生成
-            if (result.files.first.bytes != null) {
-              // bytes から Blob URL を生成（Webのみ）
-              thumbnailUrl.value = null; // プレビューは後で実装
-            }
-            
+            // bytes プレビューを使うため URL は不要
+            thumbnailUrl.value = null;
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
@@ -397,7 +425,7 @@ class CompanyVideoPostPage extends HookConsumerWidget {
               ),
               const SizedBox(height: SpacePalette.sm),
               Container(
-                height: 150,
+                height: 200,
                 decoration: BoxDecoration(
                   color: ColorPalette.neutral0,
                   borderRadius: BorderRadius.circular(RadiusPalette.lg),
@@ -408,48 +436,54 @@ class CompanyVideoPostPage extends HookConsumerWidget {
                     width: 2,
                   ),
                 ),
-                padding: const EdgeInsets.all(SpacePalette.base),  // padding追加
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        thumbnailFile.value != null
-                            ? Icons.check_circle
-                            : Icons.image_outlined,
-                        size: 48,
-                        color: thumbnailFile.value != null
-                            ? ColorPalette.systemGold
-                            : ColorPalette.neutral400,
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (thumbnailFile.value?.bytes != null)
+                      Image.memory(
+                        thumbnailFile.value!.bytes!,
+                        fit: BoxFit.cover,
+                      )
+                    else
+                      Center(
+                        child: Icon(
+                          Icons.image_outlined,
+                          size: 48,
+                          color: ColorPalette.neutral400,
+                        ),
                       ),
-                      const SizedBox(height: SpacePalette.sm),
-                      if (thumbnailFile.value != null) ...[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: SpacePalette.sm),
-                          child: Text(
-                            thumbnailFile.value!.name,
-                            style: TextStylePalette.smSubText.copyWith(
-                              color: ColorPalette.systemGold,
+                    Positioned(
+                      bottom: SpacePalette.sm,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: ColorPalette.neutral900.withValues(alpha: 0.7),
+                            borderRadius:
+                                BorderRadius.circular(RadiusPalette.base),
+                          ),
+                          child: TextButton.icon(
+                            onPressed: pickThumbnailFile,
+                            icon: Icon(
+                              thumbnailFile.value != null
+                                  ? Icons.refresh
+                                  : Icons.add_photo_alternate,
+                              size: 20,
+                              color: ColorPalette.neutral0,
                             ),
-                            textAlign: TextAlign.center,
-                            maxLines: 1,  // 1行まで表示
-                            overflow: TextOverflow.ellipsis,  // オーバーフロー対策
+                            label: Text(
+                              thumbnailFile.value != null
+                                  ? 'サムネイルを変更'
+                                  : 'サムネイルを選択',
+                              style: TextStylePalette.smTitle,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: SpacePalette.sm),
-                      ],
-                      TextButton.icon(
-                        onPressed: pickThumbnailFile,
-                        icon: Icon(
-                          thumbnailFile.value != null ? Icons.refresh : Icons.add_photo_alternate,
-                          size: 20,
-                        ),
-                        label: Text(
-                          thumbnailFile.value != null ? 'サムネイルを変更' : 'サムネイルを選択',
-                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: SpacePalette.lg),

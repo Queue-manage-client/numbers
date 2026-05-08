@@ -58,6 +58,10 @@ import 'package:numbers/features/company_portal/chat/presentation/pages/company_
 import 'package:numbers/features/company_portal/profile/presentation/pages/company_profile_edit_page.dart';
 import 'package:numbers/features/company_portal/profile/presentation/pages/company_terms_page.dart';
 import 'package:numbers/features/company_portal/presentation/pages/company_approval_status_page.dart';
+import 'package:numbers/features/company_portal/subscription/presentation/pages/plan_selection_page.dart';
+import 'package:numbers/features/company_portal/subscription/presentation/pages/subscription_status_page.dart';
+import 'package:numbers/features/company_portal/subscription/presentation/pages/plan_application_page.dart';
+import 'package:numbers/features/admin/presentation/pages/admin_plan_application_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_login_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_dashboard_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_user_management_page.dart';
@@ -581,6 +585,18 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
         builder: (context, state) => const CompanyProfileEditPage(),
       ),
       GoRoute(
+        path: '/company-portal/subscription',
+        builder: (context, state) => const SubscriptionStatusPage(),
+      ),
+      GoRoute(
+        path: '/company-portal/subscription/plans',
+        builder: (context, state) => const PlanSelectionPage(),
+      ),
+      GoRoute(
+        path: '/company-portal/subscription/applications',
+        builder: (context, state) => const PlanApplicationPage(),
+      ),
+      GoRoute(
         path: '/company-portal/terms',
         builder: (context, state) => const CompanyTermsPage(),
       ),
@@ -632,6 +648,10 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       GoRoute(
         path: '/admin/company-approvals',
         builder: (context, state) => const AdminCompanyApprovalPage(),
+      ),
+      GoRoute(
+        path: '/admin/plan-applications',
+        builder: (context, state) => const AdminPlanApplicationPage(),
       ),
     ],
   );
