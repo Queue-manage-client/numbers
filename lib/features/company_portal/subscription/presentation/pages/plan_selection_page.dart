@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../core/theme/app_theme.dart';
 import '../../domain/entities/subscription_plan.dart';
 import '../../domain/enums/billing_cycle.dart';
 import '../providers/subscription_providers.dart';
-import 'checkout_webview_page.dart';
 
 class PlanSelectionPage extends ConsumerStatefulWidget {
   const PlanSelectionPage({super.key});
@@ -15,9 +15,29 @@ class PlanSelectionPage extends ConsumerStatefulWidget {
   ConsumerState<PlanSelectionPage> createState() => _PlanSelectionPageState();
 }
 
-class _PlanSelectionPageState extends ConsumerState<PlanSelectionPage> {
+class _PlanSelectionPageState extends ConsumerState<PlanSelectionPage>
+    with WidgetsBindingObserver {
   BillingCycle _cycle = BillingCycle.monthly;
   bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      ref.invalidate(currentCompanySubscriptionProvider);
+    }
+  }
 
   String _formatYen(int amount) {
     final s = amount.toString();
@@ -38,15 +58,14 @@ class _PlanSelectionPageState extends ConsumerState<PlanSelectionPage> {
         planCode: plan.code,
         billingCycle: _cycle,
       );
-      if (!mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => StripeWebViewPage(
-            url: url,
-            title: '${plan.name} へ加入',
-          ),
-        ),
+      final uri = Uri.parse(url);
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
       );
+      if (!launched) {
+        throw Exception('ブラウザを起動できませんでした');
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

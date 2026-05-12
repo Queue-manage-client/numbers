@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../core/theme/app_theme.dart';
 import '../providers/subscription_providers.dart';
-import 'checkout_webview_page.dart';
 
 class SubscriptionStatusPage extends ConsumerStatefulWidget {
   const SubscriptionStatusPage({super.key});
@@ -42,16 +42,14 @@ class _SubscriptionStatusPageState
     try {
       final repo = ref.read(subscriptionRepositoryProvider);
       final url = await repo.createPortalSessionUrl();
-      if (!context.mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => StripeWebViewPage(
-            url: url,
-            title: 'プラン管理',
-          ),
-        ),
+      final uri = Uri.parse(url);
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
       );
-      if (mounted) ref.invalidate(currentCompanySubscriptionProvider);
+      if (!launched) {
+        throw Exception('ブラウザを起動できませんでした');
+      }
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
