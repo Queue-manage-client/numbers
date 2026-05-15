@@ -5,7 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/chat/presentation/providers/chat_provider.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 import 'package:numbers/core/theme/app_theme.dart';
 
 class ChatRoomPage extends HookConsumerWidget {
@@ -25,8 +25,6 @@ class ChatRoomPage extends HookConsumerWidget {
     final messagesAsync = ref.watch(messagesStreamProvider(roomId));
     final prevMessageCount = useRef(0);
     final currentUser = ref.watch(currentUserProvider);
-    final currentRoute = GoRouterState.of(context).uri.path;
-
     final sendMessage = useCallback(() async {
       if (messageController.text.trim().isEmpty) return;
       if (currentUser == null) return;
@@ -294,7 +292,6 @@ class ChatRoomPage extends HookConsumerWidget {
           ),
         ],
       ),
-      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
     );
   }
 

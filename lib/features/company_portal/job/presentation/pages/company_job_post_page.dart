@@ -9,7 +9,7 @@ import 'package:numbers/features/user/job/presentation/providers/job_map_provide
 import 'package:numbers/features/company_portal/subscription/presentation/providers/subscription_providers.dart';
 import 'package:numbers/features/company_portal/subscription/presentation/widgets/subscription_required_overlay.dart';
 import 'package:numbers/core/theme/app_theme.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 
 class CompanyJobPostPage extends ConsumerWidget {
   const CompanyJobPostPage({super.key});
@@ -152,7 +152,6 @@ class _CompanyJobPostPageBody extends HookConsumerWidget {
         ),
         title: const Text('求人投稿'),
       ),
-      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/jobs/post'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(SpacePalette.base),
         child: Form(

@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/core/theme/app_theme.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 
 class CompanyPortalSelectPage extends StatelessWidget {
   final bool inShell;
@@ -23,9 +23,6 @@ class CompanyPortalSelectPage extends StatelessWidget {
         title: const Text('管理メニュー'),
         backgroundColor: ColorPalette.neutral900,
       ),
-      bottomNavigationBar: inShell
-          ? null
-          : const AppFooter(currentRoute: '/company-portal/select'),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(SpacePalette.base),

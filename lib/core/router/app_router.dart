@@ -311,6 +311,7 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
           ));
         },
         branches: [
+          // ── Branch 0: Home ──
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -318,8 +319,155 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
                 pageBuilder: (context, state) => NoTransitionPage(
                     key: state.pageKey, child: const FeedPage()),
               ),
+              GoRoute(
+                path: '/my-page',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const MyPage()),
+              ),
+              GoRoute(
+                path: '/profile/edit',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const ProfileEditPage()),
+              ),
+              GoRoute(
+                path: '/resume',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const ResumeViewPage()),
+              ),
+              GoRoute(
+                path: '/resume/build',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const ResumeBuilderPage()),
+              ),
+              GoRoute(
+                path: '/applications',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const ApplicationHistoryPage()),
+              ),
+              GoRoute(
+                path: '/applications/:id',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: ApplicationDetailPage(
+                    applicationId: state.pathParameters['id'] ?? '',
+                  ),
+                ),
+              ),
+              GoRoute(
+                path: '/settings',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const SettingsPage()),
+              ),
+              GoRoute(
+                path: '/watch-history',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const WatchHistoryPage()),
+              ),
+              GoRoute(
+                path: '/search/videos',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const VideoSearchPage()),
+              ),
+              GoRoute(
+                path: '/feature/:id',
+                pageBuilder: (context, state) {
+                  final slide = state.extra;
+                  if (slide is! SlideData) {
+                    return NoTransitionPage(
+                        key: state.pageKey, child: const FeedPage());
+                  }
+                  return NoTransitionPage(
+                      key: state.pageKey, child: FeatureDetailPage(slide: slide));
+                },
+              ),
+              GoRoute(
+                path: '/company/:id',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyDetailPage()),
+              ),
+              GoRoute(
+                path: '/companies/:id',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyDetailPage()),
+              ),
+              GoRoute(
+                path: '/company/:id/videos',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyVideoListPage()),
+              ),
+              GoRoute(
+                path: '/company/:id/jobs',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyJobListPage()),
+              ),
+              GoRoute(
+                path: '/company/:id/interns',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyInternListPage()),
+              ),
+              GoRoute(
+                path: '/companies/:companyId/videos/:videoId',
+                pageBuilder: (context, state) {
+                  final companyId = state.pathParameters['companyId'] ?? '';
+                  final videoId = state.pathParameters['videoId'] ?? '';
+                  return NoTransitionPage(
+                      key: state.pageKey,
+                      child: VideoDetailPage(companyId: companyId, videoId: videoId));
+                },
+              ),
+              // Company Portal routes visible with footer (Branch 0)
+              GoRoute(
+                path: '/company-portal/profile/edit',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyProfileEditPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/terms',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyTermsPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/subscription',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const SubscriptionStatusPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/subscription/plans',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const PlanSelectionPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/subscription/applications',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const PlanApplicationPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/videos',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyVideoManagementPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/videos/post',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyVideoPostPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/videos/list',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyVideoListManagementPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/videos/:videoId/edit',
+                pageBuilder: (context, state) {
+                  final videoId = state.pathParameters['videoId'] ?? '';
+                  return NoTransitionPage(
+                      key: state.pageKey, child: CompanyVideoEditPage(videoId: videoId));
+                },
+              ),
             ],
           ),
+
+          // ── Branch 1: Search (Jobs Map) ──
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -327,8 +475,27 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
                 pageBuilder: (context, state) => NoTransitionPage(
                     key: state.pageKey, child: const JobMapPage()),
               ),
+              GoRoute(
+                path: '/jobs/:id',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const JobDetailPage()),
+                routes: [
+                  GoRoute(
+                    path: 'apply/confirm',
+                    pageBuilder: (context, state) => NoTransitionPage(
+                        key: state.pageKey, child: const JobApplicationConfirmPage()),
+                  ),
+                  GoRoute(
+                    path: 'apply/complete',
+                    pageBuilder: (context, state) => NoTransitionPage(
+                        key: state.pageKey, child: const JobApplicationCompletePage()),
+                  ),
+                ],
+              ),
             ],
           ),
+
+          // ── Branch 2: AI Chat ──
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -338,6 +505,8 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
               ),
             ],
           ),
+
+          // ── Branch 3: Chat ──
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -345,8 +514,46 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
                 pageBuilder: (context, state) => NoTransitionPage(
                     key: state.pageKey, child: const _ChatBranchPage()),
               ),
+              GoRoute(
+                path: '/chats/create',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const GroupChatCreatePage()),
+              ),
+              GoRoute(
+                path: '/chats/:roomId',
+                pageBuilder: (context, state) {
+                  final roomId = state.pathParameters['roomId'] ?? '';
+                  return NoTransitionPage(
+                      key: state.pageKey, child: ChatRoomPage(roomId: roomId));
+                },
+              ),
+              GoRoute(
+                path: '/company-portal/chats',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyChatManagementPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/chats/create',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyChatRoomCreatePage()),
+              ),
+              GoRoute(
+                path: '/company-portal/chats/list',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyChatRoomListPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/chats/:roomId',
+                pageBuilder: (context, state) {
+                  final roomId = state.pathParameters['roomId'] ?? '';
+                  return NoTransitionPage(
+                      key: state.pageKey, child: CompanyChatRoomDetailPage(roomId: roomId));
+                },
+              ),
             ],
           ),
+
+          // ── Branch 4: Intern / 管理 ──
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -354,133 +561,81 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
                 pageBuilder: (context, state) => NoTransitionPage(
                     key: state.pageKey, child: const _InternBranchPage()),
               ),
+              GoRoute(
+                path: '/interns/:id',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const InternDetailPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/select',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyPortalSelectPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/jobs',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyJobManagementPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/jobs/post',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyJobPostPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/jobs/list',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyJobListManagementPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/jobs/:id/edit',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyJobEditPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/jobs/:id/applications',
+                pageBuilder: (context, state) {
+                  final jobId = state.pathParameters['id'] ?? '';
+                  return NoTransitionPage(
+                      key: state.pageKey, child: CompanyJobApplicationsPage(jobId: jobId));
+                },
+              ),
+              GoRoute(
+                path: '/company-portal/interns',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyInternManagementPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/interns/post',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyInternPostPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/interns/list',
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const CompanyInternListManagementPage()),
+              ),
+              GoRoute(
+                path: '/company-portal/interns/:id/edit',
+                pageBuilder: (context, state) {
+                  final internshipId = state.pathParameters['id'] ?? '';
+                  return NoTransitionPage(
+                      key: state.pageKey, child: CompanyInternEditPage(internshipId: internshipId));
+                },
+              ),
+              GoRoute(
+                path: '/company-portal/interns/:id/applications',
+                pageBuilder: (context, state) {
+                  final internshipId = state.pathParameters['id'] ?? '';
+                  return NoTransitionPage(
+                      key: state.pageKey, child: CompanyInternApplicationsPage(internshipId: internshipId));
+                },
+              ),
             ],
           ),
         ],
       ),
 
-      // User - Company (/company/:id と /companies/:id の両方をサポート)
-      GoRoute(
-        path: '/company/:id',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyDetailPage()),
-      ),
-      GoRoute(
-        path: '/companies/:id',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyDetailPage()),
-      ),
-      GoRoute(
-        path: '/company/:id/videos',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyVideoListPage()),
-      ),
-      GoRoute(
-        path: '/company/:id/jobs',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyJobListPage()),
-      ),
-      GoRoute(
-        path: '/company/:id/interns',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyInternListPage()),
-      ),
-
-      // User - Video Detail (from feed)
-      GoRoute(
-        path: '/companies/:companyId/videos/:videoId',
-        builder: (context, state) {
-          final companyId = state.pathParameters['companyId'] ?? '';
-          final videoId = state.pathParameters['videoId'] ?? '';
-          return VideoDetailPage(companyId: companyId, videoId: videoId);
-        },
-      ),
-
-      // User - Feature Detail
-      GoRoute(
-        path: '/feature/:id',
-        builder: (context, state) {
-          final slide = state.extra;
-          if (slide is! SlideData) {
-            // state.extraがnullまたは型不一致の場合、フィードにリダイレクト
-            return const FeedPage();
-          }
-          return FeatureDetailPage(slide: slide);
-        },
-      ),
-
-      // User - Watch History
-      GoRoute(
-        path: '/watch-history',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const WatchHistoryPage()),
-      ),
-
-      // User - Search
-      GoRoute(
-        path: '/search/videos',
-        builder: (context, state) => const VideoSearchPage(),
-      ),
-
-      GoRoute(
-        path: '/jobs/:id',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const JobDetailPage()),
-      ),
-      GoRoute(
-        path: '/jobs/:id/apply/confirm',
-        builder: (context, state) => const JobApplicationConfirmPage(),
-      ),
-      GoRoute(
-        path: '/jobs/:id/apply/complete',
-        builder: (context, state) => const JobApplicationCompletePage(),
-      ),
-
-      GoRoute(
-        path: '/interns/:id',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const InternDetailPage()),
-      ),
-
-      GoRoute(
-        path: '/chats/create',
-        builder: (context, state) => const GroupChatCreatePage(),
-      ),
-      GoRoute(
-        path: '/chats/:roomId',
-        pageBuilder: (context, state) {
-          final roomId = state.pathParameters['roomId'] ?? '';
-          return NoTransitionPage(key: state.pageKey, child: ChatRoomPage(roomId: roomId));
-        },
-      ),
-
-
-      // User - Profile
-      GoRoute(
-        path: '/my-page',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const MyPage()),
-      ),
-      GoRoute(
-        path: '/profile/edit',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const ProfileEditPage()),
-      ),
-      GoRoute(
-        path: '/resume',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const ResumeViewPage()),
-      ),
-      GoRoute(
-        path: '/resume/build',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const ResumeBuilderPage()),
-      ),
-      GoRoute(
-        path: '/applications',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const ApplicationHistoryPage()),
-      ),
-      GoRoute(
-        path: '/applications/:id',
-        pageBuilder: (context, state) => NoTransitionPage(
-          key: state.pageKey,
-          child: ApplicationDetailPage(
-            applicationId: state.pathParameters['id'] ?? '',
-          ),
-        ),
-      ),
-      GoRoute(
-        path: '/settings',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const SettingsPage()),
-      ),
+      // Public access pages (keep outside shell - work without auth too)
       GoRoute(
         path: '/terms',
         pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const TermsOfServicePage()),
@@ -490,7 +645,7 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
         pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const PrivacyPolicyPage()),
       ),
 
-      // Company Portal
+      // Company Portal (no footer)
       GoRoute(
         path: '/company-portal/login',
         builder: (context, state) => const CompanyLoginPage(),
@@ -502,117 +657,6 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       GoRoute(
         path: '/company-portal/dashboard',
         redirect: (context, state) => '/feed',
-      ),
-      GoRoute(
-        path: '/company-portal/select',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyPortalSelectPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/videos',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyVideoManagementPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/videos/post',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyVideoPostPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/videos/list',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyVideoListManagementPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/videos/:videoId/edit',
-        pageBuilder: (context, state) {
-          final videoId = state.pathParameters['videoId'] ?? '';
-          return NoTransitionPage(key: state.pageKey, child: CompanyVideoEditPage(videoId: videoId));
-        },
-      ),
-      GoRoute(
-        path: '/company-portal/jobs',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyJobManagementPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/jobs/post',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyJobPostPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/jobs/list',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyJobListManagementPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/jobs/:id/edit',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyJobEditPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/jobs/:id/applications',
-        pageBuilder: (context, state) {
-          final jobId = state.pathParameters['id'] ?? '';
-          return NoTransitionPage(key: state.pageKey, child: CompanyJobApplicationsPage(jobId: jobId));
-        },
-      ),
-      GoRoute(
-        path: '/company-portal/interns',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyInternManagementPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/interns/post',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyInternPostPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/interns/list',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyInternListManagementPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/interns/:id/edit',
-        pageBuilder: (context, state) {
-          final internshipId = state.pathParameters['id'] ?? '';
-          return NoTransitionPage(key: state.pageKey, child: CompanyInternEditPage(internshipId: internshipId));
-        },
-      ),
-      GoRoute(
-        path: '/company-portal/interns/:id/applications',
-        pageBuilder: (context, state) {
-          final internshipId = state.pathParameters['id'] ?? '';
-          return NoTransitionPage(key: state.pageKey, child: CompanyInternApplicationsPage(internshipId: internshipId));
-        },
-      ),
-      GoRoute(
-        path: '/company-portal/chats',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyChatManagementPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/chats/create',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyChatRoomCreatePage()),
-      ),
-      GoRoute(
-        path: '/company-portal/chats/list',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyChatRoomListPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/chats/:roomId',
-        pageBuilder: (context, state) {
-          final roomId = state.pathParameters['roomId'] ?? '';
-          return NoTransitionPage(key: state.pageKey, child: CompanyChatRoomDetailPage(roomId: roomId));
-        },
-      ),
-      GoRoute(
-        path: '/company-portal/profile/edit',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyProfileEditPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/subscription',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const SubscriptionStatusPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/subscription/plans',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const PlanSelectionPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/subscription/applications',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const PlanApplicationPage()),
-      ),
-      GoRoute(
-        path: '/company-portal/terms',
-        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyTermsPage()),
       ),
 
       // Admin

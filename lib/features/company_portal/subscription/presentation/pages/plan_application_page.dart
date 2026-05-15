@@ -10,7 +10,7 @@ import '../../../../../core/theme/app_theme.dart';
 import '../../domain/entities/plan_application.dart';
 import '../../domain/entities/subscription_plan.dart';
 import '../providers/subscription_providers.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 
 class PlanApplicationPage extends ConsumerStatefulWidget {
   const PlanApplicationPage({super.key});
@@ -126,7 +126,6 @@ class _PlanApplicationPageState extends ConsumerState<PlanApplicationPage> {
         ),
         title: Text('プラン申請', style: TextStylePalette.title),
       ),
-      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/subscription/applications'),
       body: plansAsync.when(
         data: (plans) {
           final approvalPlans =

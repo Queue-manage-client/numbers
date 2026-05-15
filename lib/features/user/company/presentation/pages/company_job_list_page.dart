@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/company/presentation/providers/company_provider.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 import 'package:numbers/core/theme/app_theme.dart';
 
 class CompanyJobListPage extends ConsumerWidget {
@@ -13,8 +13,6 @@ class CompanyJobListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final companyId = GoRouterState.of(context).pathParameters['id'] ?? '';
     final jobsAsync = ref.watch(companyJobsProvider(companyId));
-    final currentRoute = GoRouterState.of(context).uri.path;
-
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
@@ -25,7 +23,6 @@ class CompanyJobListPage extends ConsumerWidget {
         backgroundColor: ColorPalette.neutral900,
         foregroundColor: ColorPalette.neutral0,
       ),
-      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: jobsAsync.when(
         data: (jobs) {
           if (jobs.isEmpty) {

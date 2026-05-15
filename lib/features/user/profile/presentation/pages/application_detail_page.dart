@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/user/job/presentation/providers/job_provider.dart';
 import 'package:numbers/features/user/intern/domain/models/internship_application.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 import 'package:numbers/core/theme/app_theme.dart';
 
 class ApplicationDetailPage extends ConsumerWidget {
@@ -18,7 +18,6 @@ class ApplicationDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentRoute = GoRouterState.of(context).uri.path;
     final applicationsAsync = ref.watch(jobApplicationsProvider);
 
     return Scaffold(
@@ -41,7 +40,6 @@ class ApplicationDetailPage extends ConsumerWidget {
         backgroundColor: ColorPalette.neutral900,
         foregroundColor: ColorPalette.neutral0,
       ),
-      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: applicationsAsync.when(
         data: (applications) {
           final application = applications

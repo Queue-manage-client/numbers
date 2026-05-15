@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/company_portal/job/presentation/providers/company_job_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 
 class CompanyJobManagementPage extends ConsumerWidget {
   const CompanyJobManagementPage({super.key});
@@ -22,7 +22,6 @@ class CompanyJobManagementPage extends ConsumerWidget {
         ),
         title: const Text('求人管理'),
       ),
-      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/jobs'),
       body: Padding(
         padding: const EdgeInsets.all(SpacePalette.base),
         child: Column(

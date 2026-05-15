@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/company_portal/job/presentation/providers/company_job_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 
 class CompanyJobListManagementPage extends ConsumerWidget {
   const CompanyJobListManagementPage({super.key});
@@ -28,7 +28,6 @@ class CompanyJobListManagementPage extends ConsumerWidget {
           ),
         ],
       ),
-      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/jobs/list'),
       body: jobsAsync.when(
         data: (jobs) {
           if (jobs.isEmpty) {

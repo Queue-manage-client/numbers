@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import 'package:numbers/features/company_portal/intern/presentation/providers/company_intern_provider.dart';
 import 'package:numbers/features/user/intern/domain/models/internship.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 
 class CompanyInternListManagementPage extends ConsumerWidget {
   const CompanyInternListManagementPage({super.key});
@@ -31,7 +31,6 @@ class CompanyInternListManagementPage extends ConsumerWidget {
           ),
         ],
       ),
-      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/interns/list'),
       body: internshipsAsync.when(
         data: (interns) {
           if (interns.isEmpty) {

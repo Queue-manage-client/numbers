@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/job/presentation/providers/job_provider.dart';
 import 'package:numbers/features/user/intern/presentation/providers/intern_provider.dart';
 import 'package:numbers/features/user/intern/domain/models/internship_application.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 import 'package:numbers/core/theme/app_theme.dart';
 
 class ApplicationHistoryPage extends ConsumerWidget {
@@ -15,8 +15,6 @@ class ApplicationHistoryPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final jobAppsAsync = ref.watch(jobApplicationsProvider);
     final internAppsAsync = ref.watch(userApplicationsProvider);
-    final currentRoute = GoRouterState.of(context).uri.path;
-
     final isLoading = jobAppsAsync.isLoading || internAppsAsync.isLoading;
     final jobError = jobAppsAsync.error;
     final internError = internAppsAsync.error;
@@ -42,7 +40,6 @@ class ApplicationHistoryPage extends ConsumerWidget {
         backgroundColor: ColorPalette.neutral900,
         elevation: 0,
       ),
-      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: isLoading
           ? Center(
               child: CircularProgressIndicator(

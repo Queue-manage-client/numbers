@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 
 class CompanyVideoListManagementPage extends ConsumerWidget {
   const CompanyVideoListManagementPage({super.key});
@@ -31,7 +31,6 @@ class CompanyVideoListManagementPage extends ConsumerWidget {
           ),
         ],
       ),
-      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/videos/list'),
       body: videosAsync.when(
         data: (videos) {
           if (videos.isEmpty) {

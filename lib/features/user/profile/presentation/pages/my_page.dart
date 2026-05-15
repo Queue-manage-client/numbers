@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/user/profile/presentation/providers/profile_provider.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 import 'package:numbers/core/theme/app_theme.dart';
 
 class MyPage extends ConsumerWidget {
@@ -14,8 +14,6 @@ class MyPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
     final profileAsync = ref.watch(profileProvider);
-    final currentRoute = GoRouterState.of(context).uri.path;
-
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
@@ -26,7 +24,6 @@ class MyPage extends ConsumerWidget {
         backgroundColor: ColorPalette.neutral900,
         elevation: 0,
       ),
-      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: profileAsync.when(
         data: (profile) {
           return ListView(

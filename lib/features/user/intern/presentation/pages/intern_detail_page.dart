@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/user/intern/presentation/providers/intern_provider.dart';
 import 'package:numbers/features/user/intern/domain/models/internship_application.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 import 'package:numbers/core/theme/app_theme.dart';
 
 class InternDetailPage extends ConsumerWidget {
@@ -13,8 +13,6 @@ class InternDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final internshipId = GoRouterState.of(context).pathParameters['id'] ?? '';
-    final currentRoute = GoRouterState.of(context).uri.path;
-
     // IDが空の場合はエラー表示
     if (internshipId.isEmpty) {
       return Scaffold(
@@ -28,7 +26,6 @@ class InternDetailPage extends ConsumerWidget {
             style: TextStylePalette.subText,
           ),
         ),
-        bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       );
     }
 
@@ -318,7 +315,6 @@ class InternDetailPage extends ConsumerWidget {
           ),
         ),
       ),
-      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
     );
   }
 

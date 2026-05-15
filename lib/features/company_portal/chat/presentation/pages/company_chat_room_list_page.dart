@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/company_portal/chat/presentation/providers/company_chat_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 
 class CompanyChatRoomListPage extends ConsumerWidget {
   const CompanyChatRoomListPage({super.key});
@@ -34,7 +34,6 @@ class CompanyChatRoomListPage extends ConsumerWidget {
           ),
         ],
       ),
-      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/chats/list'),
       body: chatRoomsAsync.when(
         data: (chatRooms) {
           if (chatRooms.isEmpty) {

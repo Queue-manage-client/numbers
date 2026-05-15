@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../providers/subscription_providers.dart';
 import 'checkout_webview_page.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 
 class SubscriptionStatusPage extends ConsumerStatefulWidget {
   const SubscriptionStatusPage({super.key});
@@ -101,7 +101,6 @@ class _SubscriptionStatusPageState
         ),
         title: Text('サブスクリプション', style: TextStylePalette.title),
       ),
-      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/subscription'),
       body: subAsync.when(
         data: (sub) {
           if (sub == null) {

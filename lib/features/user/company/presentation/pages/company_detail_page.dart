@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:numbers/features/user/company/presentation/providers/company_provider.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 import 'package:numbers/core/theme/app_theme.dart';
 import 'package:numbers/core/services/app_tour_service.dart';
 
@@ -71,8 +71,6 @@ class _CompanyDetailPageState extends ConsumerState<CompanyDetailPage> {
   Widget build(BuildContext context) {
     final companyId = GoRouterState.of(context).pathParameters['id'] ?? '';
     final companyAsync = ref.watch(companyProvider(companyId));
-    final currentRoute = GoRouterState.of(context).uri.path;
-
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
@@ -88,7 +86,6 @@ class _CompanyDetailPageState extends ConsumerState<CompanyDetailPage> {
         ),
         title: const Text('企業詳細'),
       ),
-      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: companyAsync.when(
         data: (company) {
           if (company == null) {

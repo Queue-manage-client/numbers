@@ -6,7 +6,7 @@ import 'package:numbers/features/company_portal/job/presentation/providers/compa
 import 'package:numbers/features/user/job/domain/models/job.dart';
 import 'package:numbers/features/user/job/presentation/providers/job_map_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 
 class CompanyJobEditPage extends ConsumerStatefulWidget {
   const CompanyJobEditPage({super.key});
@@ -210,7 +210,6 @@ class _CompanyJobEditPageState extends ConsumerState<CompanyJobEditPage> {
         ),
         title: const Text('求人編集'),
       ),
-      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/jobs'),
       body: jobAsync.when(
         data: (job) {
           if (job == null) {

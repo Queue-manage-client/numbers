@@ -6,7 +6,7 @@ import 'package:numbers/features/user/job/presentation/providers/job_provider.da
 import 'package:numbers/features/user/intern/domain/models/internship_application.dart';
 import 'package:numbers/features/user/job/domain/models/job.dart';
 import 'package:numbers/features/user/job/domain/models/job_application.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 import 'package:numbers/core/theme/app_theme.dart';
 
 class JobDetailPage extends ConsumerWidget {
@@ -15,8 +15,6 @@ class JobDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final jobId = GoRouterState.of(context).pathParameters['id'] ?? '';
-    final currentRoute = GoRouterState.of(context).uri.path;
-
     // IDが空の場合はエラー表示
     if (jobId.isEmpty) {
       return Scaffold(
@@ -30,7 +28,6 @@ class JobDetailPage extends ConsumerWidget {
             style: TextStylePalette.subText,
           ),
         ),
-        bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       );
     }
 
@@ -156,7 +153,6 @@ class JobDetailPage extends ConsumerWidget {
           ),
         ),
       ),
-      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
     );
   }
 

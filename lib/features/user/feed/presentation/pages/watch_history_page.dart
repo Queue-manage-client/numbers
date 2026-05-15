@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/core/theme/app_theme.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 import 'package:numbers/features/user/feed/presentation/providers/feed_provider.dart';
 
 class WatchHistoryPage extends ConsumerStatefulWidget {
@@ -35,7 +35,6 @@ class _WatchHistoryPageState extends ConsumerState<WatchHistoryPage> {
           ),
         ),
       ),
-      bottomNavigationBar: const AppFooter(currentRoute: '/watch-history'),
       body: historyAsync.when(
         data: (allViews) {
           if (allViews.isEmpty) {

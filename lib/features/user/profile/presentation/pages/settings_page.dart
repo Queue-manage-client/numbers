@@ -1,7 +1,7 @@
 // profile/presentation/pages/settings_page.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 import 'package:numbers/core/theme/app_theme.dart';
 import 'package:numbers/core/services/app_tour_service.dart';
 
@@ -10,8 +10,6 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentRoute = GoRouterState.of(context).uri.path;
-
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
@@ -32,7 +30,6 @@ class SettingsPage extends StatelessWidget {
         backgroundColor: ColorPalette.neutral900,
         elevation: 0,
       ),
-      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: ListView(
         padding: const EdgeInsets.all(SpacePalette.base),
         children: [

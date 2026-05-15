@@ -1,7 +1,7 @@
 // profile/presentation/pages/terms_of_service_page.dart
 import 'package:flutter/material.dart';
 import 'package:numbers/core/theme/app_theme.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 
 class TermsOfServicePage extends StatelessWidget {
   const TermsOfServicePage({super.key});
@@ -38,7 +38,6 @@ class TermsOfServicePage extends StatelessWidget {
         backgroundColor: ColorPalette.neutral900,
         elevation: 0,
       ),
-      bottomNavigationBar: const AppFooter(currentRoute: '/terms'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(SpacePalette.base),
         child: Column(

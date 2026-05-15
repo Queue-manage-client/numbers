@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 import 'package:numbers/features/user/company/presentation/providers/company_provider.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 import 'package:numbers/core/theme/app_theme.dart';
 
 class CompanyVideoListPage extends ConsumerStatefulWidget {
@@ -76,8 +76,6 @@ class _CompanyVideoListPageState extends ConsumerState<CompanyVideoListPage> {
   Widget build(BuildContext context) {
     final companyId = GoRouterState.of(context).pathParameters['id'] ?? '';
     final videosAsync = ref.watch(companyVideosProvider(companyId));
-    final currentRoute = GoRouterState.of(context).uri.path;
-
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
@@ -88,7 +86,6 @@ class _CompanyVideoListPageState extends ConsumerState<CompanyVideoListPage> {
         backgroundColor: ColorPalette.neutral900,
         foregroundColor: ColorPalette.neutral0,
       ),
-      bottomNavigationBar: AppFooter(currentRoute: currentRoute),
       body: videosAsync.when(
         data: (videos) {
           if (videos.isEmpty) {

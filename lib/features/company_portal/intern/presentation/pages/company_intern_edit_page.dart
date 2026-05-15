@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import 'package:numbers/features/company_portal/intern/presentation/providers/company_intern_provider.dart';
-import 'package:numbers/core/widgets/app_footer.dart';
+
 
 class CompanyInternEditPage extends ConsumerStatefulWidget {
   final String internshipId;
@@ -204,7 +204,6 @@ class _CompanyInternEditPageState extends ConsumerState<CompanyInternEditPage> {
         ),
         title: const Text('インターン編集'),
       ),
-      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/interns'),
       body: internshipAsync.when(
         data: (internship) {
           if (internship == null) {
