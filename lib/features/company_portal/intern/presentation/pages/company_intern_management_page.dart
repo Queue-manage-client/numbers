@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/features/company_portal/intern/presentation/providers/company_intern_provider.dart';
 import 'package:numbers/features/user/intern/domain/models/internship.dart';
 
@@ -24,6 +25,7 @@ class CompanyInternManagementPage extends ConsumerWidget {
         ),
         title: const Text('インターン管理'),
       ),
+      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/interns'),
       body: Padding(
         padding: const EdgeInsets.all(SpacePalette.base),
         child: Column(

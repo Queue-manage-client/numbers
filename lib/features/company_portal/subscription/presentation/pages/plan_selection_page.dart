@@ -7,6 +7,7 @@ import '../../domain/entities/subscription_plan.dart';
 import '../../domain/enums/billing_cycle.dart';
 import '../providers/subscription_providers.dart';
 import 'checkout_webview_page.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class PlanSelectionPage extends ConsumerStatefulWidget {
   const PlanSelectionPage({super.key});
@@ -79,6 +80,7 @@ class _PlanSelectionPageState extends ConsumerState<PlanSelectionPage> {
         ),
         title: Text('プラン選択', style: TextStylePalette.title),
       ),
+      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/subscription/plans'),
       body: plansAsync.when(
         data: (plans) {
           if (plans.isEmpty) {

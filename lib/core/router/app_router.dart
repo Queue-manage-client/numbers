@@ -1,5 +1,6 @@
 // core/router/app_router.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:numbers/core/services/app_tour_service.dart';
@@ -58,6 +59,7 @@ import 'package:numbers/features/company_portal/chat/presentation/pages/company_
 import 'package:numbers/features/company_portal/profile/presentation/pages/company_profile_edit_page.dart';
 import 'package:numbers/features/company_portal/profile/presentation/pages/company_terms_page.dart';
 import 'package:numbers/features/company_portal/presentation/pages/company_approval_status_page.dart';
+import 'package:numbers/features/company_portal/presentation/pages/company_portal_select_page.dart';
 import 'package:numbers/features/company_portal/subscription/presentation/pages/plan_selection_page.dart';
 import 'package:numbers/features/company_portal/subscription/presentation/pages/subscription_status_page.dart';
 import 'package:numbers/features/company_portal/subscription/presentation/pages/plan_application_page.dart';
@@ -302,18 +304,19 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
 
       // User - Main Tabs (persistent footer)
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) {
-          return ShowCaseWidget(
+        pageBuilder: (context, state, navigationShell) {
+          return NoTransitionPage(key: state.pageKey, child: ShowCaseWidget(
             onComplete: (_, __) => AppTourService.markTourSeen(),
             builder: (context) => _ShellWithTour(navigationShell: navigationShell),
-          );
+          ));
         },
         branches: [
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/feed',
-                builder: (context, state) => const FeedPage(),
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const FeedPage()),
               ),
             ],
           ),
@@ -321,7 +324,8 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
             routes: [
               GoRoute(
                 path: '/jobs/map',
-                builder: (context, state) => const JobMapPage(),
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const JobMapPage()),
               ),
             ],
           ),
@@ -329,7 +333,8 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
             routes: [
               GoRoute(
                 path: '/ai-chat',
-                builder: (context, state) => const AiChatPage(),
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const AiChatPage()),
               ),
             ],
           ),
@@ -337,7 +342,8 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
             routes: [
               GoRoute(
                 path: '/chats',
-                builder: (context, state) => const ChatListPage(),
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const _ChatBranchPage()),
               ),
             ],
           ),
@@ -345,7 +351,8 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
             routes: [
               GoRoute(
                 path: '/interns',
-                builder: (context, state) => const InternListPage(),
+                pageBuilder: (context, state) => NoTransitionPage(
+                    key: state.pageKey, child: const _InternBranchPage()),
               ),
             ],
           ),
@@ -355,23 +362,23 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       // User - Company (/company/:id と /companies/:id の両方をサポート)
       GoRoute(
         path: '/company/:id',
-        builder: (context, state) => const CompanyDetailPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyDetailPage()),
       ),
       GoRoute(
         path: '/companies/:id',
-        builder: (context, state) => const CompanyDetailPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyDetailPage()),
       ),
       GoRoute(
         path: '/company/:id/videos',
-        builder: (context, state) => const CompanyVideoListPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyVideoListPage()),
       ),
       GoRoute(
         path: '/company/:id/jobs',
-        builder: (context, state) => const CompanyJobListPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyJobListPage()),
       ),
       GoRoute(
         path: '/company/:id/interns',
-        builder: (context, state) => const CompanyInternListPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyInternListPage()),
       ),
 
       // User - Video Detail (from feed)
@@ -400,7 +407,7 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       // User - Watch History
       GoRoute(
         path: '/watch-history',
-        builder: (context, state) => const WatchHistoryPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const WatchHistoryPage()),
       ),
 
       // User - Search
@@ -411,7 +418,7 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
 
       GoRoute(
         path: '/jobs/:id',
-        builder: (context, state) => const JobDetailPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const JobDetailPage()),
       ),
       GoRoute(
         path: '/jobs/:id/apply/confirm',
@@ -424,7 +431,7 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
 
       GoRoute(
         path: '/interns/:id',
-        builder: (context, state) => const InternDetailPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const InternDetailPage()),
       ),
 
       GoRoute(
@@ -433,9 +440,9 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       ),
       GoRoute(
         path: '/chats/:roomId',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final roomId = state.pathParameters['roomId'] ?? '';
-          return ChatRoomPage(roomId: roomId);
+          return NoTransitionPage(key: state.pageKey, child: ChatRoomPage(roomId: roomId));
         },
       ),
 
@@ -443,41 +450,44 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       // User - Profile
       GoRoute(
         path: '/my-page',
-        builder: (context, state) => const MyPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const MyPage()),
       ),
       GoRoute(
         path: '/profile/edit',
-        builder: (context, state) => const ProfileEditPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const ProfileEditPage()),
       ),
       GoRoute(
         path: '/resume',
-        builder: (context, state) => const ResumeViewPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const ResumeViewPage()),
       ),
       GoRoute(
         path: '/resume/build',
-        builder: (context, state) => const ResumeBuilderPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const ResumeBuilderPage()),
       ),
       GoRoute(
         path: '/applications',
-        builder: (context, state) => const ApplicationHistoryPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const ApplicationHistoryPage()),
       ),
       GoRoute(
         path: '/applications/:id',
-        builder: (context, state) => ApplicationDetailPage(
-          applicationId: state.pathParameters['id'] ?? '',
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: ApplicationDetailPage(
+            applicationId: state.pathParameters['id'] ?? '',
+          ),
         ),
       ),
       GoRoute(
         path: '/settings',
-        builder: (context, state) => const SettingsPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const SettingsPage()),
       ),
       GoRoute(
         path: '/terms',
-        builder: (context, state) => const TermsOfServicePage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const TermsOfServicePage()),
       ),
       GoRoute(
         path: '/privacy',
-        builder: (context, state) => const PrivacyPolicyPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const PrivacyPolicyPage()),
       ),
 
       // Company Portal
@@ -494,111 +504,115 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
         redirect: (context, state) => '/feed',
       ),
       GoRoute(
+        path: '/company-portal/select',
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyPortalSelectPage()),
+      ),
+      GoRoute(
         path: '/company-portal/videos',
-        builder: (context, state) => const CompanyVideoManagementPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyVideoManagementPage()),
       ),
       GoRoute(
         path: '/company-portal/videos/post',
-        builder: (context, state) => const CompanyVideoPostPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyVideoPostPage()),
       ),
       GoRoute(
         path: '/company-portal/videos/list',
-        builder: (context, state) => const CompanyVideoListManagementPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyVideoListManagementPage()),
       ),
       GoRoute(
         path: '/company-portal/videos/:videoId/edit',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final videoId = state.pathParameters['videoId'] ?? '';
-          return CompanyVideoEditPage(videoId: videoId);
+          return NoTransitionPage(key: state.pageKey, child: CompanyVideoEditPage(videoId: videoId));
         },
       ),
       GoRoute(
         path: '/company-portal/jobs',
-        builder: (context, state) => const CompanyJobManagementPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyJobManagementPage()),
       ),
       GoRoute(
         path: '/company-portal/jobs/post',
-        builder: (context, state) => const CompanyJobPostPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyJobPostPage()),
       ),
       GoRoute(
         path: '/company-portal/jobs/list',
-        builder: (context, state) => const CompanyJobListManagementPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyJobListManagementPage()),
       ),
       GoRoute(
         path: '/company-portal/jobs/:id/edit',
-        builder: (context, state) => const CompanyJobEditPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyJobEditPage()),
       ),
       GoRoute(
         path: '/company-portal/jobs/:id/applications',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final jobId = state.pathParameters['id'] ?? '';
-          return CompanyJobApplicationsPage(jobId: jobId);
+          return NoTransitionPage(key: state.pageKey, child: CompanyJobApplicationsPage(jobId: jobId));
         },
       ),
       GoRoute(
         path: '/company-portal/interns',
-        builder: (context, state) => const CompanyInternManagementPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyInternManagementPage()),
       ),
       GoRoute(
         path: '/company-portal/interns/post',
-        builder: (context, state) => const CompanyInternPostPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyInternPostPage()),
       ),
       GoRoute(
         path: '/company-portal/interns/list',
-        builder: (context, state) => const CompanyInternListManagementPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyInternListManagementPage()),
       ),
       GoRoute(
         path: '/company-portal/interns/:id/edit',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final internshipId = state.pathParameters['id'] ?? '';
-          return CompanyInternEditPage(internshipId: internshipId);
+          return NoTransitionPage(key: state.pageKey, child: CompanyInternEditPage(internshipId: internshipId));
         },
       ),
       GoRoute(
         path: '/company-portal/interns/:id/applications',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final internshipId = state.pathParameters['id'] ?? '';
-          return CompanyInternApplicationsPage(internshipId: internshipId);
+          return NoTransitionPage(key: state.pageKey, child: CompanyInternApplicationsPage(internshipId: internshipId));
         },
       ),
       GoRoute(
         path: '/company-portal/chats',
-        builder: (context, state) => const CompanyChatManagementPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyChatManagementPage()),
       ),
       GoRoute(
         path: '/company-portal/chats/create',
-        builder: (context, state) => const CompanyChatRoomCreatePage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyChatRoomCreatePage()),
       ),
       GoRoute(
         path: '/company-portal/chats/list',
-        builder: (context, state) => const CompanyChatRoomListPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyChatRoomListPage()),
       ),
       GoRoute(
         path: '/company-portal/chats/:roomId',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final roomId = state.pathParameters['roomId'] ?? '';
-          return CompanyChatRoomDetailPage(roomId: roomId);
+          return NoTransitionPage(key: state.pageKey, child: CompanyChatRoomDetailPage(roomId: roomId));
         },
       ),
       GoRoute(
         path: '/company-portal/profile/edit',
-        builder: (context, state) => const CompanyProfileEditPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyProfileEditPage()),
       ),
       GoRoute(
         path: '/company-portal/subscription',
-        builder: (context, state) => const SubscriptionStatusPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const SubscriptionStatusPage()),
       ),
       GoRoute(
         path: '/company-portal/subscription/plans',
-        builder: (context, state) => const PlanSelectionPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const PlanSelectionPage()),
       ),
       GoRoute(
         path: '/company-portal/subscription/applications',
-        builder: (context, state) => const PlanApplicationPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const PlanApplicationPage()),
       ),
       GoRoute(
         path: '/company-portal/terms',
-        builder: (context, state) => const CompanyTermsPage(),
+        pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: const CompanyTermsPage()),
       ),
 
       // Admin
@@ -697,5 +711,33 @@ class _ShellWithTourState extends State<_ShellWithTour> {
       body: widget.navigationShell,
       bottomNavigationBar: ShellFooter(navigationShell: widget.navigationShell),
     );
+  }
+}
+
+/// /chats ブランチのラッパ。企業ユーザー時はチャット管理を表示。
+class _ChatBranchPage extends ConsumerWidget {
+  const _ChatBranchPage();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final role = ref.watch(userRoleProvider).valueOrNull;
+    if (role == 'company_user') {
+      return const CompanyChatManagementPage(inShell: true);
+    }
+    return const ChatListPage();
+  }
+}
+
+/// /interns ブランチのラッパ。企業ユーザー時は管理メニューを表示。
+class _InternBranchPage extends ConsumerWidget {
+  const _InternBranchPage();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final role = ref.watch(userRoleProvider).valueOrNull;
+    if (role == 'company_user') {
+      return const CompanyPortalSelectPage(inShell: true);
+    }
+    return const InternListPage();
   }
 }

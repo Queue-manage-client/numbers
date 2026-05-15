@@ -6,6 +6,7 @@ import 'package:numbers/features/company_portal/chat/presentation/providers/comp
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import 'package:go_router/go_router.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class CompanyChatRoomDetailPage extends HookConsumerWidget {
   final String roomId;
@@ -85,6 +86,7 @@ class CompanyChatRoomDetailPage extends HookConsumerWidget {
           error: (_, __) => const Text('チャットルーム'),
         ),
       ),
+      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/chats'),
       body: Column(
         children: [
           // メッセージリスト

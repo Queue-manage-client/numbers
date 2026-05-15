@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class CompanyVideoManagementPage extends ConsumerWidget {
   const CompanyVideoManagementPage({super.key});
@@ -21,6 +22,7 @@ class CompanyVideoManagementPage extends ConsumerWidget {
         ),
         title: const Text('動画管理'),
       ),
+      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/videos'),
       body: Padding(
         padding: const EdgeInsets.all(SpacePalette.base),
         child: Column(

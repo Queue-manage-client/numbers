@@ -1,9 +1,11 @@
 // core/widgets/app_footer.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:numbers/core/theme/app_theme.dart';
 import 'package:numbers/core/services/app_tour_service.dart';
+import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 
 const _tourTitleStyle = TextStyle(
   fontFamily: 'NotoSansJP',
@@ -30,7 +32,7 @@ const _activeGradient = LinearGradient(
 );
 
 /// Shell用フッター（StatefulShellRouteで使用、タブ切り替え時にリビルドしない）
-class ShellFooter extends StatelessWidget {
+class ShellFooter extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
   const ShellFooter({
@@ -39,9 +41,11 @@ class ShellFooter extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final currentIndex = navigationShell.currentIndex;
+    final isCompanyUser =
+        ref.watch(userRoleProvider).valueOrNull == 'company_user';
 
     return Container(
       color: ColorPalette.neutral900,
@@ -106,7 +110,9 @@ class ShellFooter extends StatelessWidget {
           Showcase(
             key: AppTourKeys.chatTab,
             title: 'チャット',
-            description: '企業とのDMやグループチャットができます。',
+            description: isCompanyUser
+                ? '応募者・グループとのチャットを管理できます。'
+                : '企業とのDMやグループチャットができます。',
             titleTextStyle: _tourTitleStyle,
             descTextStyle: _tourDescStyle,
             tooltipBackgroundColor: const Color(0xFF3A3A3A),
@@ -121,8 +127,10 @@ class ShellFooter extends StatelessWidget {
           ),
           Showcase(
             key: AppTourKeys.internTab,
-            title: 'インターン・求人',
-            description: 'インターンや求人を一覧で探して応募できます。',
+            title: isCompanyUser ? '求人・インターン管理' : 'インターン・求人',
+            description: isCompanyUser
+                ? '求人とインターンの投稿・編集を管理できます。'
+                : 'インターンや求人を一覧で探して応募できます。',
             titleTextStyle: _tourTitleStyle,
             descTextStyle: _tourDescStyle,
             tooltipBackgroundColor: const Color(0xFF3A3A3A),
@@ -130,7 +138,7 @@ class ShellFooter extends StatelessWidget {
             child: _buildNavItem(
               context,
               imagePath: 'assets/images/7.png',
-              label: 'インターン',
+              label: isCompanyUser ? '管理' : 'インターン',
               index: 4,
               isActive: currentIndex == 4,
             ),
@@ -281,7 +289,7 @@ class ShellFooter extends StatelessWidget {
 }
 
 /// 個別ページ用フッター（Shell外のページで使用）
-class AppFooter extends StatelessWidget {
+class AppFooter extends ConsumerWidget {
   final String currentRoute;
 
   const AppFooter({
@@ -290,8 +298,28 @@ class AppFooter extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final isCompanyUser =
+        ref.watch(userRoleProvider).valueOrNull == 'company_user';
+
+    // /chats と /interns は Shell ブランチで企業ユーザー時に自動で
+    // 企業版を表示するため、ルートは共通でよい。
+    const chatRoute = '/chats';
+    const internRoute = '/interns';
+
+    final isChatActive = isCompanyUser
+        ? (currentRoute == '/chats' ||
+            currentRoute.startsWith('/chats/') ||
+            currentRoute.startsWith('/company-portal/chats'))
+        : (currentRoute == '/chats' || currentRoute.startsWith('/chats/'));
+    final isInternActive = isCompanyUser
+        ? (currentRoute == '/interns' ||
+            currentRoute.startsWith('/interns/') ||
+            currentRoute == '/company-portal/select' ||
+            currentRoute.startsWith('/company-portal/jobs') ||
+            currentRoute.startsWith('/company-portal/interns'))
+        : (currentRoute == '/interns' || currentRoute.startsWith('/interns/'));
 
     return Container(
       color: ColorPalette.neutral900,
@@ -330,15 +358,15 @@ class AppFooter extends StatelessWidget {
             context,
             imagePath: 'assets/images/8.png',
             label: 'チャット',
-            route: '/chats',
-            isActive: currentRoute == '/chats' || currentRoute.startsWith('/chats/'),
+            route: chatRoute,
+            isActive: isChatActive,
           ),
           _buildNavItem(
             context,
             imagePath: 'assets/images/7.png',
-            label: 'インターン',
-            route: '/interns',
-            isActive: currentRoute == '/interns' || currentRoute.startsWith('/interns/'),
+            label: isCompanyUser ? '管理' : 'インターン',
+            route: internRoute,
+            isActive: isInternActive,
           ),
         ],
       ),

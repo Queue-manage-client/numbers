@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class CompanyTermsPage extends StatelessWidget {
   const CompanyTermsPage({super.key});
@@ -63,6 +64,7 @@ class CompanyTermsPage extends StatelessWidget {
             ],
           ),
         ),
+        bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/terms'),
         body: TabBarView(
           children: [
             _buildList('NBS~New Business Swipe~ 利用規約（法人向け）', _userTerms),

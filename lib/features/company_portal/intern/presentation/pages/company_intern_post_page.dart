@@ -6,6 +6,7 @@ import 'package:numbers/core/theme/app_theme.dart';
 import 'package:numbers/features/company_portal/intern/presentation/providers/company_intern_provider.dart';
 import 'package:numbers/features/company_portal/subscription/presentation/providers/subscription_providers.dart';
 import 'package:numbers/features/company_portal/subscription/presentation/widgets/subscription_required_overlay.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class CompanyInternPostPage extends ConsumerWidget {
   const CompanyInternPostPage({super.key});
@@ -145,6 +146,7 @@ class _CompanyInternPostPageState extends ConsumerState<_CompanyInternPostPageBo
         ),
         title: const Text('インターン投稿'),
       ),
+      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/interns/post'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(

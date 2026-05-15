@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/features/company_portal/chat/presentation/providers/company_chat_provider.dart';
 import 'package:numbers/features/company_portal/intern/presentation/providers/company_intern_provider.dart';
 import 'package:numbers/features/user/intern/domain/models/internship.dart';
 
 class CompanyChatManagementPage extends ConsumerWidget {
-  const CompanyChatManagementPage({super.key});
+  final bool inShell;
+
+  const CompanyChatManagementPage({super.key, this.inShell = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,15 +21,20 @@ class CompanyChatManagementPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: ColorPalette.neutral900,
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: ColorPalette.neutral0,
-          ),
-          onPressed: () => context.go('/feed'),
-        ),
+        leading: inShell
+            ? null
+            : IconButton(
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: ColorPalette.neutral0,
+                ),
+                onPressed: () => context.go('/feed'),
+              ),
         title: const Text('チャット管理'),
       ),
+      bottomNavigationBar: inShell
+          ? null
+          : const AppFooter(currentRoute: '/company-portal/chats'),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(companyChatRoomsListProvider);

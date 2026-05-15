@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/user/profile/presentation/providers/profile_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class ResumeViewPage extends ConsumerWidget {
   const ResumeViewPage({super.key});
@@ -32,6 +33,7 @@ class ResumeViewPage extends ConsumerWidget {
         ),
         title: const Text('職務経歴書'),
       ),
+      bottomNavigationBar: const AppFooter(currentRoute: '/resume'),
       body: profileAsync.when(
         data: (profile) {
           final resumeUrl = profile?['resume_url'] as String?;

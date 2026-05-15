@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 // 動画詳細取得Provider
 final videoByIdProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, videoId) async {
@@ -326,6 +327,7 @@ class CompanyVideoEditPage extends HookConsumerWidget {
         ),
         title: const Text('動画編集'),
       ),
+      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/videos'),
       body: videoAsync.when(
         data: (video) {
           if (video == null) {

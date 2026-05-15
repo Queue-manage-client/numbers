@@ -7,6 +7,7 @@ import 'package:numbers/features/company_portal/chat/presentation/providers/comp
 import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class CompanyChatRoomCreatePage extends HookConsumerWidget {
   const CompanyChatRoomCreatePage({super.key});
@@ -96,6 +97,7 @@ class CompanyChatRoomCreatePage extends HookConsumerWidget {
         ),
         title: const Text('グループチャット作成'),
       ),
+      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/chats/create'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(SpacePalette.base),
         child: Form(

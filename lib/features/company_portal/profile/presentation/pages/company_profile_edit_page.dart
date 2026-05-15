@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/company_portal/providers/company_portal_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class CompanyProfileEditPage extends HookConsumerWidget {
   const CompanyProfileEditPage({super.key});
@@ -201,6 +202,7 @@ class CompanyProfileEditPage extends HookConsumerWidget {
         ),
         title: const Text('企業情報編集'),
       ),
+      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/profile/edit'),
       body: companyInfoAsync.when(
         data: (companyInfo) {
           return SingleChildScrollView(

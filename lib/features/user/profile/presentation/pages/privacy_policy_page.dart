@@ -1,6 +1,7 @@
 // profile/presentation/pages/privacy_policy_page.dart
 import 'package:flutter/material.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
@@ -32,6 +33,7 @@ class PrivacyPolicyPage extends StatelessWidget {
         backgroundColor: ColorPalette.neutral900,
         elevation: 0,
       ),
+      bottomNavigationBar: const AppFooter(currentRoute: '/privacy'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(SpacePalette.base),
         child: Column(

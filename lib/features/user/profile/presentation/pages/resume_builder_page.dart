@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/user/profile/presentation/providers/profile_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class ResumeBuilderPage extends ConsumerStatefulWidget {
   const ResumeBuilderPage({super.key});
@@ -227,6 +228,7 @@ class _ResumeBuilderPageState extends ConsumerState<ResumeBuilderPage> {
       appBar: AppBar(
         title: const Text('職務経歴書を作成'),
       ),
+      bottomNavigationBar: const AppFooter(currentRoute: '/resume/build'),
       body: profileAsync.when(
         data: (profile) {
           _loadExistingData(profile);

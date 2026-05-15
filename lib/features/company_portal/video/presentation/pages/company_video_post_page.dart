@@ -11,6 +11,7 @@ import 'package:numbers/features/company_portal/providers/company_portal_provide
 import 'package:numbers/features/company_portal/subscription/presentation/providers/subscription_providers.dart';
 import 'package:numbers/features/company_portal/subscription/presentation/widgets/subscription_required_overlay.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/widgets/app_footer.dart';
 
 class CompanyVideoPostPage extends ConsumerWidget {
   const CompanyVideoPostPage({super.key});
@@ -342,6 +343,7 @@ class _CompanyVideoPostPageBody extends HookConsumerWidget {
         ),
         title: const Text('動画投稿'),
       ),
+      bottomNavigationBar: const AppFooter(currentRoute: '/company-portal/videos/post'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(SpacePalette.base),
         child: Form(
