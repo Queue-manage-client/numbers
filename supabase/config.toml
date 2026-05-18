@@ -161,10 +161,10 @@ enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
-minimum_password_length = 6
+minimum_password_length = 10
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
-password_requirements = ""
+password_requirements = "lower_upper_letters_digits"
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
@@ -183,10 +183,15 @@ token_verifications = 30
 web3 = 30
 
 # Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
+# 本番有効化手順 (Stripe セキュリティチェックリスト「不正ログイン対策」)
+#   1. hcaptcha.com で site key / secret key を発行
+#   2. Supabase Dashboard > Auth > Bot Protection で hCaptcha を有効化し secret を設定
+#   3. Flutter .env に HCAPTCHA_SITE_KEY=<site key> を追加
+#   4. 下記をコメントアウト解除 (ローカル開発で captcha を強制する場合のみ)
 # [auth.captcha]
 # enabled = true
 # provider = "hcaptcha"
-# secret = ""
+# secret = "env(HCAPTCHA_SECRET_KEY)"
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
@@ -257,6 +262,11 @@ max_frequency = "5s"
 # enabled = true
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
 
+# NOTE: password_verification_attempt フックは Supabase Team/Enterprise プランのみ。
+# Free/Pro プランでは利用不可のため、代わりに Edge Function (record-login-failure)
+# でログイン失敗をカウントし、auth.users.banned_until を更新する方式を採用。
+# 詳細: supabase/functions/record-login-failure/index.ts
+
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
 [auth.sms.twilio]
 enabled = false
@@ -272,8 +282,8 @@ max_enrolled_factors = 10
 
 # Control MFA via App Authenticator (TOTP)
 [auth.mfa.totp]
-enroll_enabled = false
-verify_enabled = false
+enroll_enabled = true
+verify_enabled = true
 
 # Configure MFA via Phone Messaging
 [auth.mfa.phone]
@@ -359,6 +369,10 @@ deno_version = 2
 
 # Stripe Webhook は JWT を持たないので検証を OFF にする (関数内で署名検証)
 [functions.stripe-webhook]
+verify_jwt = false
+
+# 未認証ユーザー (ログイン失敗時) から呼び出すため JWT 検証 OFF
+[functions.record-login-failure]
 verify_jwt = false
 
 [analytics]

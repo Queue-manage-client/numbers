@@ -9,6 +9,9 @@ import 'package:numbers/features/company_portal/providers/company_portal_provide
 import 'package:numbers/core/theme/app_theme.dart';
 import 'package:numbers/core/services/app_tour_service.dart';
 import 'package:numbers/core/router/app_router.dart';
+import 'package:numbers/shared/utils/password_validator.dart';
+import 'package:numbers/core/services/captcha_service.dart';
+import 'package:numbers/shared/widgets/hcaptcha_widget.dart';
 
 class CompanySignupPage extends HookConsumerWidget {
   const CompanySignupPage({super.key});
@@ -26,6 +29,7 @@ class CompanySignupPage extends HookConsumerWidget {
     final agreedToTerms = useState(false);
     final agreedToPrivacy = useState(false);
     final agreedToContract = useState(false);
+    final captchaToken = useState<String?>(null);
 
     Future<void> signup() async {
       if (!formKey.currentState!.validate()) return;
@@ -33,6 +37,12 @@ class CompanySignupPage extends HookConsumerWidget {
       if (passwordController.text != confirmPasswordController.text) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('パスワードが一致しません')),
+        );
+        return;
+      }
+      if (CaptchaService.isEnabled && captchaToken.value == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('画像認証を完了してください')),
         );
         return;
       }
@@ -55,6 +65,7 @@ class CompanySignupPage extends HookConsumerWidget {
         final response = await authRepository.signUp(
           email: emailController.text.trim(),
           password: passwordController.text,
+          captchaToken: captchaToken.value,
         );
 
         if (response.user == null) {
@@ -146,7 +157,7 @@ class CompanySignupPage extends HookConsumerWidget {
           } else if (errStr.contains('email')) {
             errorMsg = 'メールアドレスを確認してください。';
           } else if (errStr.contains('password')) {
-            errorMsg = 'パスワードは6文字以上で入力してください。';
+            errorMsg = PasswordValidator.hint;
           } else {
             errorMsg = '登録に失敗しました: $e';
           }
@@ -293,18 +304,10 @@ class CompanySignupPage extends HookConsumerWidget {
                   TextFormField(
                     controller: passwordController,
                     decoration: InputDecoration(
-                      hintText: '6文字以上で入力してください',
+                      hintText: PasswordValidator.hint,
                     ),
                     obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'パスワードを入力してください';
-                      }
-                      if (value.length < 6) {
-                        return 'パスワードは6文字以上で入力してください';
-                      }
-                      return null;
-                    },
+                    validator: PasswordValidator.validate,
                   ),
                   const SizedBox(height: SpacePalette.base), // 別機能間隔
 
@@ -359,6 +362,12 @@ class CompanySignupPage extends HookConsumerWidget {
                     label: '法人向け契約条項',
                     onTapLink: () => context.push('/company-portal/terms'),
                   ),
+                  if (CaptchaService.isEnabled) ...[
+                    const SizedBox(height: SpacePalette.base),
+                    HCaptchaWidget(
+                      onVerified: (token) => captchaToken.value = token,
+                    ),
+                  ],
                   const SizedBox(height: SpacePalette.lg),
 
                   // 登録ボタン

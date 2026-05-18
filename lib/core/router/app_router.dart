@@ -75,6 +75,7 @@ import 'package:numbers/features/admin/presentation/pages/admin_inquiry_detail_p
 import 'package:numbers/features/admin/presentation/pages/admin_feed_management_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_consent_management_page.dart';
 import 'package:numbers/features/admin/presentation/pages/admin_company_approval_page.dart';
+import 'package:numbers/features/auth/presentation/pages/admin_otp_challenge_page.dart';
 import 'package:numbers/features/company_portal/job/presentation/pages/company_job_applications_page.dart';
 import 'package:numbers/core/widgets/app_footer.dart';
 import 'package:numbers/features/user/feed/presentation/pages/feature_detail_page.dart';
@@ -222,6 +223,19 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
             }
             if (isCompanyPortalRoute && role != 'company_user') {
               return '/feed';
+            }
+
+            // 管理者は メール OTP 検証必須
+            if (isAdminRoute && role == 'admin' &&
+                currentPath != '/admin/otp-challenge') {
+              try {
+                final verified = await supabase.rpc('is_admin_verified');
+                if (verified != true) {
+                  return '/admin/otp-challenge';
+                }
+              } catch (e) {
+                debugPrint('Router: OTP verify チェック失敗: $e');
+              }
             }
 
             // 企業ポータルへのアクセス時、未承認企業はステータスページへリダイレクト
@@ -710,6 +724,10 @@ GoRouter createAppRouter(AuthNotifier authNotifier) {
       GoRoute(
         path: '/admin/plan-applications',
         builder: (context, state) => const AdminPlanApplicationPage(),
+      ),
+      GoRoute(
+        path: '/admin/otp-challenge',
+        builder: (context, state) => const AdminOtpChallengePage(),
       ),
     ],
   );

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthRepository {
@@ -10,10 +12,12 @@ class AuthRepository {
     required String password,
     String role = 'user',
     String? nickname,
+    String? captchaToken,
   }) async {
     final response = await _supabase.auth.signUp(
       email: email,
       password: password,
+      captchaToken: captchaToken,
       data: {
         'role': role,
         if (nickname != null && nickname.isNotEmpty) 'nickname': nickname,
@@ -37,11 +41,46 @@ class AuthRepository {
   Future<AuthResponse> signIn({
     required String email,
     required String password,
+    String? captchaToken,
   }) async {
-    return await _supabase.auth.signInWithPassword(
-      email: email,
-      password: password,
-    );
+    try {
+      final response = await _supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+        captchaToken: captchaToken,
+      );
+      if (response.user != null) {
+        unawaited(_sendLoginNotification());
+      }
+      return response;
+    } on AuthException catch (_) {
+      // 失敗をサーバ側にカウントし、N 回超過なら banned_until を更新
+      unawaited(_recordLoginFailure(email));
+      rethrow;
+    }
+  }
+
+  Future<void> _sendLoginNotification() async {
+    try {
+      await _supabase.functions.invoke(
+        'send-login-notification',
+        method: HttpMethod.post,
+      );
+    } catch (_) {
+      // 通知メール送信失敗はサイレント
+    }
+  }
+
+  Future<void> _recordLoginFailure(String email) async {
+    try {
+      await _supabase.functions.invoke(
+        'record-login-failure',
+        method: HttpMethod.post,
+        body: {'email': email.trim()},
+      );
+    } catch (_) {
+      // 記録失敗はサイレント
+    }
   }
 
   Future<void> signOut() async {

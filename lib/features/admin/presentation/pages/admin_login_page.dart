@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/features/admin/providers/admin_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/services/captcha_service.dart';
+import 'package:numbers/shared/widgets/hcaptcha_widget.dart';
 
 class AdminLoginPage extends HookConsumerWidget {
   const AdminLoginPage({super.key});
@@ -17,9 +19,16 @@ class AdminLoginPage extends HookConsumerWidget {
     final passwordController = useTextEditingController();
     final isLoading = useState(false);
     final obscurePassword = useState(true);
+    final captchaToken = useState<String?>(null);
 
     Future<void> login() async {
       if (!formKey.currentState!.validate()) return;
+      if (CaptchaService.isEnabled && captchaToken.value == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('画像認証を完了してください')),
+        );
+        return;
+      }
 
       isLoading.value = true;
 
@@ -28,6 +37,7 @@ class AdminLoginPage extends HookConsumerWidget {
         await authRepository.signIn(
           email: emailController.text.trim(),
           password: passwordController.text,
+          captchaToken: captchaToken.value,
         );
 
         if (context.mounted) {
@@ -46,11 +56,9 @@ class AdminLoginPage extends HookConsumerWidget {
             throw Exception('管理者アカウントでログインしてください');
           }
 
+          // 二段階認証ページへ。OTP の送信は遷移先で行う (セッション切れ復帰時も同じ経路)
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('ログインしました')),
-            );
-            context.go('/admin/dashboard');
+            context.go('/admin/otp-challenge');
           }
         }
       } catch (e) {
@@ -148,6 +156,12 @@ class AdminLoginPage extends HookConsumerWidget {
                       return null;
                     },
                   ),
+                  if (CaptchaService.isEnabled) ...[
+                    const SizedBox(height: SpacePalette.base),
+                    HCaptchaWidget(
+                      onVerified: (token) => captchaToken.value = token,
+                    ),
+                  ],
                   const SizedBox(height: SpacePalette.lg),
 
                   // ログインボタン

@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/core/services/captcha_service.dart';
+import 'package:numbers/shared/widgets/hcaptcha_widget.dart';
 
 class LoginPage extends HookConsumerWidget {
   const LoginPage({super.key});
@@ -19,9 +21,16 @@ class LoginPage extends HookConsumerWidget {
     // ローディングフラグ
     final isLoading = useState(false);
     final obscurePassword = useState(true);
+    final captchaToken = useState<String?>(null);
 
     Future<void> login() async {
       if (!formKey.currentState!.validate()) return;
+      if (CaptchaService.isEnabled && captchaToken.value == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('画像認証を完了してください')),
+        );
+        return;
+      }
 
       isLoading.value = true;
 
@@ -30,6 +39,7 @@ class LoginPage extends HookConsumerWidget {
         await repository.signIn(
           email: emailController.text.trim(),
           password: passwordController.text,
+          captchaToken: captchaToken.value,
         );
 
         if (context.mounted) {
@@ -132,7 +142,7 @@ class LoginPage extends HookConsumerWidget {
                   TextFormField(
                     controller: passwordController,
                     decoration: InputDecoration(
-                      hintText: '6文字以上で入力してください',
+                      hintText: 'パスワード',
                       suffixIcon: IconButton(
                         icon: Icon(
                           obscurePassword.value ? Icons.visibility_off : Icons.visibility,
@@ -146,12 +156,15 @@ class LoginPage extends HookConsumerWidget {
                       if (value == null || value.isEmpty) {
                         return 'パスワードを入力してください';
                       }
-                      if (value.length < 6) {
-                        return 'パスワードは6文字以上で入力してください';
-                      }
                       return null;
                     },
                   ),
+                  if (CaptchaService.isEnabled) ...[
+                    const SizedBox(height: SpacePalette.base),
+                    HCaptchaWidget(
+                      onVerified: (token) => captchaToken.value = token,
+                    ),
+                  ],
                   const SizedBox(height: SpacePalette.lg), // 別機能間隔
 
                   // ログインボタン

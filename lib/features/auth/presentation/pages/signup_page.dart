@@ -5,6 +5,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numbers/features/auth/presentation/providers/auth_provider.dart';
 import 'package:numbers/core/theme/app_theme.dart';
+import 'package:numbers/shared/utils/password_validator.dart';
+import 'package:numbers/core/services/captcha_service.dart';
+import 'package:numbers/shared/widgets/hcaptcha_widget.dart';
 
 class SignupPage extends HookConsumerWidget {
   const SignupPage({super.key});
@@ -16,6 +19,7 @@ class SignupPage extends HookConsumerWidget {
     final passwordController = useTextEditingController();
     final confirmPasswordController = useTextEditingController();
     final isLoading = useState(false);
+    final captchaToken = useState<String?>(null);
 
     Future<void> signup() async {
       if (!formKey.currentState!.validate()) return;
@@ -23,6 +27,12 @@ class SignupPage extends HookConsumerWidget {
       if (passwordController.text != confirmPasswordController.text) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('パスワードが一致しません')),
+        );
+        return;
+      }
+      if (CaptchaService.isEnabled && captchaToken.value == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('画像認証を完了してください')),
         );
         return;
       }
@@ -34,6 +44,7 @@ class SignupPage extends HookConsumerWidget {
         final response = await repository.signUp(
           email: emailController.text.trim(),
           password: passwordController.text,
+          captchaToken: captchaToken.value,
         );
 
         if (context.mounted) {
@@ -125,18 +136,10 @@ class SignupPage extends HookConsumerWidget {
                   TextFormField(
                     controller: passwordController,
                     decoration: const InputDecoration(
-                      hintText: '6文字以上で入力してください',
+                      hintText: PasswordValidator.hint,
                     ),
                     obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'パスワードを入力してください';
-                      }
-                      if (value.length < 6) {
-                        return 'パスワードは6文字以上で入力してください';
-                      }
-                      return null;
-                    },
+                    validator: PasswordValidator.validate,
                   ),
                   const SizedBox(height: SpacePalette.base),
 
@@ -165,6 +168,12 @@ class SignupPage extends HookConsumerWidget {
                       return null;
                     },
                   ),
+                  if (CaptchaService.isEnabled) ...[
+                    const SizedBox(height: SpacePalette.base),
+                    HCaptchaWidget(
+                      onVerified: (token) => captchaToken.value = token,
+                    ),
+                  ],
                   const SizedBox(height: SpacePalette.lg),
 
                   // 登録ボタン
